@@ -129,8 +129,8 @@ const char CHAR_EQUALS = '=',
 		   CHAR_P_END = ')',
 		   CHAR_SPACE = ' ',
 		   CHAR_COMMA = ',',
-		   CHAR_AND = '+',
-		   CHAR_OR = '*',
+		   CHAR_AND = '*',
+		   CHAR_OR = '+',
 		   CHAR_VAR_OPERATOR = '.', //EX: Timer1.DN '.' indicates that we are accessing an object variable to get a state.
 		   CHAR_NOT_OPERATOR = '/', //EX: /IN1 returns opposite state of IN1 logic state
 		   CHAR_NEWLINE = '\n',
