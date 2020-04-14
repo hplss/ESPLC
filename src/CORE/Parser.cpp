@@ -120,7 +120,6 @@ bool UICore::parseAccessPoint( const vector<String> &args )
 		return false;
 }
 
-//For connecting to a wifi network, must be currently disconnected before connecting to a new network
 void UICore::parseConnect( const vector<String> &args )
 {
 	//<SSID>:<Password>:<special mode>

@@ -39,7 +39,6 @@ const char CMD_PREFIX = '/', // "\"
 		   DATA_SPLIT = ':'; //Char used to split multiple strings of data in a serial commamnd stream
 
 const char CMD_DISCONNECT = 'd',
-		   CMD_LOGIN = 'l', //"username":"password"
 		   CMD_CONNECT = 'c', //"SSID":"Password"
 		   CMD_NETWORKS = 's', //scan
 		   CMD_NETINFO = 'i', //request current network info <if connected>

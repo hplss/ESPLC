@@ -1,7 +1,7 @@
 #include "UICore.h"
 #include "GlobalDefs.h"
 
-//Error messages
+//SPIFFS (flash file system) messages stored in program memory
 const String &err_Script PROGMEM = PSTR("Failed to load PLC Script!"),
              &err_Style PROGMEM = PSTR("Failed to load web stylesheet!"),
              &err_Config PROGMEM = PSTR("Failed to load device configuration!"),

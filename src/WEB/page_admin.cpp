@@ -69,7 +69,7 @@ void UICore::createAdminFields() //Should never be called more than once
 	//
 } 
 
-void UICore::HandleAdmin()
+void UICore::handleAdmin()
 {
 	if (!handleAuthorization())
 		return;

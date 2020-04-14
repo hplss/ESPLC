@@ -2,7 +2,8 @@
  * PLC_IO.h
  *
  * Created: 9/22/2019 4:26:05 PM
- *  Author: Andrew
+ * Author: Andrew Ward
+ * This file is dedicated to housing all of the function declarations that are responsible for handling all PLC logic IO functionality.
  */ 
 
 

@@ -32,7 +32,7 @@ void UICore::createScriptFields() //Probably shouldnt be called more than once.
 	p_UIDataTables.push_back(saveTable);
 }
 
-void UICore::HandleScript() //Generate the HTML for our main page.
+void UICore::handleScript() //Generate the HTML for our main page.
 {	  
 	if (!handleAuthorization())
 		return;
@@ -62,7 +62,6 @@ void UICore::HandleScript() //Generate the HTML for our main page.
 
 void UICore::applyLogic()
 {
-	Core.sendMessage("yeah");
 	PLCObj.parseScript(PLCObj.getScript()); //Parses the PLC logic script.
 	if ( Core.b_SaveScript )
 	{

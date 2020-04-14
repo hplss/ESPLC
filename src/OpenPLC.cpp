@@ -48,6 +48,7 @@ void setup()
 	Serial.begin(9600); //open the serial port //250000
 	Core.setup(); //Initialize all core UI.
 	PLCObj.parseScript(script); //Parses the PLC logic script.
+	Core.setupAccessPoint("ESPLC-DEV",""); //Create an access point by default to facilitate easier testing. (Not Secured)
 	//Map IO Pins and setup here.
 }
 

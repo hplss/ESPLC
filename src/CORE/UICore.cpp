@@ -140,7 +140,6 @@ void UICore::applySettings( bool loadFromFile )
 		MDNS.end(); //Close just to make sure (free resources).
 }
 
-//This function creates the access point if a network is unavailable for us to connect to. 
 bool UICore::setupAccessPoint( const String &ssid, const String &password )
 {
 	if ( WiFi.isConnected() )
@@ -197,9 +196,9 @@ void UICore::setupServer()
 	p_server = make_shared<WebServer>(80); //Open on port 80 (http)
 	//These set up our page triggers, linking them to specific functions.
 	getWebServer().on(styleDir, std::bind(&UICore::handleStyleSheet, this) );
-	getWebServer().on(PSTR("/"), std::bind(&UICore::HandleIndex, this) );
-	getWebServer().on(adminDir, std::bind(&UICore::HandleAdmin, this) );
-	getWebServer().on(scriptDir, std::bind(&UICore::HandleScript, this) );
+	getWebServer().on(PSTR("/"), std::bind(&UICore::handleIndex, this) );
+	getWebServer().on(adminDir, std::bind(&UICore::handleAdmin, this) );
+	getWebServer().on(scriptDir, std::bind(&UICore::handleScript, this) );
 	//
 };
 

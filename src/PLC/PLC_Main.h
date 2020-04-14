@@ -88,28 +88,51 @@ class PLC_Main
 		ladderRungs.clear();
 		ladderVARs.clear();
 	}
+	//Overloaded function that parses a logic script by string reference.
+	//Returns true on success.
 	bool parseScript(const String &script){ return parseScript(script.c_str()); }
+	//Overloaded function that parses a logic script by string pointer.
+	//Returns true on success.
 	bool parseScript(String *script){ return parseScript(script->c_str()); }
+	//This function parses an inputted logic script and creates the logic objects and rungs as appropriate.
 	bool parseScript(const char *);
 	uint8_t parseLogic( const String & );
-	void sendError(uint8_t, const String & = ""); //Displays an error of a given type, with the option of displaying additional information.
+	//Displays an error of a given type, with the option of displaying additional information.
+	void sendError(uint8_t, const String & = ""); 
 	shared_ptr<Ladder_VAR>parseVAR( const String &, uint16_t & );
 	template <typename T>
 	T &getObjectBit(String &);
-	void resetAll(); //This function is responsible for destructing all rungs and objects before reconstructing the ladder logic program.
+	//This function is responsible for destructing all rungs and objects before reconstructing the ladder logic program.
+	void resetAll(); 
+	//This function adds the inputted ladder rung into the ladder rung vector.
 	bool addLadderRung(shared_ptr<Ladder_Rung>);
+	//Creates a new ladder object (more info needed here).
 	shared_ptr<ladderOBJdata> createNewObject( const String &, const String &, uint16_t &, uint16_t &);
+	//Returns the number of current rungs stored in the rung vector.
 	uint16_t getNumRungs(){ return ladderRungs.size(); }
 	Ladder_OJB_Wrapper *generateObjWrapper(const vector<ladderOBJdata *> &, const String &parsedStr );
+	//Parses and returns the name of the ladder object, after removing any operators that be precede the name.
 	String getObjName( const String & );
+	//Returns the String object stored in the shared pointer for the logic script (stored in RAM).
 	String &getScript(){ return *currentScript.get(); }
+	//Returns the shared pointer object for the logic script. 
 	shared_ptr<String> &getSharedScript(){ return currentScript; }
-	shared_ptr<ladderOBJdata> findLadderObjByID( const vector<shared_ptr<ladderOBJdata>> &, const uint16_t ); //search for this object in rungs?
+	//Returns the created ladder object that corresponds to it's unique ID
+	//Args: Ladder Object Vector, Unique ID
+	shared_ptr<ladderOBJdata> findLadderObjByID( const vector<shared_ptr<ladderOBJdata>> &, const uint16_t );
+	//Returns the created ladder object that corresponds to it's name given in the logic script.
+	//Args: Ladder Object Vector, Object Name
 	shared_ptr<ladderOBJdata> findLadderObjByName( const vector<shared_ptr<ladderOBJdata>> &, const String & );
+	//Returns the created ladder object that corresponds to it's unique ID
+	//Args: Unique ID
 	shared_ptr<Ladder_OBJ> findLadderObjByID( const uint16_t );
+	//Returns the ladder rung based on its index in the rung vector.
+	//potentially unsafe? Hmm
+	//Args: Index
 	shared_ptr<Ladder_Rung>getLadderRung(uint16_t rung){ return ladderRungs[rung]; } //potentially unsafe? Hmm
 		
-	void processLogic(); //This is the main process loop that handles all logic operations
+	//This is the main process loop that handles all logic operations
+	void processLogic(); 
 		
 	private:
 	vector<shared_ptr<Ladder_Rung>> ladderRungs;

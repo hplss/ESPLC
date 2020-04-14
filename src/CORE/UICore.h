@@ -86,60 +86,93 @@ public:
 		closeConnection(); //end all wifi/webserver stuff
 	}
 	
-	void scanNetworks(); //Used to output to serial that gives detains on various available networks.
-	bool setupAccessPoint( const String &, const String & ); //This function creates an access point based on inputted data
+	//Outputs to serial (USB) details on various available WiFi networks that are within the range of the device.
+	void scanNetworks(); 
+	//This function creates a wireless access point using the integrated WiFi functionality.
+	//Args: SSID, PASSWORD
+	bool setupAccessPoint( const String &, const String & ); 
 
-	//Parser stuff
+	//this function is reponsible for reading incoming serial data (over USB), breaking the data up, and passing it into the appropriate functions.
 	void parseSerialData();
-	vector<String> parseArgs( int &, const uint8_t, const char buffer[] ); //Used as the first interpreter, to divide up all arguments to their respective functions.
-	bool parseAccessPoint( const vector<String> & ); //Used to set the device as a wireless access point.
-	void parseConnect( const vector<String> & ); //Used to parse values used to connect to existing wireless networks.
-	void parseVerbose( const vector<String> & ); //Used to enable/disable verbose mode.
-	void parseLogin( const vector<String> & ); //Used to log into (and load) user data stored remotely
-	void parseTime( const vector<String> & ); //Used to change certain system time related settings. No args returns current time.
-	void parseCfg( const vector<String> & ); //Used to program specific values into non-volatile storage (default wifi connection, so on)
-	void generateSettingsMap(); //Fills the map used for interpreting settings storage/reading to/from SPIFFS
-	void clearSettingsMap(); //Allows the memory used by the map to be freed after parsing/storing, etc.
-	//
+	//Used as the first serial data interpreter, to divide up all arguments and pass them to their respective functions.
+	vector<String> parseArgs( int &, const uint8_t, const char buffer[] ); 
+	//Used by the serial parser to set the device as a wireless access point.
+	bool parseAccessPoint( const vector<String> & ); 
+	//Used by the serial parser to connect to existing wireless networks that are within range of the device.
+	void parseConnect( const vector<String> & );
+	//Used by the serial parser to modify device message verbosity settings (as it relates to serial or the web UI).
+	void parseVerbose( const vector<String> & ); 
+	//Used by the serial parser to change certain system time related settings. No input arguments returns current system time.
+	void parseTime( const vector<String> & ); 
+	//Used by the serial parser to program specific values into non-volatile storage (default wifi connection, so on).
+	void parseCfg( const vector<String> & ); 
+	//Fills the settings map used for interpreting settings storage/reading to/from SPIFFS (flash file system).
+	void generateSettingsMap(); 
+	//Allows the memory used by the map to be freed after parsing/storing, etc (optimization).
+	void clearSettingsMap(); 
 	
-	void Process(); //This basically functions as our loop function
-	void updateClock(); //Updates device timer settings
-	void setup(); //Setup functions to be called when device inits.
-	void setupServer(); //Links specific web server address to corresponding page generation functions.
-	bool beginConnection( const String &, const String & ); //Used to connect to an existing wireless network.
-	void closeConnection( bool = true ); //Used to close all connections to the ESP device.
-	void sendMessage( const String &, uint8_t = PRIORITY_LOW ); //This prepares the inputted string for serial transmission, if applicable. 
-	void printDiag(); //Used to display current connection information for the wifi device.
+	//This basically functions as our main loop function for the Core UI.
+	void Process(); 
+	//Updates device timer settings
+	void updateClock(); 
+	//Core UI Setup function. To be called when device initializes.
+	void setup(); 
+	//Links specific web server address to corresponding page HTML generation functions.
+	void setupServer(); 
+	//Used to connect to an existing wireless network.
+	//Args: SSID, PASSWORD
+	bool beginConnection( const String &, const String & ); 
+	//Used to close all network connections (WiFi and Web) to the device.
+	void closeConnection( bool = true );
+	//This prepares the inputted string for serial transmission (over USB), if applicable. 
+	void sendMessage( const String &, uint8_t = PRIORITY_LOW ); 
+	//Used to display current network connection information over serial (USB), as well as other device statistics and statuses.
+	void printDiag(); 
 	
-	//These functions handle the generation of HTML pages t be transmitted to users
-	void HandleIndex(); //Index that displays the data fields.
-	void HandleAdmin(); //Administration page (instructor page)
-	void HandleScript(); //Page for editing the PLC logic script.
-	void handleStyleSheet(); //Stylesheet page, to edit the UI graphics properties
+	//This generates the index page HTML, which functions as a "main menu" for the web UI.
+	void handleIndex(); 
+	//Generates the HTML for the device administration page. This page is used for configuring device specific settings.
+	void handleAdmin(); 
+	//Generates the page HTML for editing the PLC logic script.
+	void handleScript(); 
+	//Generates the page HTML for the CSS editor Page. Used to edit the web UI graphics properties.
+	void handleStyleSheet(); 
+	//This function handles the user authorization prompt that is present on certain device configuration pages.
 	bool handleAuthorization();
-	void sendStyleSheet(); //The actual style sheet file, for sending in chunks directly from flash to the user
+	//The actual style sheet file, for sending in chunks directly from flash to the user
+	void sendStyleSheet(); 
 	void sendJQuery(); //not used yet
 	
-	void createAdminFields(); //Create static data fields for admin page.
-	void createIndexFields(); //Create static data fields for index page.
-	void createStyleSheetFields(); //Create static data fields for style page.
-	void createScriptFields(); //Create static data fields for PLC Logic page.
+	//Creates static data fields for admin page.
+	void createAdminFields(); 
+	//Creates static data fields for index page.
+	void createIndexFields(); 
+	//Creates static data fields for style page.
+	void createStyleSheetFields(); 
+	//Creates static data fields for PLC Logic page.
+	void createScriptFields(); 
 
-	void UpdateWebFields( const vector<shared_ptr<DataTable>>, String & ); //Updates data fields. Appends setting change notifications (if applicable) 
-	String generateTitle(const String &data = ""); //Generates the title for each UI page.
-	String generateHeader(); //Generates the header for each web pages, factors in style sheet data
-	String generateFooter(); //Generates the common footer for all pages
+	//Updates web UI data fields. Appends setting change notifications (if applicable) to HTML for user's reference.
+	void UpdateWebFields( const vector<shared_ptr<DataTable>>, String & ); 
+	//Generates the title HTML for each web UI page.
+	String generateTitle(const String &data = ""); 
+	//Generates the header HTML for each web UI page, and factors in style sheet data.
+	String generateHeader(); 
+	//Generates the common HTML footer for all web UI pages.
+	String generateFooter(); 
 	//
 
-	//used to apply a user inputted PLC logic script from the web UI
+	//Applies the user inputted PLC logic script from the web UI onto the device. 
 	static void applyLogic(); 
-	//used to apply changes to the CSS file for the web interface
+	//Applies changes to the CSS file for the web interface.
 	static void applyStyleSheet(); 
-	//used to apply changes for device settings (admin panel)
+	//Applies changes for device settings (admin panel)
 	static void applyDeviceSettings(); 
 
-	bool CheckUpdateNIST(); //Used to determine if a NIST server check should be performed.
-	bool UpdateNIST( bool = false ); //Used to perform the NIST update.
+	//Determines if a NIST server check should be performed.
+	bool CheckUpdateNIST(); 
+	//Performs the NIST update operation.
+	bool UpdateNIST( bool = false ); 
 
 	//Saves the device settings (wifi, time, etc.)
 	bool saveSettings(); 
@@ -152,9 +185,10 @@ public:
 	//This function applies current settings to the systems that use them (IE: Updating WiFi AP with new SSID, etc.)
 	//arg(s) <bool> : load from storage
 	void applySettings( bool = false ); 
-	bool loadPLCScript( String & ); //Loads the default script for the PLC system
-	String loadWebStylesheet(); //Loads a custom stylesheet for web based UI (optional) 
-	//End storage related functions
+	//Loads the default logic script for the PLC system from the flash file system.
+	bool loadPLCScript( String & ); 
+	//Loads a custom stylesheet (CSS) for web the based UI from the flash file system.
+	String loadWebStylesheet(); 
 
 	String &getWiFiHostname(){ return *s_WiFiHostname.get(); }
 	String &getDNSHostname(){ return *s_DNSHostname.get(); }
@@ -171,7 +205,8 @@ public:
 	WiFiUDP &getTimeUDP(){ return *p_UDP.get(); }
 
 private:
-	vector <shared_ptr<DataTable>> p_UIDataTables; //Acts as storage for the data tables for the WEB UI for all pages.
+	//Acts as storage for the data tables for the WEB UI for all pages.
+	vector <shared_ptr<DataTable>> p_UIDataTables; 
 
 	shared_ptr<WebServer> p_server; //web server object
 	shared_ptr<WiFiUDP> p_UDP; //UDP protocol object.

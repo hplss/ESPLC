@@ -2,7 +2,7 @@
  * PLC_VAR.h
  *
  * Created: 10/11/2019 7:06:14 PM
- *  Author: Andrew
+ *  Author: Andrew Ward
  This header contains information regarding the VAR class. This type of object is used to store data to be communicated between different logic blocks (such as math or compute blocks). 
  */ 
 

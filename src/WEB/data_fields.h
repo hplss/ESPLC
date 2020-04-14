@@ -17,7 +17,15 @@
 
 enum FIELD_TYPE : uint8_t
 {
-	NONE = 0, RADIO, TEXT, SUBMIT, CHECKBOX, PASSWORD, SELECT, TEXTAREA, HYPERLINK
+	NONE = 0, 
+	RADIO, //This field type creates a radio button for the web UI, and is typically reserved for boolean operations.
+	TEXT, //This field type represents a single line text field. Typically reserved for entering small strings of data.
+	SUBMIT, //This field type is a special type that is reserved for the POST/GET method. Takes the form of a button. 
+	CHECKBOX, //This field type creates a checkbox item for the web UI, and is typically reserved for boolean operations.
+	PASSWORD, //This special field type represents a regular single line text box, but the characters are obscured as they are entered.
+	SELECT, 
+	TEXTAREA, //This field type creates a large text area (multiple lines) in which a user can enter long messages.
+	HYPERLINK //This special field type is used for creating hyperlinks that redirect to other pages.
 };
 
 class UICore; //predefinition for linker purposes
@@ -46,22 +54,31 @@ class DataField
 	}
 	virtual ~DataField(){} //Destructor
 
+	//Returns true if the DataField is enabled, otherwise false.
 	bool IsEnabled(){ return b_enabled; }
 	//Returns the field type (used for the generation of the HTML code)
 	uint8_t GetType() { return i_Type; } 
-	virtual bool SetFieldValue( shared_ptr<String> ); //This is used for setting the data within the field.
+	//This overloaded function is used for setting the data (stored value) within the field.
+	virtual bool SetFieldValue( shared_ptr<String> ); 
+	//This overloaded function is used for setting the data (stored value) within the field.
 	virtual bool SetFieldValue( const String & );
 	//void SetEnabled( bool en ){ SetSetting(en, 1, 1); /*b_enabled = en;*/ }
-	//returns the address of the field (Used to make sure we're updating the proper field)
+
+	//Returns the address of the field (Used to make sure we're updating the proper field)
 	uint8_t GetAddress()
 	{
 		//uint8_t addr = GetSetting(8,3);
 		return i_Address;
 	}
 	String GetFieldName() { return String(GetAddress()); }
+	//Returns the string containing the value of the data field (the actual data).
 	const String &GetFieldValue() { return *s_fieldValue; }
+	//Returns the string containing the label used to describe the data field.
 	const String &GetFieldLabel() { return s_fieldLabel; }
-	virtual String GenerateHTML(); //Used to create the HTML to be appended to the body of the web page.
+	//Used to create the HTML as it corresponds each web UI data field. 
+	//Returns a string that contains all of the generated HTML, which can then be appended to the main HTML string before being sent to the end user.
+	virtual String GenerateHTML(); 
+	//Create a new line?
 	bool DoNewline(){ return b_newLine; }
 	bool UsesFunction(){ return b_Function; }
 	
@@ -104,20 +121,32 @@ class DataTable //This class is basically used to create sections for specific t
 		p_fields.clear(); //empty the vector - should delete the containd objects
 	}
 	
+	//Sets the name of the table object, which then corresponds to the table's title text generated in HTML.
 	void SetTableName( const String &name ) { s_tableName = name; }
-	String GenerateTableHTML(); //Generates the HTML for the Table.
+	 //Generates and returns the HTML for the Table object.
+	String GenerateTableHTML();
+	//Removes an element (DataField) from the table object 
 	bool RemoveElement( unsigned int );
+	//Adds a DataField object to the vector container for the table object.
 	bool AddElement( shared_ptr<DataField> );
-	int8_t IteratorFromAddress( unsigned int ); //Used to search for an object with the inputted address. If that object is found, the position in the vector is returned, else -1
-	shared_ptr<DataField> GetElementByID( unsigned int ); //Retrieves the element with the corresponding ID
-	shared_ptr<DataField> GetElementByName( const String & ); //Get the element by its assigned name.
+	//Used to search for an object with the inputted address. If that object is found, the position in the vector is returned, else -1
+	int8_t IteratorFromAddress( unsigned int ); 
+	//Returns the element (DataField) with the corresponding ID
+	//Args: data field ID
+	shared_ptr<DataField> GetElementByID( unsigned int ); 
+	//returns the element (DataField) by its assigned name.
+	//Args: data field name
+	shared_ptr<DataField> GetElementByName( const String & ); 
+	//Returns the table object's vector containing the DataField objects.
 	const vector<shared_ptr<DataField>> &GetFields(){ return p_fields; }
 		
 	private: 
 	String s_tableName;
-	vector<shared_ptr<DataField>> p_fields; //vector containing the pointers to all of our data fields (regular fields only).
+	//vector containing the shared pointers to all of our DataFields (for the table object).
+	vector<shared_ptr<DataField>> p_fields; 
 };
 
+//The Hyperlink_Datafield is a DataField that is responsible for handling and generating the HTML code that is needed for embedded hyperlinks in the pages for the web UI.
 class Hyperlink_Datafield : public DataField
 {
 	public:
@@ -131,7 +160,7 @@ class Hyperlink_Datafield : public DataField
 	private:
 };
 
-//SPECIAL DATAFIELDS - For directly modifying settings.
+//The UINT_Datafield is a DataField that is responsible for handling all code related to storing and modifying data of type UINT (unsigned 16-bit integer).
 class UINT_Datafield : public DataField
 {
 	public:
@@ -150,6 +179,7 @@ class UINT_Datafield : public DataField
 	unsigned int *fieldVar;
 };
 
+//The UINT8_Datafield is a DataField that is responsible for handling all code related to storing and modifying data of type UINT8 (unsigned 8-bit integer).
 class UINT8_Datafield : public DataField
 {
 	public:
@@ -168,6 +198,7 @@ class UINT8_Datafield : public DataField
 	uint8_t *fieldVar;
 };
 
+//The BOOL_Datafield is a DataField that is responsible for handling all code related to storing and modifying data of type BOOL.
 class BOOL_Datafield : public DataField
 {
 	public:
@@ -186,6 +217,7 @@ class BOOL_Datafield : public DataField
 	bool *fieldVar;
 };
 
+//The STRING_Datafield is a DataField that is responsible for handling all code related to storing and modifying data of type STRING.
 class STRING_Datafield : public DataField
 {
 	public:
@@ -198,7 +230,8 @@ class STRING_Datafield : public DataField
 };
 
 
-//Reactive Settings (They execute a function upon value being changed)
+//The STRING_S_Datafield is a DataField that is responsible for handling all code related to storing and modifying data of type STRING.
+//This object also calls another function once the value of the DataField has been altered (successfully).
 class STRING_S_Datafield : public STRING_Datafield
 {
 	public:
@@ -214,6 +247,8 @@ class STRING_S_Datafield : public STRING_Datafield
 	function<void(void)> func;//function reference to be executed on change
 };
 
+//The UINT_S_Datafield is a DataField that is responsible for handling all code related to storing and modifying data of type UINT (unsigned 16-bit integer).
+//This object also calls another function once the value of the DataField has been altered (successfully).
 class UINT_S_Datafield : public UINT_Datafield
 {
 	public:
@@ -259,7 +294,7 @@ class BOOL_S_Datafield : public BOOL_Datafield
 	function<void(void)> func;
 };
 
-//This field is used specifically for selecting and setting the device wifiSSID 
+//This field is used specifically for selecting and setting the device WiFi SSID for direct connection vie the web UI.
 class SSID_Datafield : public DataField
 {
 	public:

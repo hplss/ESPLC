@@ -23,7 +23,7 @@ void UICore::createIndexFields() //Probably shouldnt be called more than once.
 	p_UIDataTables.push_back(indexTable);
 }
 
-void UICore::HandleIndex() //Generate the HTML for our main page.
+void UICore::handleIndex() //Generate the HTML for our main page.
 {	  
 	//String AlertHTML;
 	//if ( p_server->args() ) //Do we have some args to input? Apply settings if so (before generating the rest of the HTML)

@@ -2,7 +2,7 @@
  * PLC_Rung.h
  *
  * Created: 9/24/2019 2:33:31 PM
- *  Author: Andrew
+ *  Author: Andrew Ward
  * The purpose of a rung is to serve as a manager of the objects stored within. 
  * - All rungs must have a dedicated output.
  */ 
