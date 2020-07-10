@@ -18,14 +18,13 @@
 // BASECLASS OBJECT BEGIN
 //////////////////////////////////////////////////////////////////////////
 
-//This function gets the next ladder logic object and checks to see if it passes the logic check.
 void Ladder_OBJ::getNextObj( uint16_t rungNum ) //perform internal logic, then get the next objects.
 {
 	pair<itr, itr> rungObjects = nextObj.equal_range(rungNum); //Find all objects for the current rung op
 	for ( itr it = rungObjects.first; it != rungObjects.second; it++ )//handle each object attached to this object.
 	{
-		Ladder_OBJ *Obj = it->second.get();
-		switch( it->second->getType() )
+		Ladder_OBJ *Obj = it->second->getObject().get();
+		switch( it->second->getObject()->getType() )
 		{
 			case OBJ_TYPE::TYPE_INPUT: //Go to next input
 				static_cast<InputOBJ *>(Obj)->setLineState(rungNum, getLineState());
@@ -48,6 +47,15 @@ void Ladder_OBJ::getNextObj( uint16_t rungNum ) //perform internal logic, then g
 			case OBJ_TYPE::TYPE_CTU:
 				static_cast<CounterOBJ *>(Obj)->setLineState(rungNum, getLineState());
 				break;
+
+			case OBJ_TYPE::TYPE_VAR_BOOL:
+			case OBJ_TYPE::TYPE_VAR_FLOAT:
+			case OBJ_TYPE::TYPE_VAR_INT:
+			case OBJ_TYPE::TYPE_VAR_LONG:
+			case OBJ_TYPE::TYPE_VAR_ULONG:
+			case OBJ_TYPE::TYPE_VAR_UINT:
+				static_cast<Ladder_VAR *>(Obj)->setLineState(rungNum, getLineState());
+				break;
 			
 			default:
 			break;
@@ -56,14 +64,14 @@ void Ladder_OBJ::getNextObj( uint16_t rungNum ) //perform internal logic, then g
 }
 
 
-bool Ladder_OBJ::addNextObject( uint16_t rungNum, shared_ptr<Ladder_OBJ> obj ) //Parallel objects that are next in the rung can also be added
+bool Ladder_OBJ::addNextObject( uint16_t rungNum, shared_ptr<Ladder_OBJ_Wrapper> obj ) //Parallel objects that are next in the rung can also be added
 {
 	//Some tests to make sure we can do that?
 	nextObj.emplace(rungNum,obj);
 	return true;
 }
 
-bool Ladder_OBJ::addNextObject( uint16_t rungNum, vector<shared_ptr<Ladder_OBJ>> &objects )
+bool Ladder_OBJ::addNextObject( uint16_t rungNum, vector<shared_ptr<Ladder_OBJ_Wrapper>> &objects )
 {
 	for (uint8_t x = 0; x < objects.size(); x++ )
 		nextObj.emplace(rungNum,objects[x]);
@@ -72,6 +80,22 @@ bool Ladder_OBJ::addNextObject( uint16_t rungNum, vector<shared_ptr<Ladder_OBJ>>
 	return true;
 }
 
+shared_ptr<Ladder_VAR> Ladder_OBJ::getObjectVAR( const String &id )
+{
+	/*std::map<const String, shared_ptr<Ladder_VAR>>::iterator bititr = bitMap.find(id);
+	if (bititr != bitMap.end())
+    {
+		return bititr->second; //return the shared pointer to the var
+    }*/
+	//Error here? 
+	return 0;
+}
+
+shared_ptr<Ladder_VAR> Ladder_OBJ::addObjectVAR( const String &id )
+{
+	//Error here? Should only be called if the derived class doesn't support the requested bit tag. Like a counter referencing the TT bit.
+	return 0;
+}
 //////////////////////////////////////////////////////////////////////////
 // OUTPUT OBJECT BEGIN
 //////////////////////////////////////////////////////////////////////////
@@ -162,7 +186,7 @@ void CounterOBJ::updateObject()
 	if ( getState() == STATE_ENABLED ) //make sure we don't increment the accumulator twice
 		return; //already enabled
 		
-	iAccum++; //increment 1
+	setAccumVal( getAccumVal() + 1 ); //increment 1
 	if ( iAccum >= iCount )//we're above the set limit for counting
 		setState(STATE_ENABLED);
 }

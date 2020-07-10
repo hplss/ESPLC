@@ -31,7 +31,6 @@
 #include <PLC/PLC_IO.h>
 #include <PLC/PLC_Main.h>
 #include <PLC/PLC_Rung.h>
-#include <PLC/PLC_VAR.h>
 #include <CORE/UICore.h>
 #include <esp_timer.h>
 #include <HardwareSerial.h>
@@ -41,7 +40,7 @@
 PLC_Main PLCObj;
 UICore Core; //Device object init
 //
-const String &script = PSTR("SW4=INPUT(13)\n SW3=INPUT(25)\n SW2=INPUT(33)\n SW1=INPUT(32)\n POTENTIOMETER=INPUT(26)\n WHITE=OUTPUT(16)\n YELLOW=OUTPUT(17)\n BLUE=OUTPUT(18)\n GREEN=OUTPUT(19)\n RED=OUTPUT(21)\n SW1+SW2+SW3+SW4+POTENTIOMETER=WHITE\n SW2=YELLOW\n SW3=BLUE\n SW4=GREEN\n SW1*SW3*POTENTIOMETER=RED\n");
+const String &script = PSTR("TIMER1=TIMER(1000)\n SW4=INPUT(13)\n SW3=INPUT(25)\n SW2=INPUT(33)\n SW1=INPUT(32)\n POTENTIOMETER=INPUT(26)\n WHITE=OUTPUT(16)\n YELLOW=OUTPUT(17)\n BLUE=OUTPUT(18)\n GREEN=OUTPUT(19)\n RED=OUTPUT(21)\n SW1+SW2+SW3+SW4+POTENTIOMETER=WHITE=TIMER1\n SW2*TIMER1.DN=YELLOW\n SW3=BLUE\n SW4=GREEN\n SW1*SW3*POTENTIOMETER=RED\n");
 void setup()
 {
 	millis(); //HACK HACK - calling this here seems to prevent millis() from crashing the device when a timer is used.

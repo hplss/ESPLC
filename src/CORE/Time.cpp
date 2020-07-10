@@ -2,7 +2,7 @@
  * time.cpp
  *
  * Created: 2/22/2018 3:33:40 PM
- *  Author: Andrew
+ *  Author: Andrew Ward
  * This file contains the function definitions for the Time class.
  * Taken from a previous project of mine.
  */ 

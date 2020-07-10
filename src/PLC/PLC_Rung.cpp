@@ -17,19 +17,19 @@ Ladder_Rung::~Ladder_Rung()
 	firstRungObjects.clear();
 }
 
-bool Ladder_Rung::addRungObject( shared_ptr<Ladder_OBJ> obj )
+bool Ladder_Rung::addRungObject( shared_ptr<Ladder_OBJ_Wrapper> obj )
 {
 	for ( uint16_t x = 0; x < getNumRungObjects(); x++)
 	{
-		if ( rungObjects[x]->getID() == obj->getID() )
-			return false; //Do not add duplicates to the vector
+		if ( obj->getObject()->getID() > 0 && rungObjects[x]->getObject()->getID() == obj->getObject()->getID() ) //new object must have an ID greater than 0
+			return false; //Do not add duplicates to the vector, except for child variables
 	}
 	
 	 rungObjects.emplace_back(obj); 
 	 return true;
 }
 
-bool Ladder_Rung::addInitialRungObject( shared_ptr<Ladder_OBJ> obj )
+bool Ladder_Rung::addInitialRungObject( shared_ptr<Ladder_OBJ_Wrapper> obj )
 {
 	#ifdef DEBUG
 	Serial.print(PSTR("Adding Initial"));
@@ -37,7 +37,7 @@ bool Ladder_Rung::addInitialRungObject( shared_ptr<Ladder_OBJ> obj )
 
 	for ( uint16_t x = 0; x < getNumInitialRungObjects(); x++)
 	{
-		if ( firstRungObjects[x]->getID() == obj->getID() )
+		if ( firstRungObjects[x]->getObject()->getID() == obj->getObject()->getID() )
 			return false; //Do not add duplicates to the vector
 	}
 	
@@ -45,11 +45,11 @@ bool Ladder_Rung::addInitialRungObject( shared_ptr<Ladder_OBJ> obj )
 	return true;
 }
 
-shared_ptr<Ladder_OBJ> Ladder_Rung::getRungObjectByID(uint16_t id)
+shared_ptr<Ladder_OBJ_Wrapper> Ladder_Rung::getRungObjectByID(uint16_t id)
 {
 	for ( uint16_t x = 0; x < getNumRungObjects(); x++ )
 	{
-		if ( rungObjects[x]->getID() == id )
+		if ( rungObjects[x]->getObject()->getID() == id )
 			return rungObjects[x];
 	}
 	
@@ -77,7 +77,7 @@ void Ladder_Rung::processRung( uint16_t rungNum ) //Begins the process
 	//Line state is always true at the beginning of the rung. From this point, the objects should handle all logic operations on their own until all pathways are checked
 	for ( uint8_t x = 0; x < getNumInitialRungObjects(); x++ )
 	{
-		Ladder_OBJ *rungObj = firstRungObjects[x].get();
+		Ladder_OBJ *rungObj = firstRungObjects[x]->getObject().get();
 		switch( rungObj->getType() )
 		{
 			case OBJ_TYPE::TYPE_INPUT: //Go to next input
@@ -101,6 +101,15 @@ void Ladder_Rung::processRung( uint16_t rungNum ) //Begins the process
 			case OBJ_TYPE::TYPE_CTU:
 				static_cast<CounterOBJ *>(rungObj)->setLineState(rungNum, true);
 				break;
+			
+			case OBJ_TYPE::TYPE_VAR_BOOL:
+			case OBJ_TYPE::TYPE_VAR_FLOAT:
+			case OBJ_TYPE::TYPE_VAR_INT:
+			case OBJ_TYPE::TYPE_VAR_LONG:
+			case OBJ_TYPE::TYPE_VAR_ULONG:
+			case OBJ_TYPE::TYPE_VAR_UINT:
+				static_cast<Ladder_VAR *>(rungObj)->setLineState(rungNum, true);
+				break;
 		
 			default:
 			break;
@@ -110,7 +119,7 @@ void Ladder_Rung::processRung( uint16_t rungNum ) //Begins the process
 	//Now that each rung object knows its line state, it's time to apply any settings to outputs, etc. across the entire rung.
 	for ( uint16_t x = 0; x < getNumRungObjects(); x++ )
 	{
-		Ladder_OBJ *rungObj = getRungObjects()[x].get();
+		Ladder_OBJ *rungObj = getRungObjects()[x]->getObject().get();
 		if ( !rungObj ) //just in case?
 			break;
 				
@@ -137,9 +146,19 @@ void Ladder_Rung::processRung( uint16_t rungNum ) //Begins the process
 			case OBJ_TYPE::TYPE_CTU:
 				static_cast<CounterOBJ *>(rungObj)->updateObject();
 				break;
+
+			case OBJ_TYPE::TYPE_VAR_BOOL:
+			case OBJ_TYPE::TYPE_VAR_FLOAT:
+			case OBJ_TYPE::TYPE_VAR_INT:
+			case OBJ_TYPE::TYPE_VAR_LONG:
+			case OBJ_TYPE::TYPE_VAR_ULONG:
+			case OBJ_TYPE::TYPE_VAR_UINT:
+				static_cast<Ladder_VAR *>(rungObj)->updateObject();
+				break;
 			
 			default:
 			break;
 		}
+
 	}
 }

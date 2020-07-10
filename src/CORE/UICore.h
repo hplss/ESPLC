@@ -70,6 +70,7 @@ class UICore
 public:
 	UICore()
 	{	
+		//initialize the shared pointers.
 		s_authenName = make_shared<String>();
 		s_authenPWD = make_shared<String>();
 		s_BTPWD = make_shared<String>();

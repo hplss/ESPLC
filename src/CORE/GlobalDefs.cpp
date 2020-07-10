@@ -15,36 +15,39 @@ const String &styleDir PROGMEM = PSTR("/style"),
 //
 
 //PLC RELATED TAGS
-const String &bitTagDN PROGMEM = PSTR("DN"),
-			 &bitTagEN PROGMEM = PSTR("EN"),
-			 &bitTagTT PROGMEM = PSTR("TT"),
-			 &bitTagACC PROGMEM = PSTR("ACC"),
-			 &bitTagPRE PROGMEM = PSTR("PRE"),
+const String &bitTagDN PROGMEM = PSTR("DN"), //Done
+			 &bitTagEN PROGMEM = PSTR("EN"), //Enable
+			 &bitTagTT PROGMEM = PSTR("TT"), //Timer Timing
+			 &bitTagACC PROGMEM = PSTR("ACC"), //Accumulated value
+			 &bitTagPRE PROGMEM = PSTR("PRE"), //Preset Value
 
-             &logicTagNO PROGMEM = PSTR("NO"),
-			 &logicTagNC PROGMEM = PSTR("NC"),
+             &logicTagNO PROGMEM = PSTR("NO"), //Normally open contact
+			 &logicTagNC PROGMEM = PSTR("NC"), //Normally closed contact
 
-             &typeTagTOF PROGMEM = PSTR("TOF"),
-			 &typeTagTON PROGMEM = PSTR("TON"),
-			 &typeTagCTD PROGMEM = PSTR("CTD"),
-			 &typeTagCTU PROGMEM = PSTR("CTU"),
-			 &typeTagMGRE PROGMEM = PSTR("GRE"),
-			 &typeTagMLES PROGMEM = PSTR("LES"),
-			 &typeTagMGREE PROGMEM = PSTR("GRQ"),
-			 &typeTagMLESE PROGMEM = PSTR("LEQ"),
+             &typeTagTOF PROGMEM = PSTR("TOF"), //TYPE: Timer-off
+			 &typeTagTON PROGMEM = PSTR("TON"), //TYPE: Timer-on
+			 &typeTagCTD PROGMEM = PSTR("CTD"), //TYPE: Counter-down
+			 &typeTagCTU PROGMEM = PSTR("CTU"), //TYPE: Counter-up
+			 &typeTagMGRE PROGMEM = PSTR("GRE"), //TYPE: MATH - Greater than
+			 &typeTagMLES PROGMEM = PSTR("LES"), //TYPE: MATH - Less than
+			 &typeTagMGREE PROGMEM = PSTR("GRQ"), //TYPE: MATH - Greater or Equal to
+			 &typeTagMLESE PROGMEM = PSTR("LEQ"), //TYPE: MATH - Lesser or equal to
+			 &typeTagMEQ PROGMEM = PSTR("EQ"), //TYPE: MATH - Equal to
+			 &typeTagMNEQ PROGMEM = PSTR("NEQ"), //TYPE: MATH - Not Equal to
 
-             &timerTag1 PROGMEM = PSTR("TIMER"),
-			 &timerTag2 PROGMEM = PSTR("TMR"),
-			 &inputTag1 PROGMEM = PSTR("INPUT"),
-			 &inputTag2 PROGMEM = PSTR("IN"),
-			 &counterTag1 PROGMEM = PSTR("COUNTER"),
-			 &counterTag2 PROGMEM = PSTR("CNTR"),
-			 &virtualTag1 PROGMEM = PSTR("VIRTUAL"),
-			 &virtualTag2 PROGMEM = PSTR("VIRT"),
-			 &outputTag1 PROGMEM = PSTR("OUTPUT"),
-			 &outputTag2 PROGMEM = PSTR("OUT"),
-			 &variableTag PROGMEM = PSTR("VAR"),
-			 &mathBasicTag PROGMEM = PSTR("MATH");
+             &timerTag1 PROGMEM = PSTR("TIMER"), //Timer object
+			 &timerTag2 PROGMEM = PSTR("TMR"), //Timer object alias
+			 &inputTag1 PROGMEM = PSTR("INPUT"), //Input object
+			 &inputTag2 PROGMEM = PSTR("IN"), //Input object alias
+			 &counterTag1 PROGMEM = PSTR("COUNTER"), //Counter object
+			 &counterTag2 PROGMEM = PSTR("CNTR"), //Counter object alias
+			 &virtualTag1 PROGMEM = PSTR("VIRTUAL"), //Virtuals serve as boolean storage for outputs (instead of physical pins).
+			 &virtualTag2 PROGMEM = PSTR("VIRT"), //Virtual object alias
+			 &outputTag1 PROGMEM = PSTR("OUTPUT"), //Output object
+			 &outputTag2 PROGMEM = PSTR("OUT"), //Output object alias
+			 &variableTag PROGMEM = PSTR("VAR"), //Variables serve as memory to be allocated for math comparisons of any kind. It is possible to have multiple data types as a VAR
+			 &mathBasicTag PROGMEM = PSTR("MATH"), //Math blocks perform simple arithmatic calculations and comparisons
+			 &movTag PROGMEM = PSTR("MOV"); //MOV blocks are responsible for transferring (copying) data between two variable objects.
 //END PLC TAGS
 
 //Storage related constants

@@ -78,14 +78,6 @@ enum LADDER_OBJ //Lists the types of objects that are used by the parser.
 	LADDER_VARIABLE	
 };
 
-enum VARIABLE_TYPES
-{
-	TYPE_VAR_INT,		//variable type, used to store information (integers)
-	TYPE_VAR_BOOL,	    //variable type, used to store information (boolean)
-	TYPE_VAR_FLOAT,		//variable type, used to store information (float/double)
-	TYPE_VAR_LONG,		//variable type, used to store information (long int)
-};
-
 enum OBJ_TYPE
 {
 	TYPE_INPUT = 0,		//physical input
@@ -107,6 +99,14 @@ enum OBJ_TYPE
 	TYPE_MATH_LIMIT,	//limit comparison block -- LOW_VAL <= IN <= HIGH VAL
 	TYPE_MATH_CMP,		//comparison block with basic statement
 	TYPE_MATH_CPT,		//compute block. Performs a math operation and sends the calculated value to the provided storage variable.
+
+	//Variable Exclusive Types
+	TYPE_VAR_INT,		//variable type, used to store information (integers - 32bit)
+	TYPE_VAR_UINT,		//variable type, uder to store information (unsigned integers - 32bit)
+	TYPE_VAR_BOOL,	    //variable type, used to store information (boolean)
+	TYPE_VAR_FLOAT,		//variable type, used to store information (float/double)
+	TYPE_VAR_LONG,		//variable type, used to store information (long int - 64bit)
+	TYPE_VAR_ULONG,
 };
 
 enum OBJ_LOGIC
