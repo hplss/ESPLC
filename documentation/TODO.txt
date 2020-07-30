@@ -1,0 +1,26 @@
+This file contains a brief list of the most important work that requires doing for this project. The list below will likely serve as a means of keeping track of various things as they come to mind, and do not necessarily represent the entirety of the project at large. Thus, this list is subject to change as the project evolves. 
+With regards to the scope of the project as it pertains to the demonstration for the Senior Design (2) section for Missouri S&T, some features may not be implemented. 
+-Andrew Ward
+
+				-------- TODO: --------
+
+- Oneshot (ONS) type ladder object
+	- This pulses high for one scan cycle, then holds low until reset (state change on next scans).
+
+- Status page for individual objects, showing the values for associated bits.
+
+- Sleeker look for web UI (css style editing).
+
+-Finish implementing basic math objects.
+
+-Nested Object Support in logic script.
+
+-Finish implementing NOT logic operator
+
+-Finish implementing variable objects.
+
+-Possibly work on external client interface (probably using QT framework).
+
+-Finish support for analog inputs and outputs.
+
+- Finish IO expansion via network interface between ESPLC devices.

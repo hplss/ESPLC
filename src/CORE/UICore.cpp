@@ -30,46 +30,26 @@ const String &HTML_HEADER_INITIAL PROGMEM = PSTR(
 
 void UICore::setup()
 {
+	*s_TimeString = p_currentTime->GetTimeStr();
+
 	WiFi.mode(WIFI_AP_STA); 
 	WiFi.enableAP(false); //off by default.
 	WiFi.persistent(false);
-	b_FSOpen = false; //init to false;
-	b_SaveScript = false; //default to off
-	b_SaveConfig = false; 
+
+	p_UDP = make_shared<WiFiUDP>( WiFiUDP() ); //MUST BE INITIALIZED ONLY AFTER WIFI IS INITIALIZED, LEST YE FACE UNFORSEEN TRIFLES
+	p_UDP->begin(123); //Open port 123 for NTP packet
+	
 	if ( !SPIFFS.begin(true) ) //Format on fail = true.
 		sendMessage(PSTR("Failed to initialize SPIFFS storage system."),PRIORITY_HIGH);
 	else
+	{
 		b_FSOpen = true; //set true if begin works
-
-	//Time stuff
-	p_UDP = make_shared<WiFiUDP>( WiFiUDP() );
-	getTimeUDP().begin(123); //Open port 123 for NTP packet
-	p_currentTime = new Time;
-	p_nextNISTUpdateTime = new Time;
+		applySettings( b_FSOpen ); //apply settings that are loaded from the flash storage - should be done before creating the data fields for web UI
+		*s_StyleSheet = loadWebStylesheet();
+	}
 
 	//Init our objects/configs here.
 	setupServer(); //Set up the web hosting directories.
-
-	//Default stuff for now, until EEPROM loading is implemented (also initializes shared pointers -- VERY IMPORTANT)
-	i_verboseMode = PRIORITY_LOW; //Do this by default for now, will probably have an eeprom setting for this later.
-	i_timeoutLimit = 15; //20 second default, will probably be an eeprom config later
-	b_enableNIST = true;
-	b_enableAP = false;
-	b_enableDNS = false;
-	i_NISTupdateFreq = 5; //default to 5 minutes for now.
-	i_NISTUpdateUnit = TIME_MINUTE; //default for now
-	s_NISTServer = make_shared<String>(PSTR("time.nist.gov")); //Default for now.
-	s_WiFiPWD = make_shared<String>();
-	s_WiFiSSID = make_shared<String>();
-	s_uniqueID = make_shared<String>(PSTR("DEFID")); //Default for now
-	i_NISTPort = 13; //default
-	i_nistMode = 1; //NTP
-	s_StyleSheet = make_shared<String>(loadWebStylesheet());
-	s_DNSHostname = make_shared<String>();
-	s_WiFiHostname = make_shared<String>();
-	//
-	
-	applySettings( true ); //apply settings that are loaded from the flash storage - should be done before creating the data fields for web UI
 }
 
 //This is the main UI process function. Responsible for handling all updates to UI objects.
@@ -107,8 +87,7 @@ void UICore::applySettings( bool loadFromFile )
     	esp_wifi_get_config(WIFI_IF_AP, &conf);
 		if ( WiFi.isConnected() ) //only works for station connections? Hmm
 			closeConnection(); //force the connection to close if open already.. somehow?
-		
-		Serial.println("should be starting the AP");
+
 		if ( String((char*)conf.ap.ssid) != getWiFiSSID() || String((char *)conf.ap.password) != getWiFiPWD() ) //only update if ssid or pwd is different
 		{
 			WiFi.softAPdisconnect();// close the existing AP if it is already open
@@ -199,6 +178,8 @@ void UICore::setupServer()
 	getWebServer().on(PSTR("/"), std::bind(&UICore::handleIndex, this) );
 	getWebServer().on(adminDir, std::bind(&UICore::handleAdmin, this) );
 	getWebServer().on(scriptDir, std::bind(&UICore::handleScript, this) );
+	getWebServer().on(statusDir, std::bind(&UICore::handleStatus, this) );
+	getWebServer().on(alertsDir, std::bind(&UICore::handleAlerts, this) );
 	//
 };
 
@@ -273,8 +254,21 @@ bool UICore::beginConnection( const String &ssid, const String &password )
 
 void UICore::sendMessage( const String &str, uint8_t priority )
 {
-	if ( i_verboseMode >= priority ) 
-		Serial.println( str );
+	if ( priority <= i_verboseMode ) 
+	{
+		uint16_t vectorSize = str.length(); //start with the size of the incoming string, since it will be added to the vector.
+		for ( uint8_t x = 0; x < alerts.size(); x++ )
+				vectorSize += alerts[x].length();
+
+		while( vectorSize > MAX_MESSAGE_HISTORY_SIZE ) //trim the vector if we start using too much memory
+		{
+			vectorSize -= alerts.front().length();
+			alerts.erase(alerts.cbegin()); //delete the first element (oldest) in the vector.
+		}
+
+		alerts.push_back( getSystemTimeObj()->GetTimeStr() + CHAR_SPACE + str ); //store in history for web UI clients
+		Serial.println( getSystemTimeObj()->GetTimeStr() + CHAR_SPACE + str ); //send it to the serial interface, regardless of whether anyone sees it or not
+	}
 	else 
 		return;
 }
@@ -344,7 +338,7 @@ bool UICore::UpdateNIST( bool force )
 		if ( !i_NISTupdateFreq && !force ) //must be a non-zero value
 			return false;
 		
-		if ( p_currentTime->IsBehind( p_nextNISTUpdateTime ) && !force ) //too soon for an update?
+		if ( p_currentTime->IsBehind( p_nextNISTUpdateTime.get() ) && !force ) //too soon for an update?
 			return false;
 		
 		sendMessage( F("Updating time." ) );
@@ -367,7 +361,7 @@ bool UICore::UpdateNIST( bool force )
 			
 			while( NISTclient.available() )
 			{
-				String line = NISTclient.readStringUntil('\r'); //DAYTIME protocol - meh, it works.
+				String line = NISTclient.readStringUntil(CHAR_CARRIAGE); //DAYTIME protocol - meh, it works.
 				if ( line.length() < 24 )
 					return false; //to be safe
 					
@@ -407,7 +401,7 @@ bool UICore::UpdateNIST( bool force )
 			p_currentTime->SetNTPTime( NTPTime - 2208988800UL );
 		}
 		
-		p_nextNISTUpdateTime->SetTime( p_currentTime ); //Replace with current time
+		p_nextNISTUpdateTime->SetTime( p_currentTime.get() ); //Replace with current time
 		p_nextNISTUpdateTime->IncrementTime( i_NISTupdateFreq, i_NISTUpdateUnit );//Then increment -- need to rework this a bit
 		
 		return true; //End here, we'll let the system clock carry on on the next second.
@@ -415,7 +409,7 @@ bool UICore::UpdateNIST( bool force )
 	return false; //default path
 }
 
-void UICore::UpdateWebFields( const vector<shared_ptr<DataTable>>tables, String &HTML )
+void UICore::UpdateWebFields( const vector<shared_ptr<DataTable>> &tables )
 {
 	std::map<shared_ptr<DataField>, String> functionFields;
 	//This bit of code handles all of the Datafield value updating, depending on the args that were received from the POST method.
@@ -451,23 +445,19 @@ void UICore::UpdateWebFields( const vector<shared_ptr<DataTable>>tables, String 
 				}
 				else
 				{
-					if ( tempField->SetFieldValue( p_server->arg(x) ) )
-						HTML += tempField->GetFieldLabel() + " set to: " + p_server->arg(x) + "<br>"; //Inform the admin
-					else 
-						HTML += PSTR("Update of '") + tempField->GetFieldLabel() + PSTR("' failed. <br>");
+					if ( !tempField->SetFieldValue( p_server->arg(x) ) )
+						sendMessage( PSTR("Update of '") + tempField->GetFieldLabel() + PSTR("' failed.") );
 				}
 			}
 		}
 	}
 
+	//Finally, update the fields as necessary, in the proper order
 	for ( std::map<shared_ptr<DataField>, String>::iterator itr = functionFields.begin(); itr != functionFields.end(); itr++ )//handle each object attached to this object.
 	{
-		if( itr->first->SetFieldValue( itr->second ) )
-			HTML += itr->first->GetFieldLabel() + " set to: " + itr->second + "<br>"; //Inform the admin
-		else 
-			HTML += PSTR("Update of '") +  itr->first->GetFieldLabel() + PSTR("' failed. <br>");
+		if( !itr->first->SetFieldValue( itr->second ) )
+			sendMessage( PSTR("Update of '") + itr->first->GetFieldLabel() + PSTR("' failed.") );
 	}
-	//Finally, update the fields as necessary, in the proper order
 }
 
 String UICore::generateTitle( const String &data )
@@ -483,4 +473,26 @@ String UICore::generateHeader()
 String UICore::generateFooter()
 {
 	return HTML_FOOTER;
+}
+
+String UICore::generateAlertsScript( uint8_t fieldID )
+{ 
+	//return PSTR("<script>var intFunc = function(){\n var xml = new XMLHttpRequest();\n xml.onreadystatechange = function(){\n if (this.readyState == 4 && this.status == 200){parse(JSON.parse(this.responseText));};};\n xml.open(\"GET\", \"alerts\", false);\n xml.send(); };\n function parse(arr){var out = \"\";\n for(var i = 0; i < arr.length;i++){out +=arr[i].al + '&#13;&#10'; }\n document.getElementById(\"1\").innerHTML = out; };\nsetInterval(intFunc,1000);</script>");
+	return PSTR("<script>var intFunc = function(){\n var xml = new XMLHttpRequest();\n xml.onreadystatechange = function(){\n if (this.readyState == 4 && this.status == 200){parse(this.responseText);};};\n xml.open(\"GET\", \"alerts\");\n xml.send(); };\n function parse(arr){ var doc = document.getElementById(\"1\"); doc.innerHTML = arr; };\nsetInterval(intFunc,500);</script>");
+
+}
+
+String UICore::generateAlertsJSON()
+{
+	String JSON = "";
+	for( size_t x = 0; x < alerts.size(); x++ )
+		JSON += alerts[x] + PSTR("\n");
+
+    return JSON;
+}
+
+void UICore::handleAlerts()
+{
+	//generate the JSON and send it off to the client.
+	p_server->send(200, transmission_HTML, generateAlertsJSON() ); //And we're off.
 }

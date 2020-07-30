@@ -38,7 +38,9 @@ bool Ladder_Rung::addInitialRungObject( shared_ptr<Ladder_OBJ_Wrapper> obj )
 	for ( uint16_t x = 0; x < getNumInitialRungObjects(); x++)
 	{
 		if ( firstRungObjects[x]->getObject()->getID() == obj->getObject()->getID() )
+		{
 			return false; //Do not add duplicates to the vector
+		}
 	}
 	
 	firstRungObjects.emplace_back(obj);
@@ -77,7 +79,8 @@ void Ladder_Rung::processRung( uint16_t rungNum ) //Begins the process
 	//Line state is always true at the beginning of the rung. From this point, the objects should handle all logic operations on their own until all pathways are checked
 	for ( uint8_t x = 0; x < getNumInitialRungObjects(); x++ )
 	{
-		Ladder_OBJ *rungObj = firstRungObjects[x]->getObject().get();
+		firstRungObjects[x]->getObject()->setLineState(rungNum, true);
+		/*Ladder_OBJ *rungObj = firstRungObjects[x]->getObject().get();
 		switch( rungObj->getType() )
 		{
 			case OBJ_TYPE::TYPE_INPUT: //Go to next input
@@ -88,9 +91,6 @@ void Ladder_Rung::processRung( uint16_t rungNum ) //Begins the process
 				static_cast<OutputOBJ *>(rungObj)->setLineState(rungNum, true);
 				break;
 		
-			case OBJ_TYPE::TYPE_VIRTUAL: //Virtual output
-				static_cast<VirtualOBJ *>(rungObj)->setLineState(rungNum, true);
-				break;
 		
 			case OBJ_TYPE::TYPE_TOF: //Looks like we've reached a timer. Set timer bits as appropriate then move on (Timer counted as an output)
 			case OBJ_TYPE::TYPE_TON:
@@ -110,16 +110,22 @@ void Ladder_Rung::processRung( uint16_t rungNum ) //Begins the process
 			case OBJ_TYPE::TYPE_VAR_UINT:
 				static_cast<Ladder_VAR *>(rungObj)->setLineState(rungNum, true);
 				break;
+
+			case OBJ_TYPE::TYPE_REMOTE:
+				static_cast<Remote_Ladder_OBJ *>(rungObj)->setLineState(rungNum, true);
+				break;
 		
 			default:
 			break;
-		}
+		}*/
+
 	}
 	
 	//Now that each rung object knows its line state, it's time to apply any settings to outputs, etc. across the entire rung.
 	for ( uint16_t x = 0; x < getNumRungObjects(); x++ )
 	{
-		Ladder_OBJ *rungObj = getRungObjects()[x]->getObject().get();
+		getRungObjects()[x]->getObject()->updateObject();
+		/*Ladder_OBJ *rungObj = getRungObjects()[x]->getObject().get();
 		if ( !rungObj ) //just in case?
 			break;
 				
@@ -131,10 +137,6 @@ void Ladder_Rung::processRung( uint16_t rungNum ) //Begins the process
 
 			case OBJ_TYPE::TYPE_OUTPUT: //We've reached an output. So assume we just set it to high.
 				static_cast<OutputOBJ *>(rungObj)->updateObject();
-				break;
-			
-			case OBJ_TYPE::TYPE_VIRTUAL: //Virtual output
-				static_cast<VirtualOBJ *>(rungObj)->updateObject();
 				break;
 			
 			case OBJ_TYPE::TYPE_TOF: //Looks like we've reached a timer. Set timer bits as appropriate then move on (Timer counted as an output)
@@ -155,10 +157,15 @@ void Ladder_Rung::processRung( uint16_t rungNum ) //Begins the process
 			case OBJ_TYPE::TYPE_VAR_UINT:
 				static_cast<Ladder_VAR *>(rungObj)->updateObject();
 				break;
+
+			case OBJ_TYPE::TYPE_REMOTE:
+				static_cast<Remote_Ladder_OBJ *>(rungObj)->updateObject();
+				break;
+			
 			
 			default:
 			break;
-		}
+		}*/
 
 	}
 }

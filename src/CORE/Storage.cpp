@@ -1,5 +1,7 @@
 #include "UICore.h"
 #include "GlobalDefs.h"
+#include <PLC/PLC_Main.h>
+
 
 //SPIFFS (flash file system) messages stored in program memory
 const String &err_Script PROGMEM = PSTR("Failed to load PLC Script!"),
@@ -16,24 +18,29 @@ void Device_Setting::setSettingValue( const String &str )
 {
     switch(getType())
     {
-        case SETTING_TYPE::TYPE_BOOL:
+        case TYPE_VAR_BOOL:
         {
             getBOOL() = bool(str);
         }
         break;
-        case SETTING_TYPE::TYPE_STRING:
+        case TYPE_VAR_STRING:
         {
             getSTRING() = str;
         }
         break;
-        case SETTING_TYPE::TYPE_UINT8:
+        case TYPE_VAR_UBYTE:
         {
-            getUINT8() = parseInt(str); //we can only assume it won't overflow
+            getUINT8() = static_cast<uint8_t>(parseInt(str)); //we can only assume it won't overflow
         }
         break;
-        case SETTING_TYPE::TYPE_UINT:
+        case TYPE_VAR_UINT:
         {
             getUINT() = parseInt(str); //we can only assume it won't overflow
+        }
+        break;
+        case TYPE_VAR_USHORT:
+        {
+            getUINT16() = static_cast<uint16_t>(parseInt(str)); //we can only assume it won't overflow
         }
         break;
     }
@@ -43,24 +50,29 @@ String Device_Setting::getSettingValue()
 {
     switch(getType())
     {
-        case SETTING_TYPE::TYPE_BOOL:
+        case TYPE_VAR_BOOL:
         {
             return String(getBOOL());
         }
         break;
-        case SETTING_TYPE::TYPE_STRING:
+        case TYPE_VAR_STRING:
         {
             return getSTRING();
         }
         break;
-        case SETTING_TYPE::TYPE_UINT8:
+        case TYPE_VAR_UBYTE:
         {
             return String(getUINT8());
         }
         break;
-        case SETTING_TYPE::TYPE_UINT:
+        case TYPE_VAR_UINT:
         {
             return String(getUINT());
+        }
+        break;
+        case TYPE_VAR_USHORT:
+        {
+            return String(getUINT16());
         }
         break;
     }
@@ -71,30 +83,38 @@ String Device_Setting::getSettingValue()
 void UICore::generateSettingsMap()
 {
     //Device specific settings
-    settingsMap.emplace(PSTR("dev_id"), make_shared<Device_Setting>( &getUniqueID() ) );
-    settingsMap.emplace(PSTR("dev_serial_v"), make_shared<Device_Setting>( &i_verboseMode) );
+    settingsMap.emplace(PSTR("dev_id"), make_shared<Device_Setting>( &getUniqueID() ) ); //Unique ID of the ESPLC device
+    settingsMap.emplace(PSTR("dev_serial_v"), make_shared<Device_Setting>( &i_verboseMode) ); //Serial verbosity settings, for debugging/status updates on local device
 
     //security related settings
-    settingsMap.emplace(PSTR("bt_en"), make_shared<Device_Setting>( &b_enableBT) );
-    settingsMap.emplace(PSTR("bt_pwd"), make_shared<Device_Setting>( &getBTPWD() ) );
-    settingsMap.emplace(PSTR("ui_uname"), make_shared<Device_Setting>( &getLoginName() ) );
-    settingsMap.emplace(PSTR("ui_pwd"), make_shared<Device_Setting>( &getLoginPWD() ) );
+    settingsMap.emplace(PSTR("bt_en"), make_shared<Device_Setting>( &b_enableBT) ); //Enable bluetooth interface
+    settingsMap.emplace(PSTR("bt_pwd"), make_shared<Device_Setting>( &getBTPWD() ) ); //password for Bluetooth adaptor connectivity
+    settingsMap.emplace(PSTR("ui_uname"), make_shared<Device_Setting>( &getLoginName() ) ); //username for web UI access (security)
+    settingsMap.emplace(PSTR("ui_pwd"), make_shared<Device_Setting>( &getLoginPWD() ) ); //password for web UI access (security)
 
     //Network settings
-    settingsMap.emplace(PSTR("net_ap_en"), make_shared<Device_Setting>( &b_enableAP) );
-    settingsMap.emplace(PSTR("net_retry"), make_shared<Device_Setting>( &b_autoRetryConnection) );
-    settingsMap.emplace(PSTR("net_max_retries"), make_shared<Device_Setting>( &i_timeoutLimit) );
-    settingsMap.emplace(PSTR("net_ssid"), make_shared<Device_Setting>( &getWiFiSSID() ) );
-    settingsMap.emplace(PSTR("net_pwd"), make_shared<Device_Setting>( &getWiFiPWD() ) );
-    settingsMap.emplace(PSTR("net_hostname"), make_shared<Device_Setting>( &getWiFiHostname() ) );
-    settingsMap.emplace(PSTR("dns_en"), make_shared<Device_Setting>( &b_enableDNS ) );
-    settingsMap.emplace(PSTR("dns_hostname"), make_shared<Device_Setting>( &getDNSHostname() ) );
+    settingsMap.emplace(PSTR("net_ap_en"), make_shared<Device_Setting>( &b_enableAP) ); //enable access point mode
+    settingsMap.emplace(PSTR("net_retry"), make_shared<Device_Setting>( &b_autoRetryConnection) ); //Retry connection to internet on failure
+    settingsMap.emplace(PSTR("net_max_retries"), make_shared<Device_Setting>( &i_timeoutLimit) ); //max number of connection retries
+    settingsMap.emplace(PSTR("net_ssid"), make_shared<Device_Setting>( &getWiFiSSID() ) ); //SSID of Wifi connection - for autoconnection
+    settingsMap.emplace(PSTR("net_pwd"), make_shared<Device_Setting>( &getWiFiPWD() ) ); //password for WiFi auto-connection
+    settingsMap.emplace(PSTR("net_hostname"), make_shared<Device_Setting>( &getWiFiHostname() ) ); 
+    settingsMap.emplace(PSTR("dns_en"), make_shared<Device_Setting>( &b_enableDNS ) ); //enable DNS server
+    settingsMap.emplace(PSTR("dns_hostname"), make_shared<Device_Setting>( &getDNSHostname() ) ); //hostname for DNS server.
 
+    //PLC networking settings
+    settingsMap.emplace(PSTR("plc_netmode"), make_shared<Device_Setting>( &i_plc_netmode )); //Switch for disabled (0), IO expander mode (1), or cluster mode (2)
+    settingsMap.emplace(PSTR("plc_broadcast_port"), make_shared<Device_Setting>( &i_plc_broadcast_port )); //status broadcast port (for all networked devices)
+    settingsMap.emplace(PSTR("plc_ip_range"), make_shared<Device_Setting>( &getPLCIPRange() )); //IP range limiters for node autoconnection (typically 0-255 -- 192.168.0.XXX) Format: <LOW,HIGH>
+    settingsMap.emplace(PSTR("plc_port_range"), make_shared<Device_Setting>( &getPLCPortRange() )); //Port range limiters for node status communication Format: <LOW,HIGH>
+    settingsMap.emplace(PSTR("plc_autoconnect"), make_shared<Device_Setting>( &b_plc_autoconnect )); //Attempt to auto connect to previously saved devices on startup?
+    settingsMap.emplace(PSTR("plc_saved_devices"), make_shared<Device_Setting>( &getPLCAutoConnectIPs() )); //IP's of stored devices that were previously detected and connected to. Works better with static IPs.
+    
     //Time Settings
-	settingsMap.emplace(PSTR("time_en"), make_shared<Device_Setting>( &b_enableNIST) );
-	settingsMap.emplace(PSTR("time_server"), make_shared<Device_Setting>( &getNISTServer() ) );
-    settingsMap.emplace(PSTR("time_port"), make_shared<Device_Setting>( &i_NISTPort) );
-    settingsMap.emplace(PSTR("time_upd_freq"), make_shared<Device_Setting>( &i_NISTupdateFreq) );
+	settingsMap.emplace(PSTR("time_en"), make_shared<Device_Setting>( &b_enableNIST) ); //Enable automatic time fetching when connected to internet
+	settingsMap.emplace(PSTR("time_server"), make_shared<Device_Setting>( &getNISTServer() ) ); //URL for time fetching
+    settingsMap.emplace(PSTR("time_port"), make_shared<Device_Setting>( &i_NISTPort) ); //port for time fetching
+    settingsMap.emplace(PSTR("time_upd_freq"), make_shared<Device_Setting>( &i_NISTupdateFreq) ); //update frequency for time fetching. 
 }
 
 void UICore::clearSettingsMap()
@@ -174,7 +194,7 @@ String UICore::loadWebStylesheet()
 
 bool UICore::savePLCScript( const String &script )
 {
-    if ( !b_FSOpen || script.length() ) //must have some length and FS must be initialized
+    if ( !b_FSOpen || !script.length() ) //must have some length and FS must be initialized
         return false;
 
     if ( SPIFFS.exists(file_Script) )
@@ -219,7 +239,7 @@ bool UICore::saveSettings()
         #endif
     }
 
-    clearSettingsMap(); //empty the map and delete our settings objects
+    clearSettingsMap(); //empty the map and delete our settings objects to save memory
 
     settingsFile.close(); //close the file
     sendMessage(succ_Config);

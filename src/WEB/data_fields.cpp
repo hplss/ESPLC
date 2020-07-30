@@ -19,7 +19,7 @@ bool DataField::SetFieldValue( shared_ptr<String> input )
 
 bool DataField::SetFieldValue( const String &input )
 {
-	if ( input.length() > MAX_DATA_LENGTH && GetType() != FIELD_TYPE::TEXT && GetType() != FIELD_TYPE::TEXTAREA )
+	if ( input.length() > iCols && GetType() != FIELD_TYPE::TEXTAREA ) //columns used as a data limiter size for non-textarea fields.
 		return false; //Die here, data string too long.
 
 	*s_fieldValue = input;
@@ -29,8 +29,8 @@ String DataField::GenerateHTML() //Baseclass GenerateHTML
 {
 	String HTML;
 
-	if ( strlen( GetFieldLabel().c_str() ) && GetType() != FIELD_TYPE::SUBMIT ) //Is there a label?
-		HTML += GetFieldLabel() + ": ";
+	if ( strlen( GetFieldLabel().c_str() ) && GetType() != FIELD_TYPE::SUBMIT ) //Is there a label? If so, generate the appropriate HTML
+		HTML += PSTR("<label for=\"") + String(GetAddress()) + "\">" + GetFieldLabel() + PSTR(": </label>");
 	
 	if ( GetType() != FIELD_TYPE::TEXTAREA )
 	{
@@ -39,7 +39,7 @@ String DataField::GenerateHTML() //Baseclass GenerateHTML
 		switch ( GetType() )
 		{
 			case FIELD_TYPE::TEXT:
-				HTML += F("type=\"text\" ");
+				HTML += PSTR("type=\"text\" maxlength=\"") + String(iCols) + PSTR("\"") + PSTR("size=\"") + String(iCols) + PSTR("\"");
 				break;
 			case FIELD_TYPE::SUBMIT:
 				HTML += F("type=\"submit\" ");
@@ -51,7 +51,10 @@ String DataField::GenerateHTML() //Baseclass GenerateHTML
 				HTML += F("type=\"checkbox\" ");
 				break;
 			case FIELD_TYPE::PASSWORD:
-				HTML += F("type=\"password\" ");
+				HTML += PSTR("type=\"password\" maxlength=\"") + String(iCols) + PSTR("\" ") + PSTR("size=\"") + String(iCols) + PSTR("\" ");;
+				break;
+			case FIELD_TYPE::NUMBER:
+				HTML += PSTR("type=\"number\" min=\"0\" size=\"") + String(iCols) + PSTR("\" oninput=\"validity.valid||(value=min);\" ");;
 				break;
 		}
 	
@@ -68,13 +71,22 @@ String DataField::GenerateHTML() //Baseclass GenerateHTML
 				HTML += PSTR("value=\"") + GetFieldValue() + "\" ";
 				break;
 		}	
+		if ( strlen( GetFieldName().c_str() ) && GetType() != FIELD_TYPE::SUBMIT ) //If we even have a name.
+			HTML += PSTR("name=\"") + GetFieldName() + "\" ";		
+
+		HTML += PSTR("id=\"") + String(GetAddress()) + "\"";
+		HTML += ">"; //End of the <INPUT 
+	}
+	else
+	{
+		HTML += PSTR("<textarea form=\"form\" id=\"") + String(GetAddress()) + PSTR("\" rows=\"") + String(iRows) + PSTR("\" cols=\"") + String (iCols) + "\"";//"form" is the default form name. It'll work for now
+		if ( strlen( GetFieldName().c_str() ) ) //If we even have a name.
+			HTML += PSTR("name=\"") + GetFieldName() + "\"";	
+		HTML += ">";
+		HTML += DataField::GetFieldValue(); //put stored text values here
+		HTML += PSTR("</textarea>");
 	}
 
-	if ( strlen( GetFieldName().c_str() ) && GetType() != FIELD_TYPE::SUBMIT ) //If we even have a name.
-		HTML += PSTR("name=\"") + GetFieldName() + "\" ";		
-	
-	HTML += ">"; //End of the <INPUT 
-	
 	if ( DoNewline() )	//Generate newline?
 		HTML += F("<br>");
 
@@ -85,22 +97,24 @@ String SSID_Datafield::GenerateHTML() //This is a specific type of field, tailor
 {
 	String HTML;
 
+	int16_t networks = WiFi.scanNetworks(false, false, false, 200); //200MS instead of 300ms - make scans faster
+
 	if ( strlen( GetFieldLabel().c_str() ) ) //Is there a label?
 		HTML += GetFieldLabel() + ": ";
 	
-	HTML += F("<select ");
-	HTML += "id=\"" + String(GetAddress()) + PSTR("\" name=\"") + GetFieldName() + PSTR("\" >");
+	HTML += PSTR("<select ");
+	HTML += PSTR("id=\"") + String(GetAddress()) + PSTR("\" name=\"") + GetFieldName() + PSTR("\" >");
 	
-	if ( WiFi.scanNetworks() <= 0 )
+	if ( networks <= 0 )
 	{
 		if ( WiFi.status() != WL_CONNECTED ) 
-			HTML += F("<option >N/A</option>");
+			HTML += PSTR("<option >N/A</option>");
 		else 
 			HTML += PSTR("<option>") + String(WiFi.SSID()) + PSTR(" (Connected)</option>"); //? hmm
 	}
 	else
 	{
-		for ( uint8_t x = 0; x < WiFi.scanNetworks(); x++ )
+		for ( uint8_t x = 0; x < networks; x++ ) //more than 255 networks? Hmm
 		{
 			HTML += PSTR("<option value=\"") + String(x) + "\"";
 			if ( WiFi.SSID( x ) == WiFi.SSID() )
@@ -119,6 +133,40 @@ String SSID_Datafield::GenerateHTML() //This is a specific type of field, tailor
 	
 	if ( DoNewline() )	//Generate newline?
 		HTML += F("<br>");
+
+	return HTML;
+}
+
+String Select_Datafield::GenerateHTML()
+{
+	String HTML;
+	if ( strlen( GetFieldLabel().c_str() ) ) //Is there a label?
+		HTML += GetFieldLabel() + ": ";
+	
+	HTML += PSTR("<select ");
+	HTML += PSTR("id=\"") + String(GetAddress()) + PSTR("\" name=\"") + GetFieldName() + PSTR("\" >");
+	
+	if ( options.size() > 0 )
+	{
+		for ( uint8_t x = 0; x < options.size(); x++ ) //more than 255 networks? Hmm
+		{
+			HTML += PSTR("<option value=\"") + String(x) + "\"";
+			if ( x == intFromValue() )
+			{
+				HTML += PSTR(" selected ");
+				HTML += ">" + options[x] + PSTR(" (Selected)");
+			}
+			else
+				HTML += ">" + options[x]; 
+				
+			HTML += PSTR("</option>");
+		}
+	}
+	
+	HTML += PSTR("</select>");
+	
+	if ( DoNewline() )	//Generate newline?
+		HTML += PSTR("<br>");
 
 	return HTML;
 }
@@ -187,15 +235,12 @@ String DataTable::GenerateTableHTML()
 	//sprintf_P(HTML.c_str(), " ", "");
 	HTML += PSTR("<h2>") + s_tableName + PSTR("</h2>");
 	HTML += PSTR("<table id =\"\"  style=\"width:100%\" > ");
-	HTML += PSTR("<P>");
+	HTML += html_paragraph_begin;
 	for ( uint8_t x = 0; x < p_fields.size(); x++ )
 	{
-		if ( !p_fields[x]->IsEnabled() )
-			continue;
-			
 		HTML += p_fields[x]->GenerateHTML();
 	}
-	HTML += F("</P>");
+	HTML += html_paragraph_end;
 	HTML += F("</table>");
 	return HTML;
 }
@@ -206,16 +251,6 @@ String DataTable::GenerateTableHTML()
 // - made by other methods (serial parser for example) in the HTML, without the need for matching the var and the FieldValue string. 
 //////////////////////////////////////////////////////////////////////////
 
-/*bool STRING_Datafield::SetFieldValue( const String &value )
-{
-	if ( GetVar() != value  ) //Check the main variable being modified first.
-	{
-		GetVar() = value;
-		return true;
-	}
-	return false;
-}*/
-
 String Hyperlink_Datafield::GenerateHTML()
 {
 	String HTML = PSTR("<a href=\"") + GetFieldValue() + "\">" + GetFieldLabel() + "</a>";
@@ -224,101 +259,159 @@ String Hyperlink_Datafield::GenerateHTML()
 	return HTML;
 }
 
-String STRING_Datafield::GenerateHTML() 
-{ 
-	if ( GetType() != FIELD_TYPE::TEXTAREA ) //Exit here if this isn't a text area (basically this would be a single row textox)
-		return DataField::GenerateHTML(); //call default generation function
-	
-	String HTML;
-
-	HTML += F("<textarea form=\"form\" rows=\"10\" cols=\"50\"");//"form" is the default form name. It'll work for now
-	if ( strlen( GetFieldName().c_str() ) ) //If we even have a name.
-		HTML += "name=\"" + GetFieldName() + "\" ";	
-
-	HTML += ">";
-	HTML += DataField::GetFieldValue(); //put stored text values here
-	HTML += PSTR("</textarea><br>");
-	return HTML;
-}
-
-bool UINT_Datafield::SetFieldValue( const String &value )
+bool VAR_Datafield::SetFieldValue( const String &value )
 {
-	unsigned int newValue = parseInt( value );
-	if ( *GetVar() != newValue  )
+	switch(iVarType)
 	{
-		//if (DataField::SetFieldValue(value))
+		case TYPE_VAR_BOOL:
 		{
-			*GetVar() = newValue;
-			return true;
+			bool temp = parseInt( value );
+			if ( *variablePtr.bVar != temp )
+			{
+				*variablePtr.bVar = temp;
+				return true;
+			}
+			else if ( value.length() )
+			{
+				*variablePtr.bVar = true;
+				return true;
+			}
+			else
+			{
+				*variablePtr.bVar = false;
+				return true;
+			}
 		}
+		break;
+		case TYPE_VAR_UBYTE:
+		{
+			uint8_t temp = parseInt( value );
+			if ( *variablePtr.uByteVar != temp )
+			{
+				*variablePtr.uByteVar = temp;
+				return true;
+			}
+		}
+		break;
+		case TYPE_VAR_UINT:
+		{
+			uint_fast32_t temp = parseInt( value );
+			if ( *variablePtr.uiVar != temp )
+			{
+				*variablePtr.uiVar = temp;
+				return true;
+			}
+		}
+		break;
+		case TYPE_VAR_INT:
+		{
+			int_fast32_t temp = parseInt( value );
+			if ( *variablePtr.iVar != temp )
+			{
+				*variablePtr.iVar = temp;
+				return true;
+			}
+		}
+		break;
+		case TYPE_VAR_USHORT:
+		{
+			uint16_t temp = parseInt( value );
+			if ( *variablePtr.uiShortVar != temp )
+			{
+				*variablePtr.uiShortVar = temp;
+				return true;
+			}
+		}
+		break;
+		case TYPE_VAR_FLOAT:
+		{
+			float temp = parseFloat( value );
+			if ( *variablePtr.fVar != temp )
+			{
+				*variablePtr.fVar = temp;
+				return true;
+			}
+		}
+		break;
+		case TYPE_VAR_STRING:
+		{
+			return DataField::SetFieldValue(value);
+		}
+		break;
 	}
 	return false;
 }
-
-bool UINT_Datafield::SetFieldValue( const unsigned int &value )
+int_fast32_t VAR_Datafield::intFromValue()
 {
-	if ( *GetVar() != value  )
+	switch(iVarType)
 	{
-		//if (DataField::SetFieldValue(String(value)))
-		{
-			*GetVar() = value;
-			return true;
-		}
+		case TYPE_VAR_BOOL:
+			return *variablePtr.bVar;
+		case TYPE_VAR_INT:
+			return *variablePtr.iVar;
+		case TYPE_VAR_FLOAT:
+			return *variablePtr.fVar;
+		case TYPE_VAR_LONG:
+			return *variablePtr.lVar;
+		case TYPE_VAR_UBYTE:
+			return *variablePtr.uByteVar;
+		case TYPE_VAR_USHORT:
+			return *variablePtr.uiShortVar;
+		case TYPE_VAR_STRING:
+			return parseInt(GetFieldValue());
 	}
-	return false;
+	return 0;
+}
+String LADDER_OBJ_Datafield::GenerateHTML() 
+{
+	/*<script>
+var xmlhttp = new XMLHttpRequest();
+var url = "myTutorials.txt";
+
+xmlhttp.onreadystatechange = function() {
+  if (this.readyState == 4 && this.status == 200) {
+    myFunction(JSON.parse(this.responseText));
+  }
+};
+xmlhttp.open("GET", url, true);
+xmlhttp.send();
+
+function myFunction(arr) {
+  var out = "";
+  var i;
+  for(i = 0; i < arr.length; i++) {
+    out = arr[i].display; 
+    document.getElementById("test" + i).innerHTML = out;
+  }
+}
+</script>*/
+	return "";
 }
 
-bool UINT8_Datafield::SetFieldValue( const String &value )
-{
-	uint8_t newValue = parseInt( value );
-	if ( *GetVar() != newValue  )
-	{
-		//if (DataField::SetFieldValue(value))
-		{
-			*GetVar() = newValue;
-			return true;
-		}
-	}
-	return false;
-}
 
-bool UINT8_Datafield::SetFieldValue( const uint8_t &value )
+//Generic functions below here
+String uLongToStr(uint64_t value, uint8_t base) 
 {
-	if ( *GetVar() != value  )
-	{
-		//if (DataField::SetFieldValue(String(value)))
-		{
-			*GetVar() = value;
-			return true;
-		}
-	}
-	return false;
+    char buf[2 + 8 * sizeof(uint64_t)];
+    if (base==10) {
+        sprintf(buf, "%llud", value);
+    } else {
+        ltoa(value, buf, base);
+    }
+	String str(buf);
+    return str;
 }
-
-bool BOOL_Datafield::SetFieldValue( const String &value )
+String longToStr(int64_t value, uint8_t base) 
 {
-	bool newValue = ( parseInt( value ) || value.length() );
-	if ( *GetVar() != newValue  )
+    char buf[2 + 8 * sizeof(uint64_t)];
+    if (base==10) 
 	{
-		//if (DataField::SetFieldValue(value))
-		{
-			*GetVar() = newValue;
-			Serial.println(*GetVar());
-			return true;
-		}
-	}
-	return false;
-}
-
-bool BOOL_Datafield::SetFieldValue( const bool &value )
-{
-	if ( *GetVar() != value  )
+        sprintf(buf, "%lld", value);
+    } 
+	else 
 	{
-		//if (DataField::SetFieldValue(String(value)))
-		{
-			*GetVar() = value;
-			return true;
-		}
-	}
-	return false;
+        ltoa(value, buf, base);
+    }
+	String str(buf);
+    return str;
 }

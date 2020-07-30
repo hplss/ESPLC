@@ -191,7 +191,30 @@ uint8_t Time::AdvanceMonthYear( unsigned int days )
 	}
 	return days; //Should always be 31 or less
 }
-
+bool Time::SetTime( const String &str ) 
+{
+	vector<String> strVector;
+	String temp = "";
+	for ( uint8_t x = 0; x < str.length(); x++ )
+	{
+		if (str[x] == DATA_SPLIT || x >= str.length() )
+		{
+			strVector.push_back(temp);
+			temp.clear();
+		}
+		else
+		{
+			temp += str[x];
+		}
+	}
+	if ( strVector.size() < 6 )
+		return false;
+	else
+	{
+		SetTime(strVector[0].toInt(), strVector[1].toInt(), strVector[2].toInt(), strVector[3].toInt(), strVector[4].toInt(), strVector[5].toInt());
+	}
+	return true;
+}
 bool Time::SetTime( const uint8_t &yr, const uint8_t &mo, const uint8_t &day, const uint8_t &hr, const uint8_t &min, const uint8_t &sec )
 {
 	if ( yr > MAX_YEAR || mo > NUM_MONTHS_YEAR || day > GetMonthDays(mo) || hr >= NUM_HOURS_DAY || min >= 60 || sec >= 60)
@@ -250,4 +273,58 @@ bool Time::IsAhead( const Time *T2 )
 	
 	
 	return false;
+}
+
+bool Time::setYear( const uint8_t yr )
+{
+	if ( yr > MAX_YEAR )
+		return false;
+
+	i_year = yr;
+	return true;
+}
+
+bool Time::setMonth( const uint8_t mo )
+{
+	if ( mo > NUM_MONTHS_YEAR )
+		return false;
+	
+	i_month = mo;
+	return true;
+}
+
+bool Time::setDay( const uint8_t day )
+{
+	if ( day > GetMonthDays(i_month) )
+		return false;
+	
+	i_day = day;
+	return true;
+}
+
+bool Time::setHour( const uint8_t hr )
+{
+	if ( hr >= NUM_HOURS_DAY)
+		return false;
+	
+	i_hour = hr;
+	return true;
+}
+
+bool Time::setMinute( const uint8_t min )
+{
+	if (min >= 60)
+		return false;
+	
+	i_minute= min;
+	return true;
+}
+
+bool Time::setSecond( const uint8_t sec )
+{
+	if (sec >= 60)
+		return false;
+	
+	i_second = sec;
+	return true;
 }

@@ -32,6 +32,8 @@ const unsigned char NULL_CHAR = 0;//'/0';
 //directories for individual web pages
 extern const String &styleDir PROGMEM,
 			 		&adminDir PROGMEM,
+					&statusDir PROGMEM,
+					&alertsDir PROGMEM,
 			 		&scriptDir PROGMEM;
 //
 
@@ -56,35 +58,37 @@ extern const String &file_Stylesheet PROGMEM,
 
 //Web UI constants
 extern const String &transmission_HTML PROGMEM,
-			 		&form_Begin PROGMEM,
-			 		&form_Middle PROGMEM,
-			 		&form_End PROGMEM;
+			 		&html_form_Begin PROGMEM,
+			 		&html_form_Middle PROGMEM,
+			 		&html_form_End PROGMEM,
+					&table_title_messages PROGMEM,
+					&html_paragraph_begin PROGMEM,
+					&html_paragraph_end PROGMEM,
+					&field_title_alerts PROGMEM;
 
 //
 
 //PLC related error messages
 extern const String &err_failed_creation PROGMEM,
-			 		&err_unknown_args,
-			 		&err_insufficient_args,
-			 		&err_unknown_type PROGMEM;
+			 		&err_unknown_args PROGMEM,
+			 		&err_insufficient_args PROGMEM,
+			 		&err_unknown_type PROGMEM,
+					&err_pin_invalid PROGMEM,
+					&err_pin_taken PROGMEM,
+					&err_unknown_obj PROGMEM,
+					&err_invalid_bit PROGMEM;
 
 //
 
 //End storage related constants
 
-enum LADDER_OBJ //Lists the types of objects that are used by the parser.
-{
-	LADDER_OBJECT,
-	LADDER_VARIABLE	
-};
-
 enum OBJ_TYPE
 {
-	TYPE_INPUT = 0,		//physical input
+	TYPE_INPUT = 0,		//physical input (digital read)
+	TYPE_INPUT_ANALOG,  //physical input (analog read)
 	TYPE_OUTPUT,		//physical output
 	TYPE_VIRTUAL,		//internal coil (variable)
-	TYPE_COF,
-	TYPE_CON,
+	TYPE_CLOCK,			//clock object type 
 	TYPE_TON,			//timed on
 	TYPE_TOF,			//timed off
 	TYPE_TRET,			//retentive timer
@@ -92,21 +96,33 @@ enum OBJ_TYPE
 	TYPE_CTU,			//count up timer
 	TYPE_CTD,			//count down timer
 	TYPE_ONS,			//one shot objects. Pulses high briefly, then goes low. Will not pulse until low-> high transition occurs. 
+	TYPE_MATH_EQ,		//equals
 	TYPE_MATH_GRT,		//greater than
 	TYPE_MATH_LES,		//less than
 	TYPE_MATH_GRQ,		//greater or equal to
 	TYPE_MATH_LEQ,		//lesser or equal to
+	TYPE_MATH_SIN,		//sine function
+	TYPE_MATH_COS,		//cosine function
+	TYPE_MATH_TAN,		//tangent function
+	TYPE_MATH_ASIN,		//sine function
+	TYPE_MATH_ACOS,		//cosine function
+	TYPE_MATH_ATAN,		//tangent function
 	TYPE_MATH_LIMIT,	//limit comparison block -- LOW_VAL <= IN <= HIGH VAL
-	TYPE_MATH_CMP,		//comparison block with basic statement
-	TYPE_MATH_CPT,		//compute block. Performs a math operation and sends the calculated value to the provided storage variable.
+	TYPE_MATH_INC,		//increment block - adds +1 to the inputted source variable
+	TYPE_MATH_DEC,		//decrement block - subtracts 1 from the inputted source variable
+	TYPE_MATH_CPT,		//compute block. Performs a math operation and sends the calculated value to the provided storage variable
+	TYPE_REMOTE,		//Remote object. Ued in cluster and expander operations when multiple ESP devices are interconnected via networks.
 
 	//Variable Exclusive Types
+	TYPE_VAR_UBYTE,		//variable type, used to store information (8-bit unsigned integer)
+	TYPE_VAR_USHORT,	//variable type, used to store information (16-bit unsigned integer)
 	TYPE_VAR_INT,		//variable type, used to store information (integers - 32bit)
 	TYPE_VAR_UINT,		//variable type, uder to store information (unsigned integers - 32bit)
 	TYPE_VAR_BOOL,	    //variable type, used to store information (boolean)
 	TYPE_VAR_FLOAT,		//variable type, used to store information (float/double)
 	TYPE_VAR_LONG,		//variable type, used to store information (long int - 64bit)
-	TYPE_VAR_ULONG,
+	TYPE_VAR_ULONG,		//variable type, used to store information (unsigned long - 64bit)
+	TYPE_VAR_STRING,	//variable type, used to store information (String)
 };
 
 enum OBJ_LOGIC
@@ -121,6 +137,29 @@ enum OBJ_STATE
 	STATE_ENABLED, //line state to this object is low(false)
 	STATE_LATCHED, //worry about this later
 	STATE_UNLATCHED
+};
+
+enum PIN_TYPE
+{
+	PIN_I = 0, //indicates that the pin is a digital input only pin
+	PIN_AI, //indicates that the pin can function as an analog and digital input only
+	PIN_O,	//indicates that the pin is a digital output only pin
+	PIN_IO,	//Indicates that the pin is a combination digital input/output pin
+	PIN_AIO, //indicates that the pin can function as an analog input or digital output
+	PIN_TAKEN, //indicates that a requested pin is no longer available to the parser.
+	PIN_INVALID //indicates that a requested pin id invalid, and not available for use at any time.
+};
+
+enum ERR_DATA
+{
+	ERR_CREATION_FAILED = 0, //This error indicates that the creation of a specified ladder object has failed for unknown reasons (generic failure)
+	ERR_UNKNOWN_TYPE, //This error indicates that an object type interpreted from the parser cannot be initialized, probably because it doesn't exist.
+	ERR_UNKNOWN_ARGS,	//This error indicates that the arguments given to the parser through the script cannot be interpreted, or they do not exist
+	ERR_INSUFFICIENT_ARGS, //This error type indicates that a ladder logic object creation has failed due to insufficient arguments provided by the end-user.
+	ERR_INVALID_OBJ,	//This error type indicates that a ladder object defined by the user does not exist or is not recognized by the parser.
+	ERR_INVALID_BIT, //This error type indicates that a bit referece to a given ladder logic object is not valid or associated with the given object.
+	ERR_PIN_INVALID, //This error indicates that a given pin number used for IO operations is invalid (doesn't exist on the device, or is used for special operations)
+	ERR_PIN_TAKEN //This error indicates that a given pin number used for IO operations is already occupied by another object.
 };
 
 const char CHAR_EQUALS = '=',
@@ -141,6 +180,7 @@ extern const String &bitTagDN PROGMEM,
 			 		&bitTagTT PROGMEM,
 			 		&bitTagACC PROGMEM,
 			 		&bitTagPRE PROGMEM,
+					&bitTagDEST PROGMEM,
 
 			 		&logicTagNO PROGMEM,
 			 		&logicTagNC PROGMEM,
@@ -153,6 +193,8 @@ extern const String &bitTagDN PROGMEM,
 			 		&typeTagMLES PROGMEM,
 			 		&typeTagMGREE PROGMEM,
 			 		&typeTagMLESE PROGMEM,
+					&typeTagAnalog PROGMEM,
+					&typeTagDigital PROGMEM,
 
 			 		&timerTag1 PROGMEM,
 			 		&timerTag2 PROGMEM,
@@ -164,6 +206,5 @@ extern const String &bitTagDN PROGMEM,
 			 		&virtualTag2 PROGMEM,
 			 		&outputTag1 PROGMEM,
 			 		&outputTag2 PROGMEM,
-			 		&variableTag PROGMEM,
 			 		&mathBasicTag PROGMEM;
 #endif /* GLOBALDEFS_H_ */

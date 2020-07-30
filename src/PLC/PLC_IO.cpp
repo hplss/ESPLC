@@ -23,7 +23,8 @@ void Ladder_OBJ::getNextObj( uint16_t rungNum ) //perform internal logic, then g
 	pair<itr, itr> rungObjects = nextObj.equal_range(rungNum); //Find all objects for the current rung op
 	for ( itr it = rungObjects.first; it != rungObjects.second; it++ )//handle each object attached to this object.
 	{
-		Ladder_OBJ *Obj = it->second->getObject().get();
+		it->second->getObject()->setLineState(rungNum, getLineState());
+		/*Ladder_OBJ *Obj = it->second->getObject().get();
 		switch( it->second->getObject()->getType() )
 		{
 			case OBJ_TYPE::TYPE_INPUT: //Go to next input
@@ -32,10 +33,6 @@ void Ladder_OBJ::getNextObj( uint16_t rungNum ) //perform internal logic, then g
 			
 			case OBJ_TYPE::TYPE_OUTPUT: //We've reached an output. So assume we just set it to high.
 				static_cast<OutputOBJ *>(Obj)->setLineState(rungNum, getLineState());
-				break;
-			
-			case OBJ_TYPE::TYPE_VIRTUAL: //Virtual output
-				static_cast<VirtualOBJ *>(Obj)->setLineState(rungNum, getLineState());
 				break;
 			
 			case OBJ_TYPE::TYPE_TOF: //Looks like we've reached a timer. Set timer bits as appropriate then move on (Timer counted as a noutput)
@@ -57,16 +54,20 @@ void Ladder_OBJ::getNextObj( uint16_t rungNum ) //perform internal logic, then g
 				static_cast<Ladder_VAR *>(Obj)->setLineState(rungNum, getLineState());
 				break;
 			
+			case OBJ_TYPE::TYPE_REMOTE:
+				static_cast<Remote_Ladder_OBJ *>(Obj)->setLineState(rungNum, getLineState());
+				break;
+
 			default:
 			break;
-		}
+		}*/
 	}
 }
 
 
 bool Ladder_OBJ::addNextObject( uint16_t rungNum, shared_ptr<Ladder_OBJ_Wrapper> obj ) //Parallel objects that are next in the rung can also be added
 {
-	//Some tests to make sure we can do that?
+	//Some tests to make sure we can do that? Not sure what those tests would be yet. 
 	nextObj.emplace(rungNum,obj);
 	return true;
 }
@@ -82,12 +83,6 @@ bool Ladder_OBJ::addNextObject( uint16_t rungNum, vector<shared_ptr<Ladder_OBJ_W
 
 shared_ptr<Ladder_VAR> Ladder_OBJ::getObjectVAR( const String &id )
 {
-	/*std::map<const String, shared_ptr<Ladder_VAR>>::iterator bititr = bitMap.find(id);
-	if (bititr != bitMap.end())
-    {
-		return bititr->second; //return the shared pointer to the var
-    }*/
-	//Error here? 
 	return 0;
 }
 
@@ -119,25 +114,19 @@ void InputOBJ::updateObject()
 
 void InputOBJ::setLineState(uint16_t rung, bool state )
 {
-	bool input = getInput();
-	if ( state ) //looks like we have a high state coming in to this object from the previous on the rung, let's see if we pass the state tests for this object.
+	iValue = getInput();
+	if ( getType() == TYPE_INPUT ) //digital only
 	{
-		if(!input && getLogic() == LOGIC_NO) //input is low (button not pressed) and logic is normally open (default position of button is off)
-			state = false; //input not activated
-		else if (input && getLogic() == LOGIC_NC) //input is high (button is pressed), but logic is normally closed (0)
-			state = false; //input not activated, only active if input is 0 in this case
+		if ( state ) //looks like we have a high state coming in to this object from the previous on the rung, let's see if we pass the state tests for this object.
+		{
+			if(!iValue && getLogic() == LOGIC_NO) //input is low (button not pressed) and logic is normally open (default position of button is off)
+				state = false; //input not activated
+			else if (iValue && getLogic() == LOGIC_NC) //input is high (button is pressed), but logic is normally closed (0)
+				state = false; //input not activated, only active if input is 0 in this case
+		}
 	}
+	
 	Ladder_OBJ::setLineState( rung, state ); //let the parent handle it from here.
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-// VIRTUAL OBJECT BEGIN
-//////////////////////////////////////////////////////////////////////////
-void VirtualOBJ::updateObject()
-{
-	setState(getLineState());
-	Ladder_OBJ::updateObject(); //parent class
 }
 
 

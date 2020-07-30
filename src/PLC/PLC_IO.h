@@ -18,6 +18,7 @@
 #include <map>
 #include <memory>
 
+
 using namespace std;
 
 //predefine to prevent some linker problems
@@ -64,9 +65,9 @@ private:
 	typedef multimap<uint16_t, shared_ptr<Ladder_OBJ_Wrapper>> :: iterator itr;
 	uint8_t iType; //Identifies the type of this object. 0 = input, 1 = Physical output, 2 = Virtual Output, 3 = timer, etc.	
 	uint8_t objState; //Enabled or disabled? needed?
-	uint8_t objLogic : 2;
+	uint8_t objLogic;
 	uint16_t ObjID; //The unique ID for this object (globally)
-	bool bLineState : 1; //This is the logic state at this point in the line for this pass. If it is set to true at any point, it remains true till the end of the scan.
+	bool bLineState; //This is the logic state at this point in the line for this pass. If it is set to true at any point, it remains true till the end of the scan.
 	//Bit shifting to save memory? Look into later
 };
 
@@ -82,9 +83,9 @@ struct Ladder_OBJ_Wrapper
 	~Ladder_OBJ_Wrapper(){ }
 
 	//Adds the inputted object to the current object's list.
-	void addNextObject( uint16_t rung, shared_ptr<Ladder_OBJ_Wrapper> pObj )
+	bool addNextObject( uint16_t rung, shared_ptr<Ladder_OBJ_Wrapper> pObj )
 	{
-		getObject()->addNextObject(rung, pObj);
+		return getObject()->addNextObject(rung, pObj);
 	}
 	
 	//Returns the pointer to the ladder object stored by this object.
@@ -100,40 +101,121 @@ struct Ladder_OBJ_Wrapper
 class Ladder_VAR : public Ladder_OBJ
 {
 	public:
-	Ladder_VAR( int_fast32_t *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_INT )
-	{ 
-		values.iValue = value;
-	}
-	Ladder_VAR( uint_fast32_t *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_UINT )
-	{ 
-		values.uiValue = value;
-	}
-	Ladder_VAR( bool *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_BOOL )
-	{
-		values.bValue = value;
-	}
-	Ladder_VAR( float *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_FLOAT )
-	{
-		values.fValue = value;
-	}
-	Ladder_VAR( uint64_t *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_ULONG )
-	{
-		values.ulValue = value;
-	}
-	Ladder_VAR( int64_t *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_LONG )
-	{
-		values.lValue = value;
-	}
+	//These constructors are for pointers to existing variables
+	Ladder_VAR( int_fast32_t *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_INT ){ values.i.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( uint_fast32_t *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_UINT ){ values.ui.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( bool *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_BOOL ){ values.b.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( float *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_FLOAT ){ values.f.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( uint64_t *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_ULONG ){ values.ul.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( int64_t *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_LONG ){ values.l.val_ptr = value; b_usesPtr = true; }
+	//
+	//These constructors are for locally stored values
+	Ladder_VAR( int_fast32_t value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_INT ){ values.i.val = value; b_usesPtr = false; }
+	Ladder_VAR( uint_fast32_t value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_UINT ){ values.ui.val = value; b_usesPtr = false; }
+	Ladder_VAR( bool value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_BOOL ){ values.b.val = value; b_usesPtr = false; }
+	Ladder_VAR( float value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_FLOAT ){ values.f.val = value; b_usesPtr = false; }
+	Ladder_VAR( uint64_t value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_ULONG ){ values.ul.val = value; b_usesPtr = false; }
+	Ladder_VAR( int64_t value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_LONG ){ values.l.val = value; b_usesPtr = false; }
+	//
 	virtual void updateObject()
 	{ 
 		Ladder_OBJ::updateObject(); 
 	}
-	bool getBoolValue(){ if (values.bValue) return *values.bValue; else return 0; }
-	int64_t getLongValue(){ if (values.lValue) return *values.lValue; else return 0; }
-	uint64_t getULongValue(){ if (values.ulValue) return *values.ulValue; else return 0; }
-	float getFloatValue(){ if (values.fValue) return *values.fValue; else return 0; }
-	int_fast32_t getIntValue(){ if (values.iValue) return *values.iValue; else return 0; }
-	uint_fast32_t getUIntValue(){ if (values.uiValue) return *values.uiValue; else return 0; }
+	bool getBoolValue(){ if (b_usesPtr && values.b.val_ptr) return *values.b.val_ptr; else return 0; }
+	int64_t getLongValue(){ if (b_usesPtr && values.l.val_ptr) return *values.l.val_ptr; else return 0; }
+	uint64_t getULongValue(){ if (b_usesPtr && values.ul.val_ptr) return *values.ul.val_ptr; else return 0; }
+	float getFloatValue(){ if (b_usesPtr && values.f.val_ptr) return *values.f.val_ptr; else return 0; }
+	int_fast32_t getIntValue(){ if (b_usesPtr && values.i.val_ptr) return *values.i.val_ptr; else return 0; }
+	uint_fast32_t getUIntValue(){ if (b_usesPtr && values.ui.val_ptr) return *values.ui.val_ptr; else return 0; }
+
+	template <class T>
+	T getValue()
+	{
+		switch(getType())
+		{
+			case OBJ_TYPE::TYPE_VAR_BOOL:
+			{
+				if ( b_usesPtr )
+					return static_cast<T>(*values.b.val_ptr);
+			}
+			break;
+			case OBJ_TYPE::TYPE_VAR_FLOAT:
+			{
+				if ( b_usesPtr )
+					return static_cast<T>(*values.f.val_ptr);
+			}
+			break;
+			case OBJ_TYPE::TYPE_VAR_INT:
+			{
+				if ( b_usesPtr )
+					return static_cast<T>(*values.i.val_ptr);
+			}
+			break;
+			case OBJ_TYPE::TYPE_VAR_LONG:
+			{
+				if ( b_usesPtr )
+					return static_cast<T>(*values.l.val_ptr);
+			}
+			break;
+			case OBJ_TYPE::TYPE_VAR_ULONG:
+			{
+				if ( b_usesPtr )
+					return static_cast<T>(*values.ul.val_ptr);
+			}
+			break;
+			case OBJ_TYPE::TYPE_VAR_UINT: 
+			{
+				if ( b_usesPtr )
+					return static_cast<T>(*values.ui.val_ptr);
+			}
+			break;
+		}
+		return static_cast<T>(0);
+	}
+
+	template <typename T>
+	void setValue( const T val )
+	{
+		switch(getType())
+		{
+			case OBJ_TYPE::TYPE_VAR_BOOL:
+			{
+				if ( b_usesPtr )
+					*values.b.val_ptr = static_cast<bool>(val);
+			}
+			break;
+			case OBJ_TYPE::TYPE_VAR_FLOAT:
+			{
+				if ( b_usesPtr )
+					*values.f.val_ptr = static_cast<float>(val);
+			}
+			break;
+			case OBJ_TYPE::TYPE_VAR_INT:
+			{
+				if ( b_usesPtr )
+					*values.i.val_ptr = static_cast<int_fast32_t>(val);
+			}
+			break;
+			case OBJ_TYPE::TYPE_VAR_LONG:
+			{
+				if ( b_usesPtr )
+					*values.l.val_ptr = static_cast<int64_t>(val);
+			}
+			break;
+			case OBJ_TYPE::TYPE_VAR_ULONG:
+			{
+				if ( b_usesPtr )
+					*values.ul.val_ptr = static_cast<uint64_t>(val);
+			}
+			break;
+			case OBJ_TYPE::TYPE_VAR_UINT:
+			{
+				if ( b_usesPtr )
+					*values.ui.val_ptr = static_cast<uint_fast32_t>(val);
+			}
+			break;
+		}
+	}
 
 	virtual void setLineState(uint16_t rung, bool state)
 	{ 
@@ -167,15 +249,52 @@ class Ladder_VAR : public Ladder_OBJ
 		Ladder_OBJ::setLineState(rung, state); 
 	}
 	private:
+
+	template <typename T>
+	union group
+	{
+		T *val_ptr;
+		T val;
+	};
 	union
 	{
-		bool *bValue;
-		float *fValue;
-		int_fast32_t *iValue; //signed int
-		uint_fast32_t *uiValue; //unsigned int
-		int64_t *lValue;
-		uint64_t *ulValue;
+		group<int64_t> l;
+		group<uint64_t> ul;
+		group<int_fast32_t> i;
+		group<uint_fast32_t> ui;
+		group<float> f;
+		group<bool> b;
 	} values;
+
+	bool b_usesPtr; //tells us if we're using a pointer to an object of the same type, or if we're using a locally stored value.
+};
+
+//The Remote_Ladder_OBJ represents an object that is initialized on an external "ESPLC" device.
+class Remote_Ladder_OBJ : public Ladder_OBJ
+{
+	public:
+	Remote_Ladder_OBJ( uint16_t id, uint8_t type, uint16_t remoteID ) : Ladder_OBJ( id, TYPE_REMOTE )
+	{
+		iRemoteType = type;
+		iRemoteID = remoteID;
+	}
+	
+	virtual void setLineState(uint16_t rung, bool state)
+	{ 
+		Ladder_OBJ::setLineState(rung, state); 
+	}
+	virtual void updateObject()
+	{
+		//Execute output operations, etc. post scan -- based on remote type.
+		Ladder_OBJ::updateObject(); //parent class - must be called last
+	}
+
+	uint16_t getRemoteID(){ return iRemoteID; }
+	uint8_t getremoteType() { return iRemoteType; }
+
+	private:
+	uint8_t iRemoteType; //This is the object type as it pertains to the remote controller. 
+	uint16_t iRemoteID; //This is the object ID as it pertains to the remote controller
 };
 
 //An output object typically represents a physical pin or boolean, and represents the final logic state on a rung after all other logic operations have been performed. 
@@ -188,26 +307,25 @@ class OutputOBJ: public Ladder_OBJ
 		 #ifdef DEBUG 
 		 Serial.println(PSTR("Output Destructor")); 
 		 #endif 
-		 enableBit = false;
 		 digitalWrite(iPin, LOW);
 	}
-	//void setOutput(uint16_t); //Set a value to the assigned output pin
 	virtual void updateObject();
 	uint8_t getOutputPin(){ return iPin; }
 	virtual void setLineState(uint16_t rung, bool state){ Ladder_OBJ::setLineState(rung, state); }
 	
 	private:
-	uint8_t iPin : 6;
-	bool enableBit;
+	uint8_t iPin;
 };
 
 //Inputs objects check the state of a physical pin and perform logic opertions based on the state of that pin. This may entail setting the rung state to high or low depending on the logic script.
 class InputOBJ : public Ladder_OBJ
 {
 	public:
-	InputOBJ( uint16_t id, uint8_t pin, uint8_t logic = LOGIC_NO ) : Ladder_OBJ(id, TYPE_INPUT)
+	InputOBJ( uint16_t id, uint8_t pin, uint8_t type = TYPE_INPUT, uint8_t logic = LOGIC_NO ) : Ladder_OBJ(id, type)
 	{ 
 		iPin = pin; 
+
+		inputValue =  make_shared<Ladder_VAR>(&iValue);
 
 		uint64_t gpioBitMask = 1ULL<<pin;
 		gpio_mode_t gpioMode = GPIO_MODE_INPUT;
@@ -227,40 +345,25 @@ class InputOBJ : public Ladder_OBJ
 		Serial.println(PSTR("Input Destructor")); 
 		#endif
 	}
-	bool getInput(){ return digitalRead(iPin); } //Return the value of the input from the assigned pin.
+	uint_fast32_t getInput()
+	{ 
+		if ( getType() == TYPE_INPUT_ANALOG )
+			return analogRead(iPin);
+		
+		return digitalRead(iPin);
+	} //Return the value of the input from the assigned pin.
 	uint8_t getInputPin(){ return iPin; }
 	virtual void updateObject();
 	virtual void setLineState(uint16_t, bool);
+	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String &id )
+	{
+		return inputValue; //There's only one Ladder_VAR for this type of object.
+	}
 	
 	private:
-	uint8_t iPin : 6; //can be over 31
-};
-
-//Virtual objects can operate as an input or an output (it's basically acting like a variable in memory), typically they are set HIGH/LOW as outputs and used as inputs on a later rung.
-class VirtualOBJ : public Ladder_OBJ 
-{
-	public:
-	VirtualOBJ( uint16_t id, uint8_t logic = LOGIC_NO ) : Ladder_OBJ(id, TYPE_VIRTUAL)
-	{ 
-		setLogic(logic); 
-	}
-	~VirtualOBJ(){}
-	virtual void updateObject(); //update logic
-	virtual void setLineState(uint16_t rung, bool lineState)
-	{ 
-		/*bool input = bit;
-		if ( lineState ) //looks like we have a high state coming in to this object from the previous on the rung, let's see if we pass the state tests for this object.
-		{
-			if(!input && getLogic() == LOGIC_NO) //input is low (button not pressed) and logic is normally open (default position of button is off)
-				lineState = false; //input not activated
-			else if (input && getLogic() == LOGIC_NC) //input is high (button is pressed), but logic is normally closed (0)
-				lineState = false; //input not activated, only active if input is 0 in this case
-		}*/
-		Ladder_OBJ::setLineState(rung, lineState); 
-	} 
-	
-	private:	
-	shared_ptr<Ladder_VAR> var;
+	uint8_t iPin;
+	uint_fast32_t iValue; 
+	shared_ptr<Ladder_VAR> inputValue;
 };
 
 //Timer objects use the system clock to perform a logic operation based on a given action delay.
@@ -421,20 +524,11 @@ class CounterOBJ : public Ladder_OBJ
 	std::map<const String, shared_ptr<Ladder_VAR>> bitMap; //used for DN, EN, ACC, PRE, if they are accessed by the parser.
 };
 
-class ComparisonOBJ :public Ladder_OBJ //uses a math statement to generate logic -- WIP
-{
-	public:
-	ComparisonOBJ(uint16_t id, uint8_t type) : Ladder_OBJ(id, type){}
-	~ComparisonOBJ(){ Serial.println(PSTR("Comparison Destructor")); }
-		
-	private:
-};
-
 //The clock object is a more advanced object that allows operations to be performed at a specific time.
 class ClockOBJ : public Ladder_OBJ
 {
 	public:
-	ClockOBJ(uint16_t id, shared_ptr<Time> sys, uint8_t yr, uint8_t mo, uint8_t da, uint8_t hr, uint8_t min, uint8_t sec, uint8_t type = TYPE_CON) : Ladder_OBJ(id, type)
+	ClockOBJ(uint16_t id, shared_ptr<Time> sys, uint8_t yr, uint8_t mo, uint8_t da, uint8_t hr, uint8_t min, uint8_t sec, uint8_t type = TYPE_CLOCK) : Ladder_OBJ(id, type)
 	{
 		pSysTime = sys;
 		doneBit = false;
@@ -453,33 +547,5 @@ class ClockOBJ : public Ladder_OBJ
 	shared_ptr<Time> pPresetTime;
 	shared_ptr<Time> pSysTime;
 };
-//Syntax: COUNTER.TAG (needs to verify that TAG exists and is valid for object type, if it is, the values needs to have all references properly established)
-// This entails storing the reference into a new LADDER_VAR, and using the var to handle the mixing of different types. 
-/*
-class BasicMathBlockOBJ :public Ladder_OBJ //Basic math operations block (does GRE, LES, GRQ, LEQ operations)
-{
-	public:
-	BasicMathBlockOBJ(uint16_t id, Ladder_VAR *A, Ladder_VAR *B, uint8_t type) : Ladder_OBJ(id, type){ sourceA = A; sourceB = B; }
-	~BasicMathBlockOBJ(){}
-	virtual void setLineState(bool state){ Ladder_OBJ:setLineState(state); }
-	virtual void updateObject();
-	
-	private:
-	Ladder_VAR* sourceA,
-				sourceB;
-};
-
-class LimitOBJ :public Ladder_OBJ //Basic math comparison block (does GRE, LES, GRQ
-{
-	public:
-	ComparisonOBJ(uint16_t id, uint_fast32_t low, uint_fast32_t high, uint8_t type) : Ladder_OBJ(id, type){ lowVal = low; highVal = high; }
-	~ComparisonOBJ(){}
-	virtual void setLineState(bool state){ Ladder_OBJ:setLineState(state); }
-	virtual void updateObject();
-	
-	private:
-	uint_fast32_t lowVal,
-				  highVal;
-};*/
 
 #endif /* PLC_IO_H_ */

@@ -15,12 +15,15 @@
 #define NUM_MONTHS_YEAR 12 //Number of months to a year
 #define NUM_HOURS_DAY 24 //Number of hours to a day
 
-#define TIME_SECOND 1
-#define TIME_MINUTE 2
-#define TIME_HOUR 3
-#define TIME_DAY 4
-#define TIME_MONTH 5
-#define TIME_YEAR 6
+enum TIME_UNITS
+{
+	TIME_SECOND = 0,
+	TIME_MINUTE,
+	TIME_HOUR,
+	TIME_DAY,
+	TIME_MONTH,
+	TIME_YEAR
+};
 
 class Time
 {
@@ -45,11 +48,22 @@ class Time
 	}
 	
 	void UpdateTime(); //used to update the time in the time object
+	//This function sets the time using integers for arguments.
 	bool SetTime( const uint8_t &yr, const uint8_t &mo, const uint8_t &day, const uint8_t &hr, const uint8_t &min, const uint8_t &sec );
 	bool SetTime( const Time &T2 ); //For copying values over
 	bool SetTime( const Time *T2 ); //For copying values over
+	//This sets the time from an inputted string that is later parsed. String Format: YY:MM:DD:HR:MI:SE
+	bool SetTime( const String & );
+	bool setYear( const uint8_t );
+	bool setMonth( const uint8_t );
+	bool setDay( const uint8_t );
+	bool setHour( const uint8_t );
+	bool setMinute( const uint8_t );
+	bool setSecond( const uint8_t );
+
 	void SetNTPTime( unsigned long ); //For translating NTP to a valid date/time
-	bool IncrementTime( uint32_t, uint8_t ); //Input increment amount, along with time unit, can also be used to set.
+	//Input increment amount, along with time unit, can also be used to set.
+	bool IncrementTime( uint32_t, uint8_t ); 
 	bool IsAhead( const Time * );
 	bool IsBehind( const Time *T2 ){ return !IsAhead(T2); }
 	uint8_t GetMonthDays( uint8_t ); //Used to determine the proper number of days in a specific month.
@@ -70,14 +84,14 @@ class Time
 	private:
 	uint8_t AdvanceMonthYear( unsigned int ); //Used to advance the month, and possibly the year, using a value of days as an input. Returns the remainder of days.
 	
-	uint8_t i_second : 6,
-		i_minute : 6,
-		i_hour : 5,
-		i_day : 5,
-		i_month : 4,
+	uint8_t i_second,
+		i_minute,
+		i_hour,
+		i_day,
+		i_month,
 		i_year,
-		i_timeZone : 5,
-		i_lastUpdateSecond : 1; //only need one bit for this
+		i_timeZone,
+		i_lastUpdateSecond; //only need one bit for this
 };
 
 

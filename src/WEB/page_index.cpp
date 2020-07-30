@@ -17,6 +17,7 @@ void UICore::createIndexFields() //Probably shouldnt be called more than once.
 	shared_ptr<DataTable> indexTable(new DataTable( F("Device Controls") ) );
 	uint8_t index = 1;
 	indexTable->AddElement( make_shared<Hyperlink_Datafield>( index++, FIELD_TYPE::HYPERLINK, PSTR("PLC Logic Script"), scriptDir ) );
+	indexTable->AddElement( make_shared<Hyperlink_Datafield>( index++, FIELD_TYPE::HYPERLINK, PSTR("PLC Object Status"), statusDir ) );
 	indexTable->AddElement( make_shared<Hyperlink_Datafield>( index++, FIELD_TYPE::HYPERLINK, PSTR("Device Configuration"), adminDir ) );
 	indexTable->AddElement( make_shared<Hyperlink_Datafield>( index++, FIELD_TYPE::HYPERLINK, PSTR("UI Style Sheet"), styleDir ) );
 
@@ -32,13 +33,11 @@ void UICore::handleIndex() //Generate the HTML for our main page.
 	
 	String HTML = generateHeader();
 	HTML += generateTitle();
-	//HTML += PSTR("<FORM action=\"/\" method=\"post\" id=\"form\">");
-	HTML += "<P>";
+	HTML += html_paragraph_begin;
 	for ( uint8_t x = 0; x < p_UIDataTables.size(); x++ )
 		HTML += p_UIDataTables[x]->GenerateTableHTML(); //Add each datafield to the HTML body
 		
-	HTML += "</P>";
-	//HTML += PSTR("</FORM>");
+	HTML += html_paragraph_end;
 	HTML += generateFooter(); //Add the footer stuff.
 	p_server->send(200, transmission_HTML, HTML ); //And we're off.
 	p_UIDataTables.clear();

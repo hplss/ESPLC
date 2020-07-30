@@ -141,7 +141,7 @@ void UICore::parseConnect( const vector<String> &args )
 			}
 			else if ( args[2] == "*" ) //Wild-card connection option.
 			{
-				WiFi.scanNetworks(); //Build a list of all available networks first.
+				//WiFi.scanNetworks(); //Build a list of all available networks first.
 				int8_t numResults = WiFi.scanNetworks(); //We need to build an index for all available nearby networks first
 				if ( numResults > 0 ) //It's possible to have negative numbers here (error codes)
 				{
@@ -191,7 +191,7 @@ void UICore::parseVerbose( const vector<String> &args ) //deprecated?
 long parseInt( const String &str )
 {
 	String tempstr;
-	for ( int x = 0; x < str.length(); x++ )
+	for ( uint_fast32_t x = 0; x < str.length(); x++ )
 	{
 		char tempChar = str.charAt(x);
 		
@@ -200,6 +200,20 @@ long parseInt( const String &str )
 	}
 	
 	return tempstr.toInt(); //Will return 0 if buffer does not contain data. (safe)
+}
+
+float parseFloat( const String &str )
+{
+	String tempstr;
+	for ( uint_fast32_t x = 0; x < str.length(); x++ )
+	{
+		char tempChar = str.charAt(x);
+		
+		if ( (tempChar > 47 && tempChar < 58) || tempChar == 45 || tempChar == 46 )//only add number chars to the string, also the negative sign and period
+			tempstr.concat( tempChar );
+	}
+	
+	return tempstr.toFloat(); //Will return 0 if buffer does not contain data. (safe)
 }
 
 vector<String> splitString( const String &str, const char split )
@@ -263,7 +277,7 @@ void UICore::parseTime( const vector<String> &args )
 	{
 		for ( uint8_t x = 0; x < totalArgs; x++ )
 		{
-			if ( args[x] == "n" && totalArgs >= (x+1) ) //enabledisable
+			if ( args[x] == "n" && totalArgs >= (x+1) ) //enable/disable
 			{
 				x++; //Move to next element.
 				uint8_t value = parseInt( args[x] );

@@ -13,10 +13,14 @@
 
 #include "PLC_IO.h"
 #include <memory>
+#include "CORE/UICore.h"
 
 /*The Ladder_Rung object serves to represent each "rung" of a "ladder" in PLC programming. 
 Each rung has its own set of logic statements (set by the end-user) that ultimately determine how the associated inputs operate on a given output(s).
 */
+
+extern UICore Core;
+
 class Ladder_Rung
 {
 	public:	
