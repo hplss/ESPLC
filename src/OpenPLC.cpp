@@ -30,6 +30,7 @@
 #include <vector>
 #include <PLC/PLC_IO.h>
 #include <PLC/PLC_Main.h>
+#include <PLC/PLC_Parser.h>
 #include <PLC/PLC_Rung.h>
 #include <CORE/UICore.h>
 #include <esp_timer.h>

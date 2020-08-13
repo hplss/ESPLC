@@ -8,9 +8,12 @@
 #include <math.h>
 
 //Basic math operations block. Math function are Addition, multiplication, division, clear (set to zero), square root, absolute value, cosine, sine, tangent, greater than, Less than, equal to
+//Also implement constructors that allow for constants to be passed in as default arguments. Basically just have the constructor create a set of ladder variables.
 class MathBlockOBJ : public Ladder_OBJ 
 {
 	public:
+    template <typename A, typename B>
+    MathBlockOBJ(uint16_t id, A var1, uint8_t type, B var2 = 0, shared_ptr<Ladder_VAR> dest = 0) : MathBlockOBJ(id, make_shared<Ladder_VAR>(var1), type, make_shared<Ladder_VAR>(var2), dest ) {}
 	MathBlockOBJ(uint16_t id, shared_ptr<Ladder_VAR> A, uint8_t type, shared_ptr<Ladder_VAR> B = 0, shared_ptr<Ladder_VAR> dest = 0) : Ladder_OBJ(id, type)
     { 
         sourceA = A; //must always have a valid pointer
@@ -70,6 +73,8 @@ class MathBlockOBJ : public Ladder_OBJ
     void computeINC();
     //decrement function - decrements 1 from source A value
     void computeDEC();
+    //Move function - copies the stored value from Source A into DEST
+    void computeMOV();
 
 	virtual void updateObject();
     virtual shared_ptr<Ladder_VAR> getObjectVAR( const String &id )

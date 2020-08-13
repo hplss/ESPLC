@@ -37,6 +37,11 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &typeTagMLESE PROGMEM = PSTR("LEQ"), //TYPE: MATH - Lesser or equal to
 			 &typeTagMEQ PROGMEM = PSTR("EQ"), //TYPE: MATH - Equal to
 			 &typeTagMNEQ PROGMEM = PSTR("NEQ"), //TYPE: MATH - Not Equal to
+			 &typeTagMDEC PROGMEM = PSTR("DEC"), //TYPE: MATH - Decrement by a single integer (1)
+			 &typeTagMINC PROGMEM = PSTR("INC"), //TYPE: MATH - Increment by a single integer (1)
+			 &typeTagMSIN PROGMEM = PSTR("SIN"), //TYPE: MATH - Sine function
+			 &typeTagMCOS PROGMEM = PSTR("COS"), //TYPE: MATH - Cosine function
+			 &typeTagMTAN PROGMEM = PSTR("TAN"), //TYPE: MATH - Tangent function
 			 &typeTagAnalog PROGMEM = PSTR("ANALOG"), //input (and possibly output) identifier - for analog signals
 			 &typeTagDigital PROGMEM = PSTR("DIGITAL"), //input (and possibly output) identifier - for digital signals
 
@@ -46,11 +51,10 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &inputTag2 PROGMEM = PSTR("IN"), //Input object alias
 			 &counterTag1 PROGMEM = PSTR("COUNTER"), //Counter object
 			 &counterTag2 PROGMEM = PSTR("CNTR"), //Counter object alias
-			 &virtualTag1 PROGMEM = PSTR("VIRTUAL"), //Virtuals serve as boolean storage for outputs (instead of physical pins).
-			 &virtualTag2 PROGMEM = PSTR("VIRT"), //Virtual object alias
+			 &variableTag1 PROGMEM = PSTR("VARIABLE"), //Virtuals serve as boolean storage for outputs (instead of physical pins).
+			 &variableTag2 PROGMEM = PSTR("VAR"), //Virtual object alias
 			 &outputTag1 PROGMEM = PSTR("OUTPUT"), //Output object
 			 &outputTag2 PROGMEM = PSTR("OUT"), //Output object alias
-			 &mathBasicTag PROGMEM = PSTR("MATH"), //Math blocks perform simple arithmatic calculations and comparisons
 			 &movTag PROGMEM = PSTR("MOV"); //MOV blocks are responsible for transferring (copying) data between two variable objects.
 //END PLC TAGS
 
@@ -79,5 +83,6 @@ const String &err_failed_creation PROGMEM = PSTR("Failed to create object."),
 			 &err_pin_invalid PROGMEM = PSTR("Invalid pin for IO."),
 			 &err_pin_taken PROGMEM = PSTR("IO pin already taken."),
 			 &err_unknown_obj PROGMEM = PSTR("Invalid Object"),
-			 &err_invalid_bit PROGMEM = PSTR("Invalid Bit");
+			 &err_invalid_bit PROGMEM = PSTR("Invalid Bit"),
+			 &err_parser_failed PROGMEM = PSTR("Parser operation failed.");
 //

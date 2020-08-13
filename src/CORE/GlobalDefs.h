@@ -76,7 +76,8 @@ extern const String &err_failed_creation PROGMEM,
 					&err_pin_invalid PROGMEM,
 					&err_pin_taken PROGMEM,
 					&err_unknown_obj PROGMEM,
-					&err_invalid_bit PROGMEM;
+					&err_invalid_bit PROGMEM,
+					&err_parser_failed PROGMEM;
 
 //
 
@@ -111,6 +112,7 @@ enum OBJ_TYPE
 	TYPE_MATH_INC,		//increment block - adds +1 to the inputted source variable
 	TYPE_MATH_DEC,		//decrement block - subtracts 1 from the inputted source variable
 	TYPE_MATH_CPT,		//compute block. Performs a math operation and sends the calculated value to the provided storage variable
+	TYPE_MATH_MOV,
 	TYPE_REMOTE,		//Remote object. Ued in cluster and expander operations when multiple ESP devices are interconnected via networks.
 
 	//Variable Exclusive Types
@@ -159,7 +161,8 @@ enum ERR_DATA
 	ERR_INVALID_OBJ,	//This error type indicates that a ladder object defined by the user does not exist or is not recognized by the parser.
 	ERR_INVALID_BIT, //This error type indicates that a bit referece to a given ladder logic object is not valid or associated with the given object.
 	ERR_PIN_INVALID, //This error indicates that a given pin number used for IO operations is invalid (doesn't exist on the device, or is used for special operations)
-	ERR_PIN_TAKEN //This error indicates that a given pin number used for IO operations is already occupied by another object.
+	ERR_PIN_TAKEN, //This error indicates that a given pin number used for IO operations is already occupied by another object.
+	ERR_PARSER_FAILED //This error indicatews that the parser failed to exit properly.
 };
 
 const char CHAR_EQUALS = '=',
@@ -193,6 +196,13 @@ extern const String &bitTagDN PROGMEM,
 			 		&typeTagMLES PROGMEM,
 			 		&typeTagMGREE PROGMEM,
 			 		&typeTagMLESE PROGMEM,
+					&typeTagMEQ PROGMEM,
+			 		&typeTagMNEQ PROGMEM,
+			 		&typeTagMDEC PROGMEM,
+			 		&typeTagMINC PROGMEM,
+			 		&typeTagMSIN PROGMEM,
+			 		&typeTagMCOS PROGMEM,
+			 		&typeTagMTAN PROGMEM,
 					&typeTagAnalog PROGMEM,
 					&typeTagDigital PROGMEM,
 
@@ -202,9 +212,8 @@ extern const String &bitTagDN PROGMEM,
 			 		&inputTag2 PROGMEM,
 					&counterTag1 PROGMEM,
 			 		&counterTag2 PROGMEM,
-			 		&virtualTag1 PROGMEM,
-			 		&virtualTag2 PROGMEM,
+			 		&variableTag1 PROGMEM,
+			 		&variableTag2 PROGMEM,
 			 		&outputTag1 PROGMEM,
-			 		&outputTag2 PROGMEM,
-			 		&mathBasicTag PROGMEM;
+			 		&outputTag2 PROGMEM;
 #endif /* GLOBALDEFS_H_ */

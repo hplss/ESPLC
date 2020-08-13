@@ -24,3 +24,8 @@ With regards to the scope of the project as it pertains to the demonstration for
 -Finish support for analog inputs and outputs.
 
 - Finish IO expansion via network interface between ESPLC devices.
+
+- Allow for declaration of inline objects (for basic math comparisons, etc.). 
+		- Inline declaration syntax INPUT(NAME,PIN,ARGS). 
+		- Additional attempts to declare a new object of the 		same name will result in a failure. 
+		- Simple objects do not require a name, but may be assigned one.

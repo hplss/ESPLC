@@ -54,6 +54,11 @@ void MathBlockOBJ::setLineState(uint16_t rung, bool state)
                 destination->setValue(state);
             }
             break;
+            case TYPE_MATH_MOV:
+            {
+                computeMOV();
+            }
+            break;
         }
     }
     Ladder_OBJ::setLineState(rung, state); 
@@ -132,5 +137,10 @@ void MathBlockOBJ::computeDEC()
         sourceA->setValue(sourceA->getValue<float>() - 1);
     else
         sourceA->setValue(sourceA->getValue<int64_t>() - 1);
+}
+
+void MathBlockOBJ::computeMOV()
+{
+    
 }
 

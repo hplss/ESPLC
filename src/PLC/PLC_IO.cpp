@@ -24,43 +24,6 @@ void Ladder_OBJ::getNextObj( uint16_t rungNum ) //perform internal logic, then g
 	for ( itr it = rungObjects.first; it != rungObjects.second; it++ )//handle each object attached to this object.
 	{
 		it->second->getObject()->setLineState(rungNum, getLineState());
-		/*Ladder_OBJ *Obj = it->second->getObject().get();
-		switch( it->second->getObject()->getType() )
-		{
-			case OBJ_TYPE::TYPE_INPUT: //Go to next input
-				static_cast<InputOBJ *>(Obj)->setLineState(rungNum, getLineState());
-				break;
-			
-			case OBJ_TYPE::TYPE_OUTPUT: //We've reached an output. So assume we just set it to high.
-				static_cast<OutputOBJ *>(Obj)->setLineState(rungNum, getLineState());
-				break;
-			
-			case OBJ_TYPE::TYPE_TOF: //Looks like we've reached a timer. Set timer bits as appropriate then move on (Timer counted as a noutput)
-			case OBJ_TYPE::TYPE_TON:
-				static_cast<TimerOBJ *>(Obj)->setLineState(rungNum, getLineState());
-				break;
-			
-			case OBJ_TYPE::TYPE_CTD:
-			case OBJ_TYPE::TYPE_CTU:
-				static_cast<CounterOBJ *>(Obj)->setLineState(rungNum, getLineState());
-				break;
-
-			case OBJ_TYPE::TYPE_VAR_BOOL:
-			case OBJ_TYPE::TYPE_VAR_FLOAT:
-			case OBJ_TYPE::TYPE_VAR_INT:
-			case OBJ_TYPE::TYPE_VAR_LONG:
-			case OBJ_TYPE::TYPE_VAR_ULONG:
-			case OBJ_TYPE::TYPE_VAR_UINT:
-				static_cast<Ladder_VAR *>(Obj)->setLineState(rungNum, getLineState());
-				break;
-			
-			case OBJ_TYPE::TYPE_REMOTE:
-				static_cast<Remote_Ladder_OBJ *>(Obj)->setLineState(rungNum, getLineState());
-				break;
-
-			default:
-			break;
-		}*/
 	}
 }
 
@@ -69,6 +32,10 @@ bool Ladder_OBJ::addNextObject( uint16_t rungNum, shared_ptr<Ladder_OBJ_Wrapper>
 {
 	//Some tests to make sure we can do that? Not sure what those tests would be yet. 
 	nextObj.emplace(rungNum,obj);
+	#ifdef DEBUG
+	Serial.print("Adding next object on rung: ");
+	Serial.println(rungNum);
+	#endif
 	return true;
 }
 
