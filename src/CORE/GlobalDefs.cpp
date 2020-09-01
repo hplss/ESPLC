@@ -86,3 +86,232 @@ const String &err_failed_creation PROGMEM = PSTR("Failed to create object."),
 			 &err_invalid_bit PROGMEM = PSTR("Invalid Bit"),
 			 &err_parser_failed PROGMEM = PSTR("Parser operation failed.");
 //
+
+vector<String> splitString( const String &str, const vector<char> &c, const vector<char> &start_limiters, const vector<char> &end_limiters, bool removeChar )
+{
+    vector<String> pVector;
+    String temp;
+	int8_t limited = 0;
+    for (uint16_t x = 0; x < str.length(); x++)
+    {
+		for (uint8_t y = 0; y < start_limiters.size(); y++ ) //search through our list of query limiter chars
+        {
+            if (str[x] == start_limiters[y])
+				limited++;
+        }
+		for (uint8_t y = 0; y < end_limiters.size(); y++ ) //search through our list of query limiter chars
+        {
+            if (str[x] == end_limiters[y])
+				limited--;
+        }
+
+		bool end = false;
+		if ( limited == 0 )
+		{
+			for (uint8_t y = 0; y < c.size(); y++ ) //searching through our list of terminating chars
+			{
+				if (str[x] == c[y] )
+				{
+					if (!removeChar)
+					{
+						if ( temp.length() )
+						{
+							end = true; //only end if we have some chars stored in the string.
+							temp += str[x];
+						}
+					}
+					else
+						end = true; //one of the chars matched
+					break; //just end the loop here
+				}
+			}
+		}
+
+		if(x >= str.length() - 1 && !end) //must also append anything at the end of the string (not including terminating char)
+		{
+			end = true; 
+			temp += str[x]; //append
+		}
+
+		if (end) //must have some length before being added to the vector. 
+		{
+			if ( temp.length() )
+			{
+				pVector.emplace_back(temp);
+				temp.clear(); //empty
+			}
+		}
+		else
+        	temp += str[x]; //append
+    }
+
+    return pVector;
+}
+
+vector<String> splitString( const String &str, const vector<char> &splitChar, bool removeChar, const char lim_begin, const char lim_end )
+{ 
+	return splitString(str, splitChar, vector<char>{lim_begin}, vector<char>{lim_end}, removeChar ); 
+}
+vector<String> splitString( const String &str, const char splitChar, bool removeChar, const char lim_begin, const char lim_end )
+{ 
+	return splitString (str, vector<char>{splitChar}, removeChar, lim_begin, lim_end ); 
+}
+
+multimap<int8_t, String> textWithin(const String &str, char begin, char end, int8_t depth ) //must be a multimap because we can have multiple subtiers in the same nest tier
+{
+	uint8_t maxTiers = 0;
+	if ( depth < 0)
+	{
+		for ( uint16_t x = 0; x < str.length(); x++ )
+		{
+			if ( str[x] == begin )
+				maxTiers++;
+		}
+	}
+
+	multimap<int8_t, String> pMap;
+	int8_t iOperatorTier = 0; //default tier
+	String temp;
+	for ( int8_t iTier = 0; iTier <= maxTiers; iTier++ ) 
+	{
+		for (uint16_t x = 0; x < str.length(); x++)
+		{
+			if (str[x] == begin) //have we reached one of our terminating chars?
+			{
+				iOperatorTier++; //jump up one tier
+				if ( (depth < 0 && iTier == iOperatorTier) )
+				{
+					if ( iTier && temp.length() )
+					{
+						pMap.emplace(iTier,temp);
+						temp.clear();
+					}
+					continue;
+				}
+				else if ( depth && depth == iOperatorTier )
+					continue;
+			}
+			else if (str[x] == end)
+			{
+				iOperatorTier--; //shift down a tier
+				if ( ( depth < 0 && iTier == iOperatorTier ) )
+				{
+					if ( iTier && temp.length() )
+					{
+						pMap.emplace(iTier,temp);
+						temp.clear();
+					}
+					continue;
+				}
+			}
+
+			if ( ( depth < 0 && iOperatorTier == iTier ) || ( depth > 0 && iOperatorTier >= depth ) )
+				temp += str[x];
+		}
+		if ( temp.length() )
+		{
+			if ( depth < 0)
+				pMap.emplace(iTier,temp);
+			else
+				pMap.emplace(0,temp);
+
+			temp.clear();
+		}
+		else break; //looks like we're done, just end here
+	}
+    
+    return pMap;
+}
+
+int64_t parseInt( const String &str )
+{
+	String tempstr;
+	for ( uint_fast32_t x = 0; x < str.length(); x++ )
+	{
+		char tempChar = str.charAt(x);
+		
+		if ( (tempChar > 47 && tempChar < 58) || tempChar == 45 )//only add number chars to the string, also the negative sign
+		tempstr.concat( tempChar );
+	}
+	
+    return atoll(tempstr.c_str());
+	//return tempstr.toInt(); //Will return 0 if buffer does not contain data. (safe)
+}
+
+float parseFloat( const String &str )
+{
+	String tempstr;
+	for ( uint_fast32_t x = 0; x < str.length(); x++ )
+	{
+		char tempChar = str.charAt(x);
+		
+		if ( (tempChar > 47 && tempChar < 58) || tempChar == 45 || tempChar == 46 )//only add number chars to the string, also the negative sign and period
+			tempstr.concat( tempChar );
+	}
+	
+	return tempstr.toFloat(); //Will return 0 if buffer does not contain data. (safe)
+}
+
+//Generic functions below here
+String uLongToStr(uint64_t value, uint8_t base) 
+{
+    char buf[2 + 8 * sizeof(uint64_t)];
+    if (base==10) {
+        sprintf(buf, "%llud", value);
+    } else {
+        ltoa(value, buf, base);
+    }
+	String str(buf);
+    return str;
+}
+
+String longToStr(int64_t value, uint8_t base) 
+{
+    char buf[2 + 8 * sizeof(uint64_t)];
+    if (base==10) 
+	{
+        sprintf(buf, "%lld", value);
+    } 
+	else 
+	{
+        ltoa(value, buf, base);
+    }
+	String str(buf);
+    return str;
+}
+
+bool strContains( const String &str, const vector<char> &c )
+{
+	for ( uint16_t x = 0; x < str.length(); x++ )
+	{
+		for (uint8_t y = 0; y < c.size(); y++ )
+		{
+			if ( str[x] == c[y] )
+				return true;
+		}
+	}
+	return false;
+}
+bool strContains( const String &str, const char c ){ return strContains(str,vector<char>{c}); }
+
+bool strBeginsWith( const String &str, const vector<char> &c )
+{
+	for (uint8_t y = 0; y < c.size(); y++ )
+	{
+		if ( *str.begin() == c[y] )
+			return true;
+	}
+	return false;
+}
+bool strBeginsWith( const String &str, const char c ){ return strContains(str,vector<char>{c}); }
+
+bool strEndsWith( const String &str, const vector<char> &c )
+{
+	for (uint8_t y = 0; y < c.size(); y++ )
+	{
+		if ( *str.end() == c[y] )
+			return true;
+	}
+	return false;
+}
+bool strEndsWith( const String &str, const char c ){ return strContains(str,vector<char>{c}); }

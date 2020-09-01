@@ -33,9 +33,6 @@ enum FIELD_TYPE : uint8_t
 
 class UICore; //predefinition for linker purposes
 
-String uLongToStr(uint64_t, uint8_t = 10);
-String longToStr(int64_t, uint8_t = 10);
-
 class DataField
 {
 	public:

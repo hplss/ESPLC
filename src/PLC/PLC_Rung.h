@@ -38,6 +38,7 @@ class Ladder_Rung
 	uint8_t getNumInitialRungObjects() { return firstRungObjects.size(); }
 	//Adds an inputted object to the container for the ladder objects that are referenced at the beginning of each ladder logic scan.
 	bool addInitialRungObject( shared_ptr<Ladder_OBJ_Wrapper> );
+	bool addInitialRungObject( const vector<shared_ptr<Ladder_OBJ_Wrapper>> & );
 	//Returns a reference to the container for the rung object's ladder objects.
 	vector<shared_ptr<Ladder_OBJ_Wrapper>> &getRungObjects(){ return rungObjects; }
 	//Begins the process of setting the line state to HIGH for the appropriate ladder object from the initial objects container, and iteratively determining the state for each subsequently associated object and applying changes as needed.

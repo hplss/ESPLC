@@ -96,8 +96,10 @@ void PLC_Main::processLogic()
 
 bool PLC_Main::addLadderRung(shared_ptr<Ladder_Rung> rung)
 {
-	if ( !rung->getRungObjects().size() ) //no objects in the rung?
-		return false;
+	if ( !rung->getNumRungObjects() || !rung->getNumInitialRungObjects() ) //no objects in the rung?
+	{
+		return false; //error here? invalid number of necessary rung objects
+	}
 		
 	//looks like we're good here	
 	ladderRungs.emplace_back(rung);
@@ -485,7 +487,7 @@ void PLC_Main::sendError( uint8_t err, const String &info )
 	}
 
 	if ( info.length() )
-		Core.sendMessage(error + CHAR_SPACE + info, PRIORITY_HIGH);
+		Core.sendMessage(error + CHAR_SPACE + String("\"") + info +  String("\""), PRIORITY_HIGH);
 	else
 		Core.sendMessage(error, PRIORITY_HIGH);
 

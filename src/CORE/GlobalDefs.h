@@ -10,7 +10,10 @@
 #ifndef GLOBALDEFS_H_
 #define GLOBALDEFS_H_
 #include <WString.h>
+#include <vector>
 #include <HardwareSerial.h>
+#include <stdlib_noniso.h>
+#include <map>
 
 #define DEBUG //comment out to remove debugging code.
 
@@ -168,6 +171,8 @@ enum ERR_DATA
 const char CHAR_EQUALS = '=',
 		   CHAR_P_START = '(',
 		   CHAR_P_END = ')',
+		   CHAR_BRACKET_START = '[',
+		   CHAR_BRACKET_END = ']',
 		   CHAR_SPACE = ' ',
 		   CHAR_COMMA = ',',
 		   CHAR_AND = '*',
@@ -175,7 +180,8 @@ const char CHAR_EQUALS = '=',
 		   CHAR_VAR_OPERATOR = '.', //EX: Timer1.DN '.' indicates that we are accessing an object variable to get a state.
 		   CHAR_NOT_OPERATOR = '/', //EX: /IN1 returns opposite state of IN1 logic state
 		   CHAR_NEWLINE = '\n',
-		   CHAR_CARRIAGE = '\r';
+		   CHAR_CARRIAGE = '\r',
+		   CHAR_NONE = 0;
 
 
 extern const String &bitTagDN PROGMEM,
@@ -216,4 +222,32 @@ extern const String &bitTagDN PROGMEM,
 			 		&variableTag2 PROGMEM,
 			 		&outputTag1 PROGMEM,
 			 		&outputTag2 PROGMEM;
+
+
+//Generic Function Declarations 
+
+//This function parses 64 bit integer lengths
+int64_t parseInt( const String & );
+float parseFloat( const String & );
+//This overloaded function allows for the breaking of strings based on multiple characters in a single operation.
+vector<String> splitString( const String &, const vector<char> &, const vector<char> &, const vector<char> &, bool = true);
+//This overloaded function allows for the breaking of strings based on multiple characters in a single operation.
+vector<String> splitString( const String &, const vector<char> &, bool = true, const char = 0, const char = 0);
+//This function breaks strings apart based on a single inputted char and optional delimiter.
+vector<String> splitString(const String &, const char, bool = true, const char = 0, const char = 0);
+//Converts a 64bit unsigned integer into a string.
+String uLongToStr(uint64_t, uint8_t = 10);
+//Converts a signed 64-bit integer to a string.
+String longToStr(int64_t, uint8_t = 10);
+//Returns a vector containing tiers of text that are nested within specific inputted characters
+multimap<int8_t, String> textWithin(const String &, char, char, int8_t = -1);
+//Performs a check to see if a given set of characters are present in the inputted string.
+bool strContains( const String &, const vector<char> & );
+//Performs a check to see if a specific character is present in the inputted string.
+bool strContains( const String &, const char );
+
+bool strBeginsWith( const String &str, const vector<char> &c );
+bool strBeginsWith( const String &str, const char c );
+bool strEndsWith( const String &str, const vector<char> &c );
+bool strEndsWith( const String &str, const char c );
 #endif /* GLOBALDEFS_H_ */

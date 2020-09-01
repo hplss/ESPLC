@@ -241,7 +241,7 @@ String DataTable::GenerateTableHTML()
 		HTML += p_fields[x]->GenerateHTML();
 	}
 	HTML += html_paragraph_end;
-	HTML += F("</table>");
+	HTML += PSTR("</table>");
 	return HTML;
 }
 
@@ -386,32 +386,4 @@ function myFunction(arr) {
 }
 </script>*/
 	return "";
-}
-
-
-//Generic functions below here
-String uLongToStr(uint64_t value, uint8_t base) 
-{
-    char buf[2 + 8 * sizeof(uint64_t)];
-    if (base==10) {
-        sprintf(buf, "%llud", value);
-    } else {
-        ltoa(value, buf, base);
-    }
-	String str(buf);
-    return str;
-}
-String longToStr(int64_t value, uint8_t base) 
-{
-    char buf[2 + 8 * sizeof(uint64_t)];
-    if (base==10) 
-	{
-        sprintf(buf, "%lld", value);
-    } 
-	else 
-	{
-        ltoa(value, buf, base);
-    }
-	String str(buf);
-    return str;
 }

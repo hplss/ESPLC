@@ -188,53 +188,6 @@ void UICore::parseVerbose( const vector<String> &args ) //deprecated?
 	}
 }
 
-long parseInt( const String &str )
-{
-	String tempstr;
-	for ( uint_fast32_t x = 0; x < str.length(); x++ )
-	{
-		char tempChar = str.charAt(x);
-		
-		if ( (tempChar > 47 && tempChar < 58) || tempChar == 45 )//only add number chars to the string, also the negative sign
-		tempstr.concat( tempChar );
-	}
-	
-	return tempstr.toInt(); //Will return 0 if buffer does not contain data. (safe)
-}
-
-float parseFloat( const String &str )
-{
-	String tempstr;
-	for ( uint_fast32_t x = 0; x < str.length(); x++ )
-	{
-		char tempChar = str.charAt(x);
-		
-		if ( (tempChar > 47 && tempChar < 58) || tempChar == 45 || tempChar == 46 )//only add number chars to the string, also the negative sign and period
-			tempstr.concat( tempChar );
-	}
-	
-	return tempstr.toFloat(); //Will return 0 if buffer does not contain data. (safe)
-}
-
-vector<String> splitString( const String &str, const char split )
-{
-	vector<String> args;
-	String temp;
-	for ( unsigned int x = 0; x < str.length(); x++ )
-	{
-		if ( str[x] == split )
-		{
-			args.push_back(temp);
-			temp.clear();
-		}
-		else
-			temp += str[x];
-	}
-
-	args.push_back(temp); //push back anything left
-	return args;
-}
-
 void UICore::parseCfg( const vector<String> &args )
 {
 	generateSettingsMap();

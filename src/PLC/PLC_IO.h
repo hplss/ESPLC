@@ -60,7 +60,6 @@ public:
 	virtual shared_ptr<Ladder_VAR> addObjectVAR( const String & );
 	
 private:
-	//vector<Ladder_OBJ *>nextObj;
 	multimap<uint16_t, shared_ptr<Ladder_OBJ_Wrapper>> nextObj;
 	typedef multimap<uint16_t, shared_ptr<Ladder_OBJ_Wrapper>> :: iterator itr;
 	uint8_t iType; //Identifies the type of this object. 0 = input, 1 = Physical output, 2 = Virtual Output, 3 = timer, etc.	
@@ -74,18 +73,18 @@ private:
 //This object serves as a means of storing logic script specific flags that pertain to a single ladder object. This allows us to perform multiple varying logic operations without the need to create multiple copies of the same object.
 struct Ladder_OBJ_Wrapper 
 {
-	//Bits 8 = EN, 7 = TT, 6 = DN, 5 = ACC, 4 = ?, 3 = ?, 2 = ?, 1 = ?
-	Ladder_OBJ_Wrapper(shared_ptr<Ladder_OBJ> obj, bool not_flag = false)
+	Ladder_OBJ_Wrapper(shared_ptr<Ladder_OBJ> obj, uint16_t rung, bool not_flag = false)
 	{
 		bNot = not_flag; //Exclusively for NOT logic
 		ladderOBJ = obj; 
+		i_rungNum = rung; //store this here for now
 	}
 	~Ladder_OBJ_Wrapper(){ }
 
 	//Adds the inputted object to the current object's list.
-	bool addNextObject( uint16_t rung, shared_ptr<Ladder_OBJ_Wrapper> pObj )
+	bool addNextObject( shared_ptr<Ladder_OBJ_Wrapper> pObj )
 	{
-		return getObject()->addNextObject(rung, pObj);
+		return getObject()->addNextObject(i_rungNum, pObj);
 	}
 	
 	//Returns the pointer to the ladder object stored by this object.
@@ -95,7 +94,8 @@ struct Ladder_OBJ_Wrapper
 		
 	private:
 	bool bNot; //if the object is using not logic (per instance in rungs)
-	shared_ptr<Ladder_OBJ> ladderOBJ; 
+	uint16_t i_rungNum; //this is a carry over, and will be removed soon.
+	shared_ptr<Ladder_OBJ> ladderOBJ; //Container for the actual Ladder_Obj object
 };
 //Ladder_VARs can serve as both local variables to specific ladder objects (such as timers,counters,etc.), as well as independent values stored in memory, to be shared by multiple objects.
 class Ladder_VAR : public Ladder_OBJ
@@ -246,6 +246,7 @@ class Ladder_VAR : public Ladder_OBJ
 					break;
 			}
 		}
+
 		Ladder_OBJ::setLineState(rung, state); 
 	}
 	private:

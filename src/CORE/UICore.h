@@ -324,13 +324,10 @@ private:
 	vector<String> alerts; //vestor that stores alerts that have yet to be forwarded to a web client.
 
 	//Settings storage/reading variables
-	std::map<const String, shared_ptr<Device_Setting>> settingsMap;
-	std::map<const String, shared_ptr<Device_Setting>>::iterator settings_itr;
+	std::map<String, shared_ptr<Device_Setting>> settingsMap;
+	std::map<String, shared_ptr<Device_Setting>>::iterator settings_itr;
 	//
 };
 
-long parseInt( const String & );
-float parseFloat( const String & );
-vector<String> splitString(const String &, const char);
 
 #endif /* UICore_H_ */

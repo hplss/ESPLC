@@ -64,7 +64,7 @@ shared_ptr<Ladder_VAR> Ladder_OBJ::addObjectVAR( const String &id )
 void OutputOBJ::updateObject() //Logic used to update the coil
 {
 	bool state = getLineState()!=getLogic() ? LOW : HIGH;
-	digitalWrite(iPin, state );
+	digitalWrite(iPin, state);
 	//Serial.print("Output State: ");
 	//Serial.println(state);
 	Ladder_OBJ::updateObject();

@@ -1,104 +1,131 @@
 #ifndef PLC_PARSER_H_
 #define PLC_PARSER_H_
 
+#include <map>
+
 using namespace std;
 
-/* The logicOP object serves as a container for individual logic statements as they are read in the parser. 
-	Technically speaking, each LogicOP represents a series operation, and a vector containing LogicOPs represents parallel operations.
-	LogicOP's are capable of storing multime "tiers" of objects, with each tier representing the level of a nest, as it pertains to the final logic calculation.
-	A perfect example of this is SW1*(SW2+SW3)*(SW4+SW5)+SW6=OUT1 -- Here, SW1 has both SW2 and SW3 as the next objects given for comparison testing in a calculation, and SW2 and 3 are given 4 and 5 respectively.
-	This is essentially a series operation, with nested parallel operations involved.
-	It should be noted that in this example, SW1, SW2/3, and SW4/5 represent individual tiers that reference SW1, whereas SW6 ids its own logicOP.
-*/
-struct logicOP
+
+struct NestContainer
 {
-	public:
-	logicOP( uint16_t rung, shared_ptr<Ladder_OBJ_Wrapper> obj )
+	NestContainer( uint8_t pTier, uint8_t orTier )
 	{
-		iRung = rung;
-		iTier = 0; //default tier is at level 0
-		objects.emplace(iTier, obj);
-	}
-	~logicOP()
-	{
+		i_pTier = pTier;
+		i_orTier = orTier;
 	}
 
-	//Appends an inputted object to the objects map, with the current tier used as the index for the logical operation.
-	bool addParallelObject(shared_ptr<Ladder_OBJ_Wrapper> obj, bool nested = false)
+	const vector<shared_ptr<Ladder_OBJ_Wrapper>> &getEQObjects(){ return eqObjects; }
+	const vector<shared_ptr<Ladder_OBJ_Wrapper>> &getORObjects(){ return orObjects; }
+	const vector<shared_ptr<Ladder_OBJ_Wrapper>> &getANDObjects(){ return andObjects; }
+	void setLastObjects( const vector<shared_ptr<Ladder_OBJ_Wrapper>> &vec ){ lastObjects = vec; }
+	uint8_t getNumORObjects(){ return orObjects.size(); }
+	uint8_t getNumANDObjects(){ return andObjects.size(); }
+	uint8_t getNumEQObjects(){ return eqObjects.size(); }
+
+	bool addORObject( shared_ptr<Ladder_OBJ_Wrapper> obj)
 	{ 
-        if ( (nested && !applyNextObjectsToLast(obj)) || !applyNextObjects(obj))
-            return false;
+		if (obj) 
+			orObjects.push_back(obj); //ELSE ERROR 
+		else
+			return false;
 
-        objects.emplace(getTier(), obj); //up shifting a tier for certain ops? object on tier 2 and 3 append to tier 1?
 		return true;
 	}
-	//Creates a new tier, which represents a new nest in a single (series) logic operation
-	bool addSeriesObject(shared_ptr<Ladder_OBJ_Wrapper> obj, bool nested = false)
-	{
-		if ( !getNumCurrentObjects() ) //must have at least one valid object in the map for the current tier.
-			return false;
-		
-		iTier++; //increase our tier index
-		return addParallelObject(obj, nested); //Think of the Series as the X axis, And the parallel as the Y axis
-	}
-
-	//Returns the current number of objects in the last tier of the logicOP
-	uint8_t getNumCurrentObjects(){ return getCurrentObjects().size(); }
-	uint8_t getNumTierObjects( uint8_t tier ){ return getTierObjects(tier).size(); }
-	//This returns a vector of the objects added to the last tier of the logicOP object
-	shared_ptr<Ladder_OBJ_Wrapper> getLastObject( uint8_t tier )
-    {
-        if ( getNumTierObjects(tier) )
-            return getTierObjects(tier).back(); 
-        
-        return 0;//null
-    }
-	vector<shared_ptr<Ladder_OBJ_Wrapper>> getCurrentObjects() { return getTierObjects(getTier()); }
-	vector<shared_ptr<Ladder_OBJ_Wrapper>> getTierObjects( uint8_t tier ) 
-	{  
-		vector<shared_ptr<Ladder_OBJ_Wrapper>> pObjects; //make the container
-		pair<itr, itr> rungObjects = objects.equal_range(tier); //Find all objects for the current rung op
-		for ( itr it = rungObjects.first; it != rungObjects.second; it++ )
-			pObjects.emplace_back(it->second);
-
-		return pObjects; 
-	}
-	uint8_t getTier(){ return iTier; }
-	void setTier( uint8_t tier )
+	bool addANDObject( shared_ptr<Ladder_OBJ_Wrapper> obj)
 	{ 
-		iTier = tier; 
+		if (obj) 
+			andObjects.push_back(obj); //ELSE ERROR 
+		else
+			return false;
+			
+		return true;
 	}
+	bool addEQObject( shared_ptr<Ladder_OBJ_Wrapper> obj)
+	{ 
+		if (obj) 
+			eqObjects.push_back(obj); //ELSE ERROR 
+		else
+			return false;
+			
+		return true;
+	}
+	const uint8_t getPTier(){ return i_pTier; }
+	const uint8_t getOrTier(){ return i_orTier; }
+
+	//This function interconnects the objects logically, based on their type. 
+	//It also generated the lists for the first and last objects that need to be referenced later, for connecting between tiers.
+	bool connectObjects()
+	{
+		//Connect the series objects first.
+		for ( uint8_t p = 0; p < getNumANDObjects(); p++)
+		{
+			if ( (p+1) < getNumANDObjects() )
+			{
+				if ( !andObjects[p]->addNextObject(andObjects[p+1]) ) //logically connect the current to the next
+					return false;
+			}
+		}
+
+		//If we have some assignment (=) objects, make sure to factor those into the logic as needed.
+		for ( uint8_t y = 0; y < getNumEQObjects(); y++ )
+		{
+			if ( getNumANDObjects() )
+				andObjects.back()->addNextObject(eqObjects[y]); //append to the end of the series 
+
+			for ( uint8_t x = 0; x < orObjects.size(); x++ )
+			{
+				orObjects[x]->addNextObject(eqObjects[y]); //also append to any parallel operations that we have.
+			}
+		}
+
+		//Generate the lastObjects vector;
+		if ( getNumEQObjects() )
+			lastObjects = eqObjects;
+
+		else if ( getNumORObjects() || getNumANDObjects() )
+		{
+			lastObjects = orObjects; 
+			if ( getNumANDObjects() )
+				lastObjects.push_back(andObjects.back());
+		}
+		//
+
+		//generate the firstObjects vector
+		if ( getNumORObjects() || getNumANDObjects() )
+		{
+			firstObjects = orObjects; //parallel objects are always "first"
+			if ( getNumANDObjects() ) //have some AND objects? 
+				firstObjects.push_back(andObjects.front()); //only use the first AND object (because the others are in series with it)
+		}
+		else if ( getNumEQObjects() )//if nothing else.. though syntactically this doesn't make sense.. we'll allow it
+			firstObjects = eqObjects;
+		//
+
+
+		return true;
+	}
+
+	//Get a reference to the lastObjects vector. 
+	vector<shared_ptr<Ladder_OBJ_Wrapper>> &getLastObjects(){ return lastObjects; }
+	//Get a reference to the firstObjects vector.
+	vector<shared_ptr<Ladder_OBJ_Wrapper>> &getFirstObjects(){ return firstObjects; }
+	const vector<shared_ptr<NestContainer>> &getNextNests(){ return pNextNestContainers; }
+
+	uint8_t getNumNextNests(){ return pNextNestContainers.size(); }
+
+	void addNextNestContainer( shared_ptr<NestContainer> ptr)
+	{ 
+		//Serial.println( "Nest at: "+ String(getPTier()) + ":" + String(getOrTier()) + " is adding: " + String(ptr->getPTier()) + ":" + String(ptr->getOrTier()) );
+		pNextNestContainers.push_back(ptr); 
+	}
+
+
 
 	private:
-	//This tells the previous tier of objects that the current tier's objects are the next in line to be processed in a given logic operation.
-	bool applyNextObjects( shared_ptr<Ladder_OBJ_Wrapper> obj )
-	{
-		if ( getTier() ) //must have multiple tiers (greater than 0)
-		{
-            vector<shared_ptr<Ladder_OBJ_Wrapper>> pObjects = getTierObjects(getTier() - 1);
-            for (uint8_t x = 0; x < pObjects.size(); x++)
-            {
-                if ( obj->getObject() == pObjects[x]->getObject() || !pObjects[x]->addNextObject(iRung, obj))
-                    return false;
-            }
-        }
-        return true;
-	}
-    bool applyNextObjectsToLast( shared_ptr<Ladder_OBJ_Wrapper> obj )
-    {
-        shared_ptr<Ladder_OBJ_Wrapper> prev = getLastObject(getTier() - 1);
-        if (prev && prev->getObject() != obj->getObject())
-            return prev->addNextObject(iRung, obj);
-
-        return false;
-    }
-
-	multimap<uint8_t, shared_ptr<Ladder_OBJ_Wrapper>> objects; //<tier, object pointer>
-	typedef multimap<uint8_t, shared_ptr<Ladder_OBJ_Wrapper>> :: iterator itr;
-	uint8_t iTier;
-	uint16_t iRung;
+	uint8_t i_pTier, i_orTier; //Nest Identifiers (does i_orTier do anything these days? Hmm)
+	vector<shared_ptr<Ladder_OBJ_Wrapper>> eqObjects, andObjects, orObjects, lastObjects, firstObjects; //Our little gaggle of vectors
+	vector<shared_ptr<NestContainer>> pNextNestContainers; //Storage for the NestContainers that are referenced by the current NestContainer (as dictated by the parser).
 };
-
 
 /* PLC_Parser serves as a container and accessor for variables that are used for establishing ladder logic object relationships in the parser. */
 struct PLC_Parser
@@ -111,28 +138,28 @@ public:
 		pRung = make_shared<Ladder_Rung>(); 
 		bitOperator = false;
 		bitNot = false; 
-		iLastOP = CHAR_AND;
+		argsOP = false;
 		sParsedLine = parsed;
 		iRung = rung;
-		iNestDepth = 0;
 	}
 
+	//Forwards an error of a given type (with additional info message as second argument) to the client.
     void sendError(uint8_t, const String & = "");
 
     //Parses the individual lines for logic operations and declarations (called from parseScript())
 	bool parseLine();
-	//Displays an error of a given type, with the option of displaying additional information.
-	bool parser_ANDOP();
-	bool parser_EQOP();
-	bool parser_OROP();
-	bool parser_Default();
 
+	//This function breaks up the arguments that are passed in during object declaration and instantiation. Putting them into a vector of Strings
     vector<String> parseObjectArgs();
 
+	//Appends an inputted char to the string that stores the given object's name.
 	void appendToObjName( const char c ) { sParsedObj += c; }
+	//Appends an inputted char to the string that stores the given object's bit name.
 	void appendToBitName( const char c ){ sParsedBit += c; }
+	//Appends an inputted char to the string that stores the given object's initializer arguments.
+	void appendToObjArgs( const char c ){ sParsedArgs += c; }
 	//Resets the values typically used by the parser to their default values.
-	void reset(){ sParsedObj.clear(); sParsedBit.clear(); bitNot = false; bitOperator = false; }
+	void reset(){ sParsedObj.clear(); sParsedBit.clear(); sParsedArgs.clear(); bitNot = false; bitOperator = false; argsOP = false; }
 	
 	//Attempts to create a new object wrapper using an already defined ladder object, applies necessary wrapper flags, and returns the created object.
 	shared_ptr<Ladder_OBJ_Wrapper> getObjectVARWrapper(shared_ptr<Ladder_OBJ> ptr)
@@ -142,7 +169,7 @@ public:
 			pVar = ptr->addObjectVAR( sParsedBit ); //try to create the VAR object
 		
 		if ( pVar ) //If successful (not null), make the wrapper and return it
-			return make_shared<Ladder_OBJ_Wrapper>( pVar, getNotOP() );
+			return make_shared<Ladder_OBJ_Wrapper>( pVar, getRungNum(), getNotOP() );
 
 		return 0; //failed, return NULL
 	}
@@ -158,7 +185,7 @@ public:
 			}
 			else
 			{
-				newOBJWrapper = make_shared<Ladder_OBJ_Wrapper>( obj, getNotOP() );
+				newOBJWrapper = make_shared<Ladder_OBJ_Wrapper>( obj, getRungNum(), getNotOP() );
 			}
 
 			if ( getRung()->addRungObject(newOBJWrapper) ) //Add to the new rung in order to perform updates on the object, post line scanning.
@@ -171,82 +198,89 @@ public:
 
 	void setBitOP( bool bit ){ bitOperator = bit; }
 	void setNotOP( bool bit ){ bitNot = bit; }
-	void setLastOP( uint8_t op ){ iLastOP = op; }
-    bool setNumNests( uint8_t num )
-    {
-        if ( num < 0 )
-            return false;
-        
-        iNestDepth = num;
-        return true;
-    }
+	void setArgsOP( uint8_t op ){ argsOP = op; }
 
-	bool addNest()
-	{ 
-		//Basically,  in a nest, any objects that are parsed are added into a parallel operation with their respective logicop tier. 
-		//Maximum number of nests check? Meh..
-		#ifdef DEBUG
-		Serial.println(PSTR("Added a Nest"));
-		#endif
-
-        
-		iNestDepth++;
-        iRequestedNestDepth = iNestDepth;
-		return true;
-	}
-	//End a currently initialized nest. This entails linking all of the "previous objects" initialized in the nest as next objects for the previous tier of object(s).
-	bool endNest()
-	{
-		#ifdef DEBUG
-		Serial.println(PSTR("Ended a Nest"));
-		#endif
-
-		if (iNestDepth > 0)
-		{
-			//iNestDepth--;
-            iRequestedNestDepth--;
-		}
-		else
-		{
-			return false; //error, tried to remove too many nests
-		}
-		
-		return true;
-	}
-
-    bool handlePreviousOP(bool = false);
-    bool handleEQOP( shared_ptr<Ladder_OBJ_Wrapper> );
+    shared_ptr<Ladder_OBJ_Wrapper> handleObject();
 	
-	uint8_t getLastOP(){ return iLastOP; }
 	const String &getParsedObjectStr(){ return sParsedObj; } 
 	const String &getParsedBitStr(){ return sParsedBit; } 
+	const String &getParsedArgs(){ return sParsedArgs; } 
 
-	bool addLogicOP(shared_ptr<Ladder_OBJ_Wrapper> ptr)
-	{ 
-		if ( getRung()->addInitialRungObject(ptr) ) //only create it if it's possible to add the pointer to the initial objects list.
+	vector<shared_ptr<NestContainer>> &getNests() { return nestData; }
+	vector<shared_ptr<NestContainer>> getNestsByTier( uint8_t tier )
+	{
+		vector<shared_ptr<NestContainer>> tempVec;
+		for (uint8_t x = 0; x < getNests().size(); x++)
 		{
-			getLogicOPs().emplace_back(make_shared<logicOP>(iRung, ptr));
-            return true;
+			if ( getNests()[x]->getPTier() == tier )
+				tempVec.push_back(getNests()[x]);
 		}
 
-		return false;
+		return tempVec;
 	}
-	uint8_t getNumLogicOPs(){ return getLogicOPs().size(); }
-	//Returns a reference to the vector containing all created logicOPs
-	vector<shared_ptr<logicOP>> &getLogicOPs(){ return pLogicOPs; }
-	//Returns a reference to the current (last created) previous objects vector. Index of -1 returns the most recently initialized tier of previous objects.
-	shared_ptr<logicOP> getLogicOP( int8_t idx = -1 )
-	{ 
-		if (idx >= 0 && idx <= (pLogicOPs.size() - 1) )
-			return pLogicOPs[idx];
 
-		return pLogicOPs.back();
+	uint8_t getHighestNestTier()
+	{
+		uint8_t tier = 0; 
+		for (uint8_t x = 0; x < getNests().size(); x++)
+		{
+			if ( getNests()[x]->getPTier() > tier )
+				tier = getNests()[x]->getPTier();
+		}
+		return tier;
 	}
+	
+	//This function returns a vector containing all objects that are the last to be referenced across all NestContainer objects
+	vector<shared_ptr<Ladder_OBJ_Wrapper>> getLastNestObjects()
+	{
+		vector<shared_ptr<Ladder_OBJ_Wrapper>> allLastObjects;
+
+		for (uint8_t x = 0; x < getNests().size(); x++)
+		{
+			if ( !getNests()[x]->getNumNextNests() ) //have we reach a nest that has no nests following it? Must be the last at the enf of the chain.
+			{
+				vector<shared_ptr<Ladder_OBJ_Wrapper>> lastObjects = getNests()[x]->getLastObjects();
+				for ( uint8_t y = 0; y < lastObjects.size(); y++ )
+				{
+					allLastObjects.push_back(lastObjects[y]);
+				}
+			}
+		}
+
+		return allLastObjects;
+	}
+
+	//This function gathers a list of the first object's that are to be referenced by the PLC_Rung object when beginning a logic scan.
+	vector<shared_ptr<Ladder_OBJ_Wrapper>> getFirstNestObjects()
+	{
+		vector<shared_ptr<Ladder_OBJ_Wrapper>> allFirstObjects;
+
+		for (uint8_t x = 0; x <= getHighestNestTier(); x++)
+		{
+			vector<shared_ptr<NestContainer>> nests = getNestsByTier(x);
+			for ( uint8_t y = 0; y < nests.size(); y++ )
+			{
+				vector<shared_ptr<Ladder_OBJ_Wrapper>> nestFirstObjects = nests[y]->getFirstObjects(); 
+				for ( uint8_t z = 0; z < nestFirstObjects.size(); z++ ) //have we reach a nest that has no nests following it? Must be the last at the enf of the chain.
+				{
+					allFirstObjects.push_back(nestFirstObjects[z]);
+				}
+			}
+
+			if ( allFirstObjects.size() ) //we have some objects after going through the first tier, so end here.
+				break;
+		}
+
+		return allFirstObjects;
+	}
+
+	bool buildObjectStr( const String & );
 
 	shared_ptr<Ladder_Rung> &getRung(){ return pRung; }
-	uint8_t getNumNests(){ return iNestDepth; }
 	bool getNotOP(){ return bitNot; }
 	bool getBitOP(){ return bitOperator; }
+	bool getArgsOP(){ return argsOP; }
+	uint16_t getRungNum(){ return iRung; } 
 	uint16_t &getLinePos() { return iLinePos; }
 	uint16_t getLineLength() { return sParsedLine.length(); }
 	const String &getParsedLineStr(){ return sParsedLine; }
@@ -255,18 +289,119 @@ public:
 private:
 	bool bitOperator;
 	bool bitNot; 
-	uint8_t iLastOP; //Last operator used by the parser
+	bool argsOP; //Last operator used by the parser
 	uint16_t iLinePos; //position at which the line is currently being parsed (in the string character array)
 	uint16_t iLineLength; //total length of the parsed line (number of chars)
 	uint16_t iRung; 
-	uint8_t iNestDepth, iRequestedNestDepth;
 	String sParsedLine,
+		   sParsedArgs, //object arguments (if applicable)
 		   sParsedObj, //object name 
 		   sParsedBit; //for bit operations on objects
 
-	vector<shared_ptr<logicOP>> pLogicOPs;
-
 	shared_ptr<Ladder_Rung> pRung; //Rung object that is being created by the parser
+	vector<shared_ptr<NestContainer>> nestData;
+};
+
+struct LogicObject
+{
+	public:
+	//This object is responsible for breaking up an inputted line based on the different types of operators that we are using for the PLC. 
+	//Parenthetical tiers are also processed by recursively creating a new object from within the current object's constructor. 
+	//In this sense, each newly created object represents the data that has been parsed for each specific parenthetical tier. 
+	LogicObject(const String &line, PLC_Parser *parser, uint8_t pTier = 0, uint8_t orTier = 0)
+	{
+		//Serial.println("new LogicOP with str: " + line + " at tier: " + String(pTier) );
+		pNestContainer = make_shared<NestContainer>(pTier, orTier); //create a new nest container for this LogicObject
+		parser->getNests().emplace_back(pNestContainer); //add this new "block" parser object to the storage container in the parser object
+
+		if ( !strContains(line, vector<char>{CHAR_OR, CHAR_EQUALS, CHAR_AND, CHAR_P_END, CHAR_P_START} )) //contains no logic operators at all? (could be a single object in a parallel operation)
+		{
+			if ( parser->buildObjectStr(line) )
+			{
+				if ( pNestContainer->addORObject(parser->handleObject()) ) //attempt to build the object using the parsed info in buildObjectStr() and push into NestContainer
+				{
+					//Serial.println("ADDED OR: " + line );
+				}
+			}
+		}
+		else
+		{
+			vector<String> outer = splitString(line, CHAR_EQUALS, true, CHAR_P_START, CHAR_P_END); //Split the inputted line up based on CHAR_EQUALS, with ( and ) as limiters
+			for ( uint8_t x = 0; x < outer.size(); x++ )
+			{
+				if ( !strContains( outer[x], vector<char>{CHAR_OR, CHAR_AND, CHAR_P_END, CHAR_P_START})) //Does it contain any of these chars?
+				{
+					if ( parser->buildObjectStr(outer[x]) )
+					{
+						if ( pNestContainer->addEQObject(parser->handleObject()) ) //attempt to build the object using the parsed info in buildObjectStr() and push into NestContainer
+						{
+							//Serial.println("ADDED EQ: " + outer[x] );
+						}
+					}
+					continue;
+				}
+
+				vector<String> inner = splitString(outer[x], CHAR_OR, true, CHAR_P_START, CHAR_P_END ); //Break up what's left by CHAR_OR
+				for ( uint8_t y = 0; y < inner.size(); y++ )
+				{
+					if ( y > orTier )
+						orTier = y;
+
+					if ( !strContains( inner[y], vector<char>{CHAR_AND, CHAR_P_END, CHAR_P_START})) //Does the line contain any of these chars?
+					{
+						if ( parser->buildObjectStr(inner[y]) )
+						{
+							if ( pNestContainer->addORObject(parser->handleObject()) ) //attempt to build the object using the parsed info in buildObjectStr() and push into NestContainer
+							{
+								//Serial.println("ADDED OR: " + inner[y] );
+							}
+						}
+						continue;
+					}
+
+					vector<String> current = splitString(inner[y], CHAR_AND, true, CHAR_P_START, CHAR_P_END ); //Split the string based on CHAR_AND
+					for ( uint8_t z = 0; z < current.size(); z++ )
+					{
+						if ( !strContains( current[z], vector<char>{CHAR_P_END, CHAR_P_START}))
+						{
+							if ( parser->buildObjectStr(current[z]) )
+							{
+								if ( pNestContainer->addANDObject(parser->handleObject()) ) //attempt to build the object using the parsed info in buildObjectStr() and push into NestContainer
+								{
+									//Serial.println("ADDED AND: " + current[z] );
+								}
+							}
+							continue;
+						}
+
+						multimap<int8_t, String> tierMap = textWithin(current[z], CHAR_P_START, CHAR_P_END, 1); //break everything up into tiers and subtiers based on parenthesis in statement
+						typedef multimap<int8_t, String> :: iterator itr;
+						for (int8_t ptier = 0; ptier < tierMap.end()->first; ptier++ ) //find the highest tier level
+						{
+							if ( !tierMap.count(ptier) ) //make sure there's some data stored for the given tier
+								continue;
+
+							pair<itr, itr> nestedStatements = tierMap.equal_range(ptier); 
+							for ( itr it = nestedStatements.first; it != nestedStatements.second; it++ )
+							{
+								shared_ptr<LogicObject> newLogicTier = make_shared<LogicObject>(it->second, parser, pTier + 1, orTier );
+								pNestContainer->addNextNestContainer( newLogicTier->getNestContainer() );
+							} //end iterations through nested tier
+						} //end equal range for tier number
+					}
+				}
+			}
+		}
+
+		pNestContainer->connectObjects(); //tether the objects together for this logic block if necessary (particularly for series - AND - objects). 
+	}
+	//Deconstructor
+	~LogicObject(){}
+
+	shared_ptr<NestContainer> getNestContainer(){ return pNestContainer; }
+
+	private: 
+	shared_ptr<NestContainer> pNestContainer;
 };
 
 /*ladderOBJdata is mostly for tying a name (String) to an object for the brief time it matters.
