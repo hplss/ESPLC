@@ -22,6 +22,8 @@ using namespace std;
 const unsigned char NULL_CHAR = 0;//'/0';
 #define MAX_BUFFERSIZE 128
 
+#define MAX_PLC_OBJ_NAME 32 //32 chars seems like a reasonably long enough name for a ladder logic object.
+
 #define VERBOSE_MAX 2
 
 #define PRIORITY_LOW 2
@@ -80,6 +82,7 @@ extern const String &err_failed_creation PROGMEM,
 					&err_pin_taken PROGMEM,
 					&err_unknown_obj PROGMEM,
 					&err_invalid_bit PROGMEM,
+					&err_name_too_long PROGMEM,
 					&err_parser_failed PROGMEM;
 
 //
@@ -165,7 +168,8 @@ enum ERR_DATA
 	ERR_INVALID_BIT, //This error type indicates that a bit referece to a given ladder logic object is not valid or associated with the given object.
 	ERR_PIN_INVALID, //This error indicates that a given pin number used for IO operations is invalid (doesn't exist on the device, or is used for special operations)
 	ERR_PIN_TAKEN, //This error indicates that a given pin number used for IO operations is already occupied by another object.
-	ERR_PARSER_FAILED //This error indicatews that the parser failed to exit properly.
+	ERR_PARSER_FAILED, //This error indicatews that the parser failed to exit properly.
+	ERR_NAME_TOO_LONG //This indicates that the name of an object being parsed is too long to be stored (exceeds allowed memory usage)
 };
 
 const char CHAR_EQUALS = '=',

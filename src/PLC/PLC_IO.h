@@ -30,47 +30,40 @@ class Ladder_VAR;
 class Ladder_OBJ
 {
 public:
-	Ladder_OBJ( uint16_t &id, uint8_t type ){ ObjID = id; iType = type; bLineState = false; }//start off
-	virtual ~Ladder_OBJ(){ nextObj.clear(); }
+	Ladder_OBJ( const String &id, uint8_t type ){ s_ObjID = id; iType = type; }//start off
+	virtual ~Ladder_OBJ(){ }
 	//Sets the unique ID number for the object, possibly for future reference by the program if needed. ARGS: <ID>
-	void setObjID(uint16_t id) { ObjID = id; }
 	bool setState(uint8_t state) { objState = state; return true; }
 	//Sets the PLC Ladder Logic object type. This tells us whether the object is an INPUT/OUTPUT,TIMER, etc.
 	void setType(uint8_t type) { iType = type; }
-	virtual void setLineState(uint16_t rung, bool state){ if(state) bLineState = state; getNextObj( rung ); } //latch state high if applied, then find the next connected object in the rung.
+	virtual void setLineState(bool &state){ bLineState = state; } //save the state. Possibly consider latching the state if state is HIGH (duplicate outputs?)
 	void setLogic(uint8_t logic) { objLogic = logic; }
-	//Add the potential objects that are next in the chain, based on Rung number. ARGS: <rung number>, <Object>
-	bool addNextObject( uint16_t, shared_ptr<Ladder_OBJ_Wrapper> ); 
-	bool addNextObject( uint16_t, vector<shared_ptr<Ladder_OBJ_Wrapper>> &);
-	
-	//This function gets the next ladder logic object and checks to see if it passes the logic check.
-	void getNextObj( uint16_t ); 
-	uint8_t getState(){ return objState; } //Returns enabled/disabled
+
+	//Returns enabled/disabled
+	uint8_t getState(){ return objState; } 
 	uint8_t getLogic() { return objLogic; }
 	//Returns the object type (OUTPUT/INPUT/TIMER,etc.)
 	uint8_t getType(){ return iType; }
-	//Returns the current state of the "line" (or ladder rung), which is computed based on the logic operations of the preceding object. This serves as a foundation for the current object's logic operations.
 	bool getLineState(){ return bLineState; }
 	//Returns the unique object ID
-	uint16_t getID(){ return ObjID; }
+	const String &getID(){ return s_ObjID; }
 	//Set the line state back to false for the next scan This should only be called by the rung manager (which applies the logic after processing)
-	virtual void updateObject(){ bLineState = false; } 
+	virtual void updateObject(){ bLineState = false;} 
 	//Returns an object's bit (Ladder_VAR pointer) based on an inputted bit ID string
 	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String & );
 	virtual shared_ptr<Ladder_VAR> addObjectVAR( const String & );
 	
 private:
-	multimap<uint16_t, shared_ptr<Ladder_OBJ_Wrapper>> nextObj;
-	typedef multimap<uint16_t, shared_ptr<Ladder_OBJ_Wrapper>> :: iterator itr;
 	uint8_t iType; //Identifies the type of this object. 0 = input, 1 = Physical output, 2 = Virtual Output, 3 = timer, etc.	
 	uint8_t objState; //Enabled or disabled? needed?
-	uint8_t objLogic;
-	uint16_t ObjID; //The unique ID for this object (globally)
-	bool bLineState; //This is the logic state at this point in the line for this pass. If it is set to true at any point, it remains true till the end of the scan.
+	uint8_t objLogic; //Is it normally closed or normally open? (for example)
+	String s_ObjID; //The unique ID for this object (globally)
+	bool bLineState; 
 	//Bit shifting to save memory? Look into later
 };
 
-//This object serves as a means of storing logic script specific flags that pertain to a single ladder object. This allows us to perform multiple varying logic operations without the need to create multiple copies of the same object.
+//This object serves as a means of storing logic script specific flags that pertain to a single ladder object. 
+//This allows us to perform multiple varying logic operations without the need to create multiple copies of the same object.
 struct Ladder_OBJ_Wrapper 
 {
 	Ladder_OBJ_Wrapper(shared_ptr<Ladder_OBJ> obj, uint16_t rung, bool not_flag = false)
@@ -84,38 +77,55 @@ struct Ladder_OBJ_Wrapper
 	//Adds the inputted object to the current object's list.
 	bool addNextObject( shared_ptr<Ladder_OBJ_Wrapper> pObj )
 	{
-		return getObject()->addNextObject(i_rungNum, pObj);
+		nextObjects.push_back(pObj);
+		return true; 
+	}
+	bool addNextObject( const vector<shared_ptr<Ladder_OBJ_Wrapper>> &pObj )
+	{
+		for ( uint8_t x = 0; x < pObj.size(); x++ )
+			nextObjects.push_back(pObj[x]);
+
+		return true; 
+	}
+
+	void setLineState(bool state)
+	{
+		getObject()->setLineState(state); //line state needs to be set per wrapper, not per ladder object
+
+		for(uint8_t x = 0; x < nextObjects.size(); x++ )
+			nextObjects[x]->setLineState(state);
 	}
 	
 	//Returns the pointer to the ladder object stored by this object.
-	shared_ptr<Ladder_OBJ> getObject(){ return ladderOBJ; }
+	shared_ptr<Ladder_OBJ> &getObject(){ return ladderOBJ; }
 	//Tells us if the object is being interpreted using NOT logic
 	bool getNot(){ return bNot; }
 		
 	private:
 	bool bNot; //if the object is using not logic (per instance in rungs)
-	uint16_t i_rungNum; //this is a carry over, and will be removed soon.
+	uint16_t i_rungNum;
 	shared_ptr<Ladder_OBJ> ladderOBJ; //Container for the actual Ladder_Obj object
+	vector<shared_ptr<Ladder_OBJ_Wrapper>> nextObjects;
 };
 //Ladder_VARs can serve as both local variables to specific ladder objects (such as timers,counters,etc.), as well as independent values stored in memory, to be shared by multiple objects.
 class Ladder_VAR : public Ladder_OBJ
 {
 	public:
 	//These constructors are for pointers to existing variables
-	Ladder_VAR( int_fast32_t *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_INT ){ values.i.val_ptr = value; b_usesPtr = true; }
-	Ladder_VAR( uint_fast32_t *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_UINT ){ values.ui.val_ptr = value; b_usesPtr = true; }
-	Ladder_VAR( bool *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_BOOL ){ values.b.val_ptr = value; b_usesPtr = true; }
-	Ladder_VAR( float *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_FLOAT ){ values.f.val_ptr = value; b_usesPtr = true; }
-	Ladder_VAR( uint64_t *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_ULONG ){ values.ul.val_ptr = value; b_usesPtr = true; }
-	Ladder_VAR( int64_t *value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_LONG ){ values.l.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( int_fast32_t *value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_INT ){ values.i.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( uint_fast32_t *value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_UINT ){ values.ui.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( bool *value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_BOOL ){ values.b.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( float *value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_FLOAT ){ values.f.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( uint64_t *value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_ULONG ){ values.ul.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( int64_t *value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_LONG ){ values.l.val_ptr = value; b_usesPtr = true; }
 	//
 	//These constructors are for locally stored values
-	Ladder_VAR( int_fast32_t value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_INT ){ values.i.val = value; b_usesPtr = false; }
-	Ladder_VAR( uint_fast32_t value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_UINT ){ values.ui.val = value; b_usesPtr = false; }
-	Ladder_VAR( bool value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_BOOL ){ values.b.val = value; b_usesPtr = false; }
-	Ladder_VAR( float value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_FLOAT ){ values.f.val = value; b_usesPtr = false; }
-	Ladder_VAR( uint64_t value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_ULONG ){ values.ul.val = value; b_usesPtr = false; }
-	Ladder_VAR( int64_t value, uint16_t id = 0 ) : Ladder_OBJ( id, TYPE_VAR_LONG ){ values.l.val = value; b_usesPtr = false; }
+	Ladder_VAR( int_fast32_t value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_INT ){ values.i.val = value; b_usesPtr = false; }
+	Ladder_VAR( uint_fast32_t value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_UINT ){ values.ui.val = value; b_usesPtr = false; }
+	Ladder_VAR( bool value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_BOOL ){ values.b.val = value; b_usesPtr = false; }
+	Ladder_VAR( float value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_FLOAT ){ values.f.val = value; b_usesPtr = false; }
+	Ladder_VAR( uint64_t value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_ULONG ){ values.ul.val = value; b_usesPtr = false; }
+	Ladder_VAR( int64_t value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_LONG ){ values.l.val = value; b_usesPtr = false; }
 	//
 	virtual void updateObject()
 	{ 
@@ -217,7 +227,7 @@ class Ladder_VAR : public Ladder_OBJ
 		}
 	}
 
-	virtual void setLineState(uint16_t rung, bool state)
+	virtual void setLineState(bool &state)
 	{ 
 		if ( state ) //active up till this point
 		{
@@ -247,7 +257,7 @@ class Ladder_VAR : public Ladder_OBJ
 			}
 		}
 
-		Ladder_OBJ::setLineState(rung, state); 
+		Ladder_OBJ::setLineState(state); 
 	}
 	private:
 
@@ -274,15 +284,15 @@ class Ladder_VAR : public Ladder_OBJ
 class Remote_Ladder_OBJ : public Ladder_OBJ
 {
 	public:
-	Remote_Ladder_OBJ( uint16_t id, uint8_t type, uint16_t remoteID ) : Ladder_OBJ( id, TYPE_REMOTE )
+	Remote_Ladder_OBJ( const String &id, uint8_t type, uint16_t remoteID ) : Ladder_OBJ( id, TYPE_REMOTE )
 	{
 		iRemoteType = type;
 		iRemoteID = remoteID;
 	}
 	
-	virtual void setLineState(uint16_t rung, bool state)
+	virtual void setLineState(bool &state)
 	{ 
-		Ladder_OBJ::setLineState(rung, state); 
+		Ladder_OBJ::setLineState(state); 
 	}
 	virtual void updateObject()
 	{
@@ -302,7 +312,7 @@ class Remote_Ladder_OBJ : public Ladder_OBJ
 class OutputOBJ: public Ladder_OBJ
 {
 	public:
-	OutputOBJ( uint16_t id, uint8_t pin, uint8_t logic = LOGIC_NO ) : Ladder_OBJ(id, TYPE_OUTPUT){ iPin = pin; pinMode(pin, OUTPUT); setLogic(logic); }
+	OutputOBJ( const String &id, uint8_t pin, uint8_t logic = LOGIC_NO ) : Ladder_OBJ(id, TYPE_OUTPUT){ iPin = pin; pinMode(pin, OUTPUT); setLogic(logic); }
 	~OutputOBJ()
 	{
 		 #ifdef DEBUG 
@@ -312,7 +322,7 @@ class OutputOBJ: public Ladder_OBJ
 	}
 	virtual void updateObject();
 	uint8_t getOutputPin(){ return iPin; }
-	virtual void setLineState(uint16_t rung, bool state){ Ladder_OBJ::setLineState(rung, state); }
+	virtual void setLineState(bool &state){ Ladder_OBJ::setLineState(state); }
 	
 	private:
 	uint8_t iPin;
@@ -322,7 +332,7 @@ class OutputOBJ: public Ladder_OBJ
 class InputOBJ : public Ladder_OBJ
 {
 	public:
-	InputOBJ( uint16_t id, uint8_t pin, uint8_t type = TYPE_INPUT, uint8_t logic = LOGIC_NO ) : Ladder_OBJ(id, type)
+	InputOBJ( const String &id, uint8_t pin, uint8_t type = TYPE_INPUT, uint8_t logic = LOGIC_NO ) : Ladder_OBJ(id, type)
 	{ 
 		iPin = pin; 
 
@@ -355,7 +365,7 @@ class InputOBJ : public Ladder_OBJ
 	} //Return the value of the input from the assigned pin.
 	uint8_t getInputPin(){ return iPin; }
 	virtual void updateObject();
-	virtual void setLineState(uint16_t, bool);
+	virtual void setLineState(bool &);
 	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String &id )
 	{
 		return inputValue; //There's only one Ladder_VAR for this type of object.
@@ -372,7 +382,7 @@ class InputOBJ : public Ladder_OBJ
 class TimerOBJ : public Ladder_OBJ
 {
 	public:
-	TimerOBJ(uint16_t id, uint_fast32_t delay, uint_fast32_t accum = 0, uint8_t type = TYPE_TON) : Ladder_OBJ(id, type)
+	TimerOBJ(const String &id, uint_fast32_t delay, uint_fast32_t accum = 0, uint8_t type = TYPE_TON) : Ladder_OBJ(id, type)
 	{ 
 		//Defaults
 		ttBit = false;
@@ -388,7 +398,7 @@ class TimerOBJ : public Ladder_OBJ
 		#endif
 	}
 	virtual void updateObject();
-	virtual void setLineState(uint16_t rung, bool state){ Ladder_OBJ::setLineState(rung, state); }
+	virtual void setLineState(bool &state){ Ladder_OBJ::setLineState(state); }
 	virtual shared_ptr<Ladder_VAR> addObjectVAR( const String &id )
 	{ 
 		if ( !getObjectVAR(id) ) //proceed if it doesn't already exist
@@ -449,7 +459,7 @@ class TimerOBJ : public Ladder_OBJ
 class CounterOBJ : public Ladder_OBJ
 {
 	public:
-	CounterOBJ(uint16_t id, uint_fast32_t count = 0, uint_fast32_t accum = 0, uint8_t type = TYPE_CTU) : Ladder_OBJ(id, type)
+	CounterOBJ(const String &id, uint_fast32_t count = 0, uint_fast32_t accum = 0, uint8_t type = TYPE_CTU) : Ladder_OBJ(id, type)
 	{ 
 		iCount = count;
 		iAccum = accum;
@@ -462,8 +472,8 @@ class CounterOBJ : public Ladder_OBJ
 		Serial.println(PSTR("Counter Destructor"));
 		#endif
 	}
-	virtual void setLineState(uint16_t rung, bool state){ Ladder_OBJ::setLineState(rung, state); }
-	virtual void updateObject();
+	virtual void setLineState(bool &state){ Ladder_OBJ::setLineState(state); }
+	virtual void updateObject(bool);
 	//returns the current value of the counter's enable bit 
 	void setENBitVal(bool val){ enableBit = val; }
 	//returns the current value of the counter's done bit
@@ -529,7 +539,7 @@ class CounterOBJ : public Ladder_OBJ
 class ClockOBJ : public Ladder_OBJ
 {
 	public:
-	ClockOBJ(uint16_t id, shared_ptr<Time> sys, uint8_t yr, uint8_t mo, uint8_t da, uint8_t hr, uint8_t min, uint8_t sec, uint8_t type = TYPE_CLOCK) : Ladder_OBJ(id, type)
+	ClockOBJ(const String &id, shared_ptr<Time> sys, uint8_t yr, uint8_t mo, uint8_t da, uint8_t hr, uint8_t min, uint8_t sec, uint8_t type = TYPE_CLOCK) : Ladder_OBJ(id, type)
 	{
 		pSysTime = sys;
 		doneBit = false;
@@ -537,8 +547,8 @@ class ClockOBJ : public Ladder_OBJ
 		pPresetTime = make_shared<Time>(yr, mo, da, hr, min, sec); //should remain static (not updated unless explicitly told to do so)
 	}
 	~ClockOBJ(){  }
-	virtual void setLineState(uint16_t rung, bool state){ Ladder_OBJ::setLineState(rung, state); }
-	virtual void updateObject(); //this handles the updating of the clock
+	virtual void setLineState(bool &state){ Ladder_OBJ::setLineState(state); }
+	virtual void updateObject(bool); //this handles the updating of the clock
 	
 	bool getENBit(){ return enableBit; }
 	bool getDNbit(){ return doneBit; }

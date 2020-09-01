@@ -63,7 +63,7 @@ bool Ladder_Rung::addInitialRungObject( shared_ptr<Ladder_OBJ_Wrapper> obj )
 	return true;
 }
 
-shared_ptr<Ladder_OBJ_Wrapper> Ladder_Rung::getRungObjectByID(uint16_t id)
+shared_ptr<Ladder_OBJ_Wrapper> Ladder_Rung::getRungObjectByID(const String &id)
 {
 	for ( uint16_t x = 0; x < getNumRungObjects(); x++ )
 	{
@@ -80,12 +80,7 @@ void Ladder_Rung::processRung( uint16_t rungNum ) //Begins the process
 	//Line state is always true at the beginning of the rung. From this point, the objects should handle all logic operations on their own until all pathways are checked
 	for ( uint8_t x = 0; x < getNumInitialRungObjects(); x++ )
 	{
-		firstRungObjects[x]->getObject()->setLineState(rungNum, true);
-	}
-	
-	//Now that each rung object knows its line state, it's time to apply any settings to outputs, etc. across the entire rung.
-	for ( uint16_t x = 0; x < getNumRungObjects(); x++ )
-	{
-		getRungObjects()[x]->getObject()->updateObject();
+		//firstRungObjects[x]->getObject()->setLineState(rungNum, true);
+		firstRungObjects[x]->setLineState(true);
 	}
 }

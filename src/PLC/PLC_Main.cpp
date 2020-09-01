@@ -10,7 +10,6 @@
 
 void PLC_Main::resetAll()
 {
-	currentObjID = 1; //reset the counter
 	ladderRungs.clear(); //Empty created ladder rungs vector
 	ladderObjects.clear(); //Empty the created ladder logic objects vector
 	generatePinMap(); //reset and fill the pinmap
@@ -85,13 +84,17 @@ String PLC_Main::getObjName( const String &parsedString )
 
 void PLC_Main::processLogic()
 {
-	if ( !getNumRungs() )
-		return;
+	if ( !getNumRungs() ) //are there no available rungs?
+		return; //Do nothing if that's the case.
 
-	for (uint16_t x = 0; x < getNumRungs(); x++)
+	for (uint16_t x = 0; x < getNumRungs(); x++) //iterate through all available rungs
 	{
-		getLadderRung(x)->processRung(x);
+		getLadderRung(x)->processRung(x); //perform logic 'scan' on the selected rung
 	}
+
+	//After the logic scans, the object's state is known. Perform the update on the objects (for some objects, this is the "action" function.)
+	for ( uint16_t y = 0; y < ladderObjects.size(); y++ )
+		ladderObjects[y]->updateObject(); 
 }
 
 bool PLC_Main::addLadderRung(shared_ptr<Ladder_Rung> rung)
@@ -106,11 +109,11 @@ bool PLC_Main::addLadderRung(shared_ptr<Ladder_Rung> rung)
 	return true;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::findLadderObjByID( const uint16_t id ) //Search through all created objects thus far. This assumes that the object was created successfully.
+shared_ptr<Ladder_OBJ> PLC_Main::findLadderObjByID( const String &id ) //Search through all created objects thus far. This assumes that the object was created successfully.
 {
 	for ( uint16_t x = 0; x < ladderObjects.size(); x++ )
 	{
-		shared_ptr<Ladder_OBJ>pObj = ladderObjects[x];
+		shared_ptr<Ladder_OBJ> pObj = ladderObjects[x];
 		if ( pObj && pObj->getID() == id )
 			return pObj;
 	}
@@ -118,29 +121,18 @@ shared_ptr<Ladder_OBJ> PLC_Main::findLadderObjByID( const uint16_t id ) //Search
 	return 0; //default
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::findLadderObjByName( const String &name ) //only works in the parsing phase.
-{
-	for ( uint16_t x = 0; x < parsedLadderObjects.size(); x++ )
-	{
-		if ( parsedLadderObjects[x]->getName() == name)
-			return parsedLadderObjects[x]->getObject();
-	}
-	
-	return 0;
-}
-
 bool PLC_Main::parseScript(const char *script)
 {
-	resetAll(); //Purge all previous ladder logic objects before applying new script.
-	  
+	resetAll(); //Purge all previous ladder logic objects before applying new script, also generate a new pinmap.
+
 	String scriptLine; //container for parsed characters
 	uint16_t iLine = 0;
-	for (uint16_t x = 0; x < strlen(script); x++) //go one char at a time.
+	for (uint16_t x = 0; x <= strlen(script); x++) //go one char at a time.
 	{
 		if ( script[x] == CHAR_SPACE ) //omit spaces
 			continue;
 			
-		if ( script[x] != CHAR_NEWLINE && script[x] != CHAR_CARRIAGE ) //Do this one line at a time.
+		if ( script[x] != CHAR_NEWLINE && script[x] != CHAR_CARRIAGE && x < strlen(script) ) //Do this one line at a time.
 		{
 			scriptLine += toUpper(script[x]); //convert all chars to upper case. This might be done elsewhere later (web interface code) but for now we'll do it here
 		}
@@ -150,7 +142,6 @@ bool PLC_Main::parseScript(const char *script)
 			shared_ptr<PLC_Parser> parser = make_shared<PLC_Parser>(scriptLine, getNumRungs() );
 			if ( !parser->parseLine() )
 			{
-				parsedLadderObjects.clear();
 				sendError( ERR_PARSER_FAILED, PSTR("At Line: ") + String(iLine));
 				return false; //error ocurred somewhere?
 			}
@@ -159,49 +150,56 @@ bool PLC_Main::parseScript(const char *script)
 		}
 	}
 
-	parsedLadderObjects.clear(); //empty the parsed objects vector once we're done.
+	pinMap.clear(); //free some memory
 	return true; //success
 }
 
-shared_ptr<ladderOBJdata> PLC_Main::createNewObject(const String &name, const vector<String> &ObjArgs )
+shared_ptr<Ladder_OBJ> PLC_Main::createNewObject(const String &name, const vector<String> &ObjArgs )
 {
-	if (ObjArgs.size() > 1) //must have at least one arg (first indictes the object type)
+	if ( name.length() > MAX_PLC_OBJ_NAME ) //name is too long. Gotta keep memory in mind
 	{
-		String type = ObjArgs[0];
-		if ( type == variableTag1 || type == variableTag2 ) //Is this a variable type object? (Used for local data storage in memory, to facilitate communication between objects)
-		{
-			return make_shared<ladderOBJdata>(name, createVariableOBJ(ObjArgs));
-		}
-		else if ( type == inputTag1 || type == inputTag2 )
-		{
-			return make_shared<ladderOBJdata>(name, createInputOBJ(ObjArgs));
-		}
-		else if ( type == outputTag1 || type == outputTag2 ) 
-		{
-			return make_shared<ladderOBJdata>(name, createOutputOBJ(ObjArgs));
-		}
-		else if ( type == timerTag1 || type == timerTag2 ) 
-		{
-			return make_shared<ladderOBJdata>(name, createTimerOBJ(ObjArgs));
-		}
-		else if ( type == counterTag1 || type == counterTag2 ) 
-		{
-			return make_shared<ladderOBJdata>(name, createCounterOBJ(ObjArgs));
-		}
-		/*else if ( type == counterTag2 ) 
-		{
-			return make_shared<ladderOBJdata>(name, createMathOBJ(ObjArgs));
-		}*/
-		else //if we don't find a valid object type
-			sendError(ERR_DATA::ERR_UNKNOWN_TYPE, type);
+		sendError(ERR_DATA::ERR_NAME_TOO_LONG, name );
 	}
-	else //not enough arguments to create a new ladder object
-		sendError(ERR_DATA::ERR_INSUFFICIENT_ARGS, name );
+	else
+	{
+		if (ObjArgs.size() > 1) //must have at least one arg (first indictes the object type)
+		{
+			String type = ObjArgs[0];
+			if ( type == variableTag1 || type == variableTag2 ) //Is this a variable type object? (Used for local data storage in memory, to facilitate communication between objects)
+			{
+				return createVariableOBJ(name, ObjArgs);
+			}
+			else if ( type == inputTag1 || type == inputTag2 )
+			{
+				return createInputOBJ(name, ObjArgs);
+			}
+			else if ( type == outputTag1 || type == outputTag2 ) 
+			{
+				return createOutputOBJ(name, ObjArgs);
+			}
+			else if ( type == timerTag1 || type == timerTag2 ) 
+			{
+				return createTimerOBJ(name, ObjArgs);
+			}
+			else if ( type == counterTag1 || type == counterTag2 ) 
+			{
+				return createCounterOBJ(name, ObjArgs);
+			}
+			/*else if ( type == counterTag2 ) 
+			{
+				return make_shared<ladderOBJdata>(name, createMathOBJ(ObjArgs));
+			}*/
+			else //if we don't find a valid object type
+				sendError(ERR_DATA::ERR_UNKNOWN_TYPE, type);
+		}
+		else //not enough arguments to create a new ladder object
+			sendError(ERR_DATA::ERR_INSUFFICIENT_ARGS, name );
+	}
 	
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createInputOBJ( const vector<String> &args )
+shared_ptr<Ladder_OBJ> PLC_Main::createInputOBJ( const String &id, const vector<String> &args )
 {
 	uint8_t pin = 0, logic = LOGIC_NO, type = TYPE_INPUT, numArgs = args.size();
 
@@ -221,7 +219,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createInputOBJ( const vector<String> &args )
 		pin = args[1].toInt(); 
 		if ( isValidPin(pin, type) )
 		{
-			shared_ptr<InputOBJ> newObj(new InputOBJ(currentObjID++, pin, type, logic));
+			shared_ptr<InputOBJ> newObj(new InputOBJ(id, pin, type, logic));
 			ladderObjects.emplace_back(newObj); //add to the list of global shared pointers for later reference.
 			setClaimedPin(pin); //set the pin as claimed for this object.
 			#ifdef DEBUG
@@ -234,7 +232,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createInputOBJ( const vector<String> &args )
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createOutputOBJ( const vector<String> &args )
+shared_ptr<Ladder_OBJ> PLC_Main::createOutputOBJ( const String &id, const vector<String> &args )
 {
 	uint8_t pin = 0, logic = LOGIC_NO, numArgs = args.size();
 	if ( numArgs > 2 ) //caveat here is that outputs would NEVER normally be normally closed (ON)
@@ -245,7 +243,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createOutputOBJ( const vector<String> &args )
 		pin = args[1].toInt();
 		if ( isValidPin(pin, TYPE_OUTPUT) )
 		{
-			shared_ptr<OutputOBJ> newObj(new OutputOBJ(currentObjID++, pin, logic));
+			shared_ptr<OutputOBJ> newObj(new OutputOBJ(id, pin, logic));
 			ladderObjects.emplace_back(newObj);
 			setClaimedPin( pin ); //claim the pin for this object.
 			#ifdef DEBUG
@@ -258,7 +256,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createOutputOBJ( const vector<String> &args )
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createTimerOBJ( const vector<String> &args )
+shared_ptr<Ladder_OBJ> PLC_Main::createTimerOBJ( const String &id, const vector<String> &args )
 {
 	uint8_t numArgs = args.size();
 	uint32_t delay = 0, accum = 0, subType = TYPE_TON;
@@ -276,10 +274,10 @@ shared_ptr<Ladder_OBJ> PLC_Main::createTimerOBJ( const vector<String> &args )
 
 	if ( numArgs > 1 ) //must have at least one arg
 	{
-		delay = args[1].toInt();
+		delay = args[1].toInt(); //verification tests? 
 		if (delay > 1) //Must have a valid delay time. 
 		{
-			shared_ptr<TimerOBJ> newObj(new TimerOBJ(currentObjID++, delay, accum, subType ));
+			shared_ptr<TimerOBJ> newObj(new TimerOBJ(id, delay, accum, subType ));
 			ladderObjects.emplace_back(newObj);
 			#ifdef DEBUG
 			Serial.println(PSTR("NEW TIMER"));
@@ -290,7 +288,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createTimerOBJ( const vector<String> &args )
 
 	return 0;
 }
-shared_ptr<Ladder_OBJ> PLC_Main::createCounterOBJ( const vector<String> &args )
+shared_ptr<Ladder_OBJ> PLC_Main::createCounterOBJ( const String &id, const vector<String> &args )
 {
 	uint16_t count = 0, accum = 0; 
 	uint8_t subType = TYPE_CTU, numArgs = args.size();
@@ -310,7 +308,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createCounterOBJ( const vector<String> &args )
 	if ( numArgs > 1 )
 	{
 		count = args[1].toInt();
-		shared_ptr<CounterOBJ> newObj(new CounterOBJ(currentObjID++, count, accum, subType));
+		shared_ptr<CounterOBJ> newObj(new CounterOBJ(id, count, accum, subType));
 		ladderObjects.emplace_back(newObj);
 		#ifdef DEBUG
 		Serial.println(PSTR("NEW COUNTER"));
@@ -321,7 +319,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createCounterOBJ( const vector<String> &args )
 }
 
 //TODO - Implement some way where a user can easily dictate which variable type to use for memory purposes, otherwise default to auto-detection (maybe always estimate high? 64-bit?).
-shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const vector<String> &args )
+shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vector<String> &args )
 {
 	if ( args.size() > 1 )
 	{
@@ -354,21 +352,21 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const vector<String> &args )
 		#endif
 			
 		if (isFloat)
-			return make_shared<Ladder_VAR>( val.toFloat(), currentObjID++ );
+			return make_shared<Ladder_VAR>( val.toFloat(), id );
 		
 		int64_t value = atoll(val.c_str());
 		if ( value < 0 && abs( value ) <= INT_MAX )
-			return make_shared<Ladder_VAR>( static_cast<int_fast32_t>(value), currentObjID++ ); //must be signed
+			return make_shared<Ladder_VAR>( static_cast<int_fast32_t>(value), id ); //must be signed
 		else if (value <= INT_MAX )
-			return make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(value), currentObjID++ ); //we can use unsigned
+			return make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(value), id ); //we can use unsigned
 		else
-			return make_shared<Ladder_VAR>( static_cast<uint64_t>(value), currentObjID++ ); //assume a long (geater than 32 bits)
+			return make_shared<Ladder_VAR>( static_cast<uint64_t>(value), id ); //assume a long (geater than 32 bits)
 	}
 
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createMathOBJ( const vector<String> & args)
+shared_ptr<Ladder_OBJ> PLC_Main::createMathOBJ( const String &id, const vector<String> & args)
 {
 	return 0;
 }
@@ -482,6 +480,11 @@ void PLC_Main::sendError( uint8_t err, const String &info )
 		case ERR_DATA::ERR_PARSER_FAILED:
 		{
 			error = err_parser_failed;
+		}
+		break;
+		case ERR_DATA::ERR_NAME_TOO_LONG:
+		{
+			error = err_failed_creation + CHAR_SPACE + err_name_too_long;
 		}
 		break;
 	}

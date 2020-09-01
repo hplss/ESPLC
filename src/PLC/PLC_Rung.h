@@ -31,7 +31,7 @@ class Ladder_Rung
 	//Returns the ladder object associated within this rung object, based on the object's index in the storage vector.
 	shared_ptr<Ladder_OBJ_Wrapper>getRungObjectByIndex(uint16_t x){ return rungObjects[x]; }
 	//Returns the ladder object associated with this rung object, based on the object's unique ID number.
-	shared_ptr<Ladder_OBJ_Wrapper>getRungObjectByID(uint16_t id);
+	shared_ptr<Ladder_OBJ_Wrapper>getRungObjectByID(const String &);
 	//Returns the total number of objects stored in the rung object.
 	uint16_t getNumRungObjects(){ return rungObjects.size(); }
 	//Returns the number of rung objects stored in the container for ladder objects that are referenced at the beginning of each ladder logic scan.

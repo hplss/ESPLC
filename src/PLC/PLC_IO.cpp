@@ -18,36 +18,6 @@
 // BASECLASS OBJECT BEGIN
 //////////////////////////////////////////////////////////////////////////
 
-void Ladder_OBJ::getNextObj( uint16_t rungNum ) //perform internal logic, then get the next objects.
-{
-	pair<itr, itr> rungObjects = nextObj.equal_range(rungNum); //Find all objects for the current rung op
-	for ( itr it = rungObjects.first; it != rungObjects.second; it++ )//handle each object attached to this object.
-	{
-		it->second->getObject()->setLineState(rungNum, getLineState());
-	}
-}
-
-
-bool Ladder_OBJ::addNextObject( uint16_t rungNum, shared_ptr<Ladder_OBJ_Wrapper> obj ) //Parallel objects that are next in the rung can also be added
-{
-	//Some tests to make sure we can do that? Not sure what those tests would be yet. 
-	nextObj.emplace(rungNum,obj);
-	#ifdef DEBUG
-	Serial.print("Adding next object on rung: ");
-	Serial.println(rungNum);
-	#endif
-	return true;
-}
-
-bool Ladder_OBJ::addNextObject( uint16_t rungNum, vector<shared_ptr<Ladder_OBJ_Wrapper>> &objects )
-{
-	for (uint8_t x = 0; x < objects.size(); x++ )
-		nextObj.emplace(rungNum,objects[x]);
-		
-	objects.clear(); //empty here, just to make sure we don't add the exact same objects to something else later
-	return true;
-}
-
 shared_ptr<Ladder_VAR> Ladder_OBJ::getObjectVAR( const String &id )
 {
 	return 0;
@@ -63,8 +33,8 @@ shared_ptr<Ladder_VAR> Ladder_OBJ::addObjectVAR( const String &id )
 //////////////////////////////////////////////////////////////////////////
 void OutputOBJ::updateObject() //Logic used to update the coil
 {
-	bool state = getLineState()!=getLogic() ? LOW : HIGH;
-	digitalWrite(iPin, state);
+	bool lineState = (getLineState()!=getLogic()) ? LOW : HIGH;
+	digitalWrite(iPin, lineState);
 	//Serial.print("Output State: ");
 	//Serial.println(state);
 	Ladder_OBJ::updateObject();
@@ -75,25 +45,21 @@ void OutputOBJ::updateObject() //Logic used to update the coil
 //////////////////////////////////////////////////////////////////////////
 void InputOBJ::updateObject()
 {
-	setState(getLineState());//store the most recent state
 	Ladder_OBJ::updateObject(); //parent class - must be called last
 }
 
-void InputOBJ::setLineState(uint16_t rung, bool state )
+void InputOBJ::setLineState( bool &state )
 {
 	iValue = getInput();
 	if ( getType() == TYPE_INPUT ) //digital only
 	{
-		if ( state ) //looks like we have a high state coming in to this object from the previous on the rung, let's see if we pass the state tests for this object.
-		{
-			if(!iValue && getLogic() == LOGIC_NO) //input is low (button not pressed) and logic is normally open (default position of button is off)
-				state = false; //input not activated
-			else if (iValue && getLogic() == LOGIC_NC) //input is high (button is pressed), but logic is normally closed (0)
-				state = false; //input not activated, only active if input is 0 in this case
-		}
+		if(!iValue && getLogic() == LOGIC_NO) //input is low (button not pressed) and logic is normally open (default position of button is off)
+			state = false; //input not activated
+		else if (iValue && getLogic() == LOGIC_NC) //input is high (button is pressed), but logic is normally closed (0)
+			state = false; //input not activated, only active if input is 0 in this case
 	}
 	
-	Ladder_OBJ::setLineState( rung, state ); //let the parent handle it from here.
+	Ladder_OBJ::setLineState( state ); //let the parent handle it from here.
 }
 
 
@@ -101,9 +67,8 @@ void InputOBJ::setLineState(uint16_t rung, bool state )
 // TIMER OBJECT BEGIN
 //////////////////////////////////////////////////////////////////////////
 void TimerOBJ::updateObject()
-{
+{	
 	bool lineState = getLineState();
-	
 	if ( (lineState && getType() == TYPE_TON) || (!lineState && getType() == TYPE_TOF) )  //Is the pathway to this timer active?
 	{
 		uint32_t currentTime = millis();
@@ -137,7 +102,7 @@ void TimerOBJ::updateObject()
 //////////////////////////////////////////////////////////////////////////
 // COUNTER OBJECT BEGIN
 //////////////////////////////////////////////////////////////////////////
-void CounterOBJ::updateObject()
+void CounterOBJ::updateObject(bool state)
 {
 	if ( getState() == STATE_ENABLED ) //make sure we don't increment the accumulator twice
 		return; //already enabled

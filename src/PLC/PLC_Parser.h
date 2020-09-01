@@ -404,28 +404,4 @@ struct LogicObject
 	shared_ptr<NestContainer> pNestContainer;
 };
 
-/*ladderOBJdata is mostly for tying a name (String) to an object for the brief time it matters.
-* This is typically only supposed to be used during the parsing of an inputted ladder logic script, and objects of this type are deleted once the script has been parsed and object associations are established.
-*/
-struct ladderOBJdata 
-{
-	ladderOBJdata( const String &name, shared_ptr<Ladder_OBJ> createdObj )
-	{
-		objName = name;
-		LadderOBJ = createdObj;
-	}
-	~ladderOBJdata()
-	{ 
-	}
-	
-	//Returns a pointer to the ladder object stored in this object (if applicble).
-	shared_ptr<Ladder_OBJ> getObject(){ return LadderOBJ; } 
-	//Returns a reference to the name (string) of the object as it has been parsed. This is only used while the parser is generating the logic functionality.
-	const String &getName(){ return objName; }
-	
-	private:
-	shared_ptr<Ladder_OBJ> LadderOBJ;
-	String objName;
-};
-
 #endif

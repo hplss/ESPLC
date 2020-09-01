@@ -84,6 +84,7 @@ const String &err_failed_creation PROGMEM = PSTR("Failed to create object."),
 			 &err_pin_taken PROGMEM = PSTR("IO pin already taken."),
 			 &err_unknown_obj PROGMEM = PSTR("Invalid Object"),
 			 &err_invalid_bit PROGMEM = PSTR("Invalid Bit"),
+			 &err_name_too_long PROGMEM = PSTR("Object Name Too Long"),
 			 &err_parser_failed PROGMEM = PSTR("Parser operation failed.");
 //
 

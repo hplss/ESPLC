@@ -61,7 +61,7 @@ void MathBlockOBJ::setLineState(uint16_t rung, bool state)
             break;
         }
     }
-    Ladder_OBJ::setLineState(rung, state); 
+    Ladder_OBJ::setLineState(state); 
 }
 
 void MathBlockOBJ::computeMUL()

@@ -74,7 +74,7 @@ class remoteController
 		//nodeClient->print()
 		return false;
 	}
-	uint16_t findRemoteObjectIndexByID( uint16_t id )
+	uint16_t findRemoteObjectIndexByID( const String &id )
 	{
 		for ( uint16_t x = 0; x < remoteObjects.size(); x++ )
 		{
@@ -84,7 +84,7 @@ class remoteController
 	}
 	uint16_t getNumObjects() { return remoteObjects.size(); }
 	private: 
-	vector<shared_ptr<Remote_Ladder_OBJ>> remoteObjects;
+	vector<shared_ptr<Remote_Ladder_OBJ>> remoteObjects; 
 	shared_ptr<WiFiClient> nodeClient;
 };
 
@@ -96,9 +96,7 @@ class PLC_Main
 	PLC_Main()
 	{
 		currentScript = make_shared<String>(); //initialize the smart pointer
-		currentObjID = 1; //start at 1, becaose 0 indicates a child variable (bit operators)
 		nodeMode = 0; //default to off
-		generatePinMap();
 	}
 	~PLC_Main()
 	{
@@ -125,19 +123,19 @@ class PLC_Main
 	bool addLadderRung(shared_ptr<Ladder_Rung>);
 	//Creates a new ladder object based in inputted TYPE argument (parsed from the logic script), once the arguments for each ne wobject have been parsed, the appropriate 
 	//object is created, paired with its name for later reference by the parser. 
-	shared_ptr<ladderOBJdata> createNewObject( const String &, const vector<String> &);
+	shared_ptr<Ladder_OBJ> createNewObject( const String &, const vector<String> &);
 	//Creates a new OUTPUT type object, based on the inputted arguments. Script args: [1] = output pin, [2] = NO/NC
-	shared_ptr<Ladder_OBJ> createOutputOBJ( const vector<String> &);
+	shared_ptr<Ladder_OBJ> createOutputOBJ( const String &, const vector<String> &);
 	//Creates an input object and associates it with a name. Script args: [1] = input pin, [2] = type (analog/digital), [3] = logic
-	shared_ptr<Ladder_OBJ> createInputOBJ( const vector<String> &);
+	shared_ptr<Ladder_OBJ> createInputOBJ( const String &, const vector<String> &);
 	//Creates a counter object and associates it with a name. Script args: [1] = count value, [2] = accum, [3] = subtype(CTU/CTD)
-	shared_ptr<Ladder_OBJ> createCounterOBJ( const vector<String> &);
+	shared_ptr<Ladder_OBJ> createCounterOBJ( const String &, const vector<String> &);
 	//Creates a new timer object and associates it with a name. Script args: [1] = delay(ms), [2]= accum default(ms), [3] = subtype(TON/TOF)
-	shared_ptr<Ladder_OBJ> createTimerOBJ( const vector<String> &);
+	shared_ptr<Ladder_OBJ> createTimerOBJ( const String &, const vector<String> &);
 	//Creates a new basic math object, which is capable of performing a series of simple calculations based on inputted arguments.
-	shared_ptr<Ladder_OBJ> createMathOBJ( const vector<String> &);
+	shared_ptr<Ladder_OBJ> createMathOBJ( const String &, const vector<String> &);
 	//Creates a new virtual type object, which represents a stored value in memory, to be accessed by other objects such as counters or timers or comparison blocks, etc.
-	shared_ptr<Ladder_OBJ> createVariableOBJ( const vector<String> &);
+	shared_ptr<Ladder_OBJ> createVariableOBJ( const String &, const vector<String> &);
 	//performs a lookup to make sure the inputted pin number corresponds to a pin that is valid for the device. Used for some basic error checking in the parser. 
 	//Also lets us know if a given pin is already claimed by another object. 
 	//ARGS: <Pin>, <Device Type>
@@ -145,11 +143,8 @@ class PLC_Main
 	//attempts to claim the inputted pin as "taken", thereby preventing other objects from using the pin as they are initialized.
 	bool setClaimedPin( uint8_t );
 
-	void addParsedObject(shared_ptr<ladderOBJdata> obj){ parsedLadderObjects.emplace_back(obj); }
-
 	//Returns the number of current rungs stored in the rung vector.
 	uint16_t getNumRungs(){ return ladderRungs.size(); }
-	Ladder_OBJ_Wrapper *generateObjWrapper(const vector<ladderOBJdata *> &, const String &parsedStr );
 	//Parses and returns the name of the ladder object, after removing any operators that be precede the name.
 	String getObjName( const String & );
 	//Returns the String object stored in the shared pointer for the logic script (stored in RAM).
@@ -158,10 +153,7 @@ class PLC_Main
 	shared_ptr<String> &getLogicScript(){ return currentScript; }
 	//Returns the created ladder object that corresponds to it's unique ID
 	//Args: Ladder Object Vector, Unique ID
-	shared_ptr<Ladder_OBJ> findLadderObjByID( const uint16_t );
-	//Returns the created ladder object that corresponds to it's name given in the logic script.
-	//Args: Object Name (as define in the user inputted script)
-	shared_ptr<Ladder_OBJ> findLadderObjByName( const String & );
+	shared_ptr<Ladder_OBJ> findLadderObjByID( const String & );
 	//Returns the created ladder object that corresponds to it's unique ID
 	//Returns the ladder rung based on its index in the rung vector.
 	//potentially unsafe? Hmm
@@ -177,9 +169,7 @@ class PLC_Main
 	vector<shared_ptr<Ladder_Rung>> ladderRungs; //Container for all ladder rungs present in the parsed ladder logic script.
 	vector<shared_ptr<Ladder_OBJ>> ladderObjects; //Container for all ladder objects present in the parsed ladder logic script. Used for easy status query.
 	shared_ptr<String> currentScript; //save the current script in RAM?.. Hmm..
-	uint16_t currentObjID;
 	uint8_t nodeMode; //Networking mode - 0 = disabled. 1 = dependent, 2 = cluster
-	vector<shared_ptr<ladderOBJdata>> parsedLadderObjects; //container for information for all ladder objects created by the parser -- cleared after parsing has completed
 
 	std::map<uint8_t, uint8_t> pinMap;
 	//std::map<const String &, function<shared_ptr<ladderOBJdata>(const vector<String> &)>> creationMap; //not used yet
