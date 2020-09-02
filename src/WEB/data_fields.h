@@ -204,13 +204,19 @@ class VAR_S_Datafield : public VAR_Datafield
 class SSID_Datafield : public DataField
 {
 	public:
-	SSID_Datafield(uint8_t address, const String &fieldLabel = "", bool newLine = true ) :
-	DataField( address, FIELD_TYPE::SELECT, fieldLabel, WiFi.SSID(), newLine )
+	SSID_Datafield( shared_ptr<String> str, uint8_t address, const String &fieldLabel = "", bool newLine = true) :
+	DataField( str, address, FIELD_TYPE::SELECT, fieldLabel, 32, 1, newLine )
 	{
 	}
 	~SSID_Datafield(){}
 
 	String GenerateHTML(); //See Data_fields.cpp
+	bool SetFieldValue( const String &str )
+	{
+		return DataField::SetFieldValue(WiFi.SSID(str.toInt())); //translate integer values to the strings as it relates to those stored in the WiFi scanner.
+	}
+
+	private:
 };
 
 class Select_Datafield : public VAR_Datafield

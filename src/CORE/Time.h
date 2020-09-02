@@ -67,9 +67,9 @@ class Time
 	bool IsAhead( const Time * );
 	bool IsBehind( const Time *T2 ){ return !IsAhead(T2); }
 	uint8_t GetMonthDays( uint8_t ); //Used to determine the proper number of days in a specific month.
-	bool SetTimeZone( const uint8_t &zone ){ i_timeZone = zone; return true; }
+	void SetTimeZone( int8_t zone ){ i_timeZone = zone; }
 	uint8_t GetTimeZone(){ return i_timeZone; }
-	String GetTimeStr( bool decade = true ); //Returns a formatted string, representing the current saved time.
+	String GetTimeStr( bool = true ); 
 	
 	//Operator stuff.
 	bool operator< ( const Time &T2 ); //see time.cpp
@@ -90,8 +90,9 @@ class Time
 		i_day,
 		i_month,
 		i_year,
-		i_timeZone,
 		i_lastUpdateSecond; //only need one bit for this
+	
+	int8_t i_timeZone;
 };
 
 

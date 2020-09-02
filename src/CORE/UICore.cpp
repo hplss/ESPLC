@@ -30,14 +30,14 @@ const String &HTML_HEADER_INITIAL PROGMEM = PSTR(
 
 void UICore::setup()
 {
-	*s_TimeString = p_currentTime->GetTimeStr();
-
 	WiFi.mode(WIFI_AP_STA); 
 	WiFi.enableAP(false); //off by default.
 	WiFi.persistent(false);
 
 	p_UDP = make_shared<WiFiUDP>( WiFiUDP() ); //MUST BE INITIALIZED ONLY AFTER WIFI IS INITIALIZED, LEST YE FACE UNFORSEEN TRIFLES
 	p_UDP->begin(123); //Open port 123 for NTP packet
+	//Init our objects/configs here.
+	setupServer(); //Set up the web hosting directories.
 	
 	if ( !SPIFFS.begin(true) ) //Format on fail = true.
 		sendMessage(PSTR("Failed to initialize SPIFFS storage system."),PRIORITY_HIGH);
@@ -47,9 +47,6 @@ void UICore::setup()
 		applySettings( b_FSOpen ); //apply settings that are loaded from the flash storage - should be done before creating the data fields for web UI
 		*s_StyleSheet = loadWebStylesheet();
 	}
-
-	//Init our objects/configs here.
-	setupServer(); //Set up the web hosting directories.
 }
 
 //This is the main UI process function. Responsible for handling all updates to UI objects.
@@ -81,18 +78,18 @@ void UICore::applySettings( bool loadFromFile )
 	{
 		loadSettings(); //load the saved settings from flash memory and apply them to our settings variables.
 	}
-	if ( b_enableAP ) //set after load?
+
+	if ( b_enableAP && getWiFiAPSSID().length() ) //set after load?
 	{
 		wifi_config_t conf;
     	esp_wifi_get_config(WIFI_IF_AP, &conf);
 		if ( WiFi.isConnected() ) //only works for station connections? Hmm
 			closeConnection(); //force the connection to close if open already.. somehow?
 
-		if ( String((char*)conf.ap.ssid) != getWiFiSSID() || String((char *)conf.ap.password) != getWiFiPWD() ) //only update if ssid or pwd is different
+		if ( String((char*)conf.ap.ssid) != getWiFiAPSSID() || String((char *)conf.ap.password) != getWiFiAPPWD() || loadFromFile ) //only update if ssid or pwd is different
 		{
 			WiFi.softAPdisconnect();// close the existing AP if it is already open
-			
-			b_enableAP = setupAccessPoint(getWiFiSSID(), getWiFiPWD()); //verify proper setup of AP
+			b_enableAP = setupAccessPoint(getWiFiAPSSID(), getWiFiAPPWD()); //verify proper setup of AP
 		}
 	}
 	else if ( !b_enableAP && getWiFiSSID().length() ) //connect to network instead?
@@ -100,16 +97,23 @@ void UICore::applySettings( bool loadFromFile )
 		wifi_config_t conf;
     	esp_wifi_get_config(WIFI_IF_STA, &conf);
 
-		if ( String((const char *)conf.sta.ssid) != getWiFiSSID() || String((const char *)conf.sta.password) != getWiFiPWD() ) //only update is ssid is different
+		if ( String((const char *)conf.sta.ssid) != getWiFiSSID() || String((const char *)conf.sta.password) != getWiFiPWD() || loadFromFile ) //only update is ssid is different
 		{
 			if ( WiFi.isConnected() ) //only works for station connections? Hmm
 				closeConnection(); //force the connection to close if open already.. somehow?
 
-			beginConnection(getWiFiSSID(), getWiFiPWD());
+			if (!beginConnection(getWiFiSSID(), getWiFiPWD()) )
+			{
+				if ( getWiFiAPSSID().length() )
+					b_enableAP = setupAccessPoint(getWiFiAPSSID(), getWiFiAPPWD()); //default to this if connection fails.
+				else
+					b_enableAP = setupAccessPoint(PSTR("ESPLC"), getWiFiAPPWD());
+			}
+				
 		}
 	}
 	
-	if ( b_enableDNS && getDNSHostname().length() > 1 ) //must have a valid hostname
+	if ( b_enableDNS && getDNSHostname().length() > 1 && WiFi.isConnected() ) //must have a valid hostname
 	{
 		b_enableDNS = MDNS.begin( getDNSHostname().c_str() );
 		if ( b_enableDNS ) //verify
@@ -136,11 +140,15 @@ bool UICore::setupAccessPoint( const String &ssid, const String &password )
 		if ( (password.length() > 1) ? WiFi.softAP(ssid.c_str(), password.c_str()) : WiFi.softAP(ssid.c_str()) )  //Set up the access point with our password and SSID name.
 		{
 			WiFi.softAPsetHostname(String(getWiFiHostname() + String(DATA_SPLIT) + getUniqueID()).c_str()); //set the host name
-			sendMessage( PSTR("Opening access point with SSID: ") + ssid + PSTR(" using password: ") + password );
+			if ( password.length() )
+				sendMessage( PSTR("Opening access point with SSID: ") + ssid + PSTR(" using password: ") + password );
+			else
+				sendMessage( PSTR("Opening access point with SSID: ") + ssid );
+				
 			IPAddress myIP = WiFi.softAPIP();
 			sendMessage( PSTR("IP address: ") + myIP.toString() );
 			sendMessage( PSTR("Hostname: ") + String(WiFi.softAPgetHostname()) );
-			p_server->begin();//Start up page server.
+			getWebServer().begin();//Start up page server.
 			return true;
 		}
 	}
@@ -185,15 +193,6 @@ void UICore::setupServer()
 
 void UICore::scanNetworks()
 {
-	/*if ( WiFi.isConnected() )
-	{
-		sendMessage( "Connected to '" + WiFi.SSID() + "'. Disconnect before scanning for networks.", true );
-		return;
-	}*/
-		
-	//WiFi.mode(WIFI_AP_STA);
-	//closeConnection( false ); //Just in case
-	//delay(100);
 	int8_t n = WiFi.scanNetworks(); //More than 255 networks in an area? Possible I suppose.
 	if (!n)
 		sendMessage( F("No networks found" ) );
@@ -207,7 +206,6 @@ void UICore::scanNetworks()
 			delay(10);
 		}
 	}
-	//WiFi.mode(WIFI_OFF);
 }
 
 bool UICore::beginConnection( const String &ssid, const String &password )
@@ -240,7 +238,7 @@ bool UICore::beginConnection( const String &ssid, const String &password )
 			WiFi.setHostname(String(getWiFiHostname() + String(DATA_SPLIT) + getUniqueID()).c_str());
 			sendMessage( PSTR("Connected to ") + ssid + PSTR(" with local IP: ") + WiFi.localIP().toString() + PSTR(" Hostname: ") + WiFi.getHostname() );
 			WiFi.setAutoReconnect(b_autoRetryConnection);
-			p_server->begin(); //start the server
+			getWebServer().begin(); //start the server
 		}
 		else 
 		{
@@ -304,7 +302,7 @@ void UICore::printDiag()
 	sendMessage( PSTR("Hostname: ") + String(WiFi.softAPgetHostname()), PRIORITY_HIGH);
 	//sendMessage( PSTR("\n -- DNS Settings --"), PRIORITY_HIGH );
 	//sendMessage( PSTR("Hostname: ") + MDNS.hostname() );
-	//sendMessage( PSTR("Port: ") + MDNS.port() );
+	//sendMessage( PSTR("Port: ") + String(MDNS.port()) );
 	//wifi_config_t conf;
     //esp_wifi_get_config(WIFI_IF_STA, &conf);
 	
@@ -430,22 +428,22 @@ void UICore::UpdateWebFields( const vector<shared_ptr<DataTable>> &tables )
 		//Idea: use some of the code below to build a list of objects that are being modified by args, then build a vector of all that aren't function callers,
 		//Then add those to the end.
 		
-		for ( uint8_t x = 0; x < p_server->args(); x++ ) // For each arg...
+		for ( uint8_t x = 0; x < getWebServer().args(); x++ ) // For each arg...
 		{
-			tempField = tables[i]->GetElementByName( p_server->argName(x) );
+			tempField = tables[i]->GetElementByName( getWebServer().argName(x) );
 			if ( tempField ) //Found an element with this name?
 			{
-				if ( tempField->GetFieldValue() == p_server->arg(x) ) //Is the arg the same as the existing setting?
+				if ( tempField->GetFieldValue() == getWebServer().arg(x) ) //Is the arg the same as the existing setting?
 					continue; //Skip if so
 				
 				//build a map of function data fields to update last, update all others as they come
 				if ( tempField->UsesFunction() ) //All function related fields should go here
 				{
-					functionFields.emplace(tempField, p_server->arg(x));
+					functionFields.emplace(tempField, getWebServer().arg(x));
 				}
 				else
 				{
-					if ( !tempField->SetFieldValue( p_server->arg(x) ) )
+					if ( !tempField->SetFieldValue( getWebServer().arg(x) ) )
 						sendMessage( PSTR("Update of '") + tempField->GetFieldLabel() + PSTR("' failed.") );
 				}
 			}

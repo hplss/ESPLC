@@ -88,7 +88,7 @@ struct Ladder_OBJ_Wrapper
 	void setLineState(bool state)
 	{
 		getObject()->setLineState(state); //line state needs to be set per wrapper, not per ladder object
-
+		
 		for(uint8_t x = 0; x < nextObjects.size(); x++ )
 			nextObjects[x]->setLineState(state);
 	}

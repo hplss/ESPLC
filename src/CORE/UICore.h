@@ -84,7 +84,9 @@ public:
 		i_NISTUpdateUnit = TIME_MINUTE; //minutes (default for now)
 		s_NISTServer = make_shared<String>(PSTR("time.nist.gov")); //Default for now.
 		s_WiFiPWD = make_shared<String>();
+		s_WiFiAPPWD = make_shared<String>();
 		s_WiFiSSID = make_shared<String>();
+		s_WiFiAPSSID = make_shared<String>(PSTR("ESPLC"));
 		s_uniqueID = make_shared<String>(PSTR("DEFID")); //Default for now
 		i_NISTPort = 13; //default
 		i_nistMode = 1; //NTP
@@ -94,7 +96,6 @@ public:
 		s_BTPWD = make_shared<String>();
 		s_authenName = make_shared<String>();
 		s_authenPWD = make_shared<String>();
-		s_TimeString = make_shared<String>();
 		s_plc_addresses = make_shared<String>();
 		s_plc_port_ranges = make_shared<String>();
 		s_plc_ip_ranges = make_shared<String>();
@@ -231,7 +232,9 @@ public:
 	//Accessors for stored pointers (Local device settings)
 	String &getWiFiHostname(){ return *s_WiFiHostname.get(); }
 	String &getDNSHostname(){ return *s_DNSHostname.get(); }
+	String &getWiFiAPSSID(){ return *s_WiFiAPSSID.get(); }
 	String &getWiFiSSID(){ return *s_WiFiSSID.get(); }
+	String &getWiFiAPPWD(){ return *s_WiFiAPPWD.get(); }
 	String &getWiFiPWD(){ return *s_WiFiPWD.get(); }
 	String &getNISTServer(){ return *s_NISTServer.get(); }
 	String &getUniqueID(){ return *s_uniqueID.get(); }
@@ -277,7 +280,6 @@ private:
 	unsigned int i_NISTupdateFreq; //frequency of NIST time update
 	uint8_t i_NISTUpdateUnit; //Unit of time for frequency between updates.
 	bool b_enableNIST; //Enable time server update mode?
-	shared_ptr<String> s_TimeString;
 	//
 	
 	//WiFi specific settings
@@ -286,8 +288,10 @@ private:
 	bool b_APFallback; //Automatically revert to AP mode upon failure to connect to station.
 	bool b_autoConnect; //Automatically connect to a given SSID
 	bool b_autoRetryConnection; //Automatically retry on disconnect?
-	shared_ptr<String> s_WiFiSSID, //SSID for AP mode broadcast or station connection.
-					   s_WiFiPWD, //Password to connect to AP or station
+	shared_ptr<String> s_WiFiSSID, //SSID for station connection.
+					   s_WiFiAPSSID, //SSID for AP mode broadcast
+					   s_WiFiAPPWD, //Password to connect to access point
+					   s_WiFiPWD, //Password to connect to station
 					   s_WiFiHostname, //Hostname for the device.
 					   s_DNSHostname; //Hostname for DNS server.
 	//

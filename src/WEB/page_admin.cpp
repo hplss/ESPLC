@@ -51,9 +51,10 @@ void UICore::createAdminFields() //Should never be called more than once
 
 	//Network Table Stuff
 	networkTable->AddElement( make_shared<VAR_Datafield>( &b_enableAP, index++, FIELD_TYPE::CHECKBOX, PSTR("Enable Access Point Mode") ) ); //HACKHACK - Must be before SSID fields
-	networkTable->AddElement( make_shared<VAR_Datafield>( s_WiFiSSID, index++, FIELD_TYPE::TEXT, PSTR("Access Point SSID") ) );
-	networkTable->AddElement( make_shared<SSID_Datafield>(index++, PSTR("Station Network SSID") ) );
-	networkTable->AddElement( make_shared<VAR_Datafield>( s_WiFiPWD, index++, FIELD_TYPE::PASSWORD, PSTR("Network Password (For AP or Station)") ) );
+	networkTable->AddElement( make_shared<VAR_Datafield>( s_WiFiAPSSID, index++, FIELD_TYPE::TEXT, PSTR("Access Point SSID") ) );
+	networkTable->AddElement( make_shared<VAR_Datafield>( s_WiFiAPPWD, index++, FIELD_TYPE::TEXT, PSTR("Access Point Password") ) );
+	networkTable->AddElement( make_shared<SSID_Datafield>( s_WiFiSSID, index++, PSTR("Wi-Fi Network SSID") ) );
+	networkTable->AddElement( make_shared<VAR_Datafield>( s_WiFiPWD, index++, FIELD_TYPE::PASSWORD, PSTR("Wi-Fi Network Password") ) );
 	networkTable->AddElement( make_shared<VAR_Datafield>( s_WiFiHostname, index++, FIELD_TYPE::TEXT, PSTR("Network Hostname") ) );
 	networkTable->AddElement( make_shared<VAR_Datafield>( &i_timeoutLimit, index++, FIELD_TYPE::NUMBER, PSTR("Connection Retry Limit"), 2 ) );
 	networkTable->AddElement( make_shared<VAR_Datafield>( &b_autoRetryConnection, index++, FIELD_TYPE::CHECKBOX, PSTR("Auto Retry On Disconnect (Station)") ) );
@@ -86,7 +87,7 @@ void UICore::createAdminFields() //Should never be called more than once
 	updateUnits->addOption(PSTR("Month(s)"));
 	updateUnits->addOption(PSTR("Year(s)"));
 	timeTable->AddElement(updateUnits);
-	timeTable->AddElement( make_shared<VAR_Datafield>( s_TimeString, index++, FIELD_TYPE::TEXT, PSTR("Current System Time (YY:MM:DD:HR:MN:SE)") ) );
+	//timeTable->AddElement( make_shared<VAR_Datafield>( p_currentTime->GetTimeStr(), index++, FIELD_TYPE::TEXT, PSTR("Current System Time (YY:MM:DD:HR:MN:SE)") ) );
 	//
 	
 	//Save Table Stuff

@@ -20,7 +20,7 @@ void Device_Setting::setSettingValue( const String &str )
     {
         case TYPE_VAR_BOOL:
         {
-            getBOOL() = bool(str);
+            getBOOL() = str.toInt() > 0 ? true : false;
         }
         break;
         case TYPE_VAR_STRING:
@@ -96,7 +96,9 @@ void UICore::generateSettingsMap()
     settingsMap.emplace(PSTR("net_ap_en"), make_shared<Device_Setting>( &b_enableAP) ); //enable access point mode
     settingsMap.emplace(PSTR("net_retry"), make_shared<Device_Setting>( &b_autoRetryConnection) ); //Retry connection to internet on failure
     settingsMap.emplace(PSTR("net_max_retries"), make_shared<Device_Setting>( &i_timeoutLimit) ); //max number of connection retries
+    settingsMap.emplace(PSTR("net_ap_ssid"), make_shared<Device_Setting>( &getWiFiAPSSID() ) );
     settingsMap.emplace(PSTR("net_ssid"), make_shared<Device_Setting>( &getWiFiSSID() ) ); //SSID of Wifi connection - for autoconnection
+    settingsMap.emplace(PSTR("net_ap_pwd"), make_shared<Device_Setting>( &getWiFiAPPWD() ) ); //password for WiFi auto-connection
     settingsMap.emplace(PSTR("net_pwd"), make_shared<Device_Setting>( &getWiFiPWD() ) ); //password for WiFi auto-connection
     settingsMap.emplace(PSTR("net_hostname"), make_shared<Device_Setting>( &getWiFiHostname() ) ); 
     settingsMap.emplace(PSTR("dns_en"), make_shared<Device_Setting>( &b_enableDNS ) ); //enable DNS server

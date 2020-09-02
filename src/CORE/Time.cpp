@@ -48,7 +48,7 @@ void Time::UpdateTime()
 	IncrementTime( 1, TIME_SECOND );// increment 1 second at a time.
 }
 
-String Time::GetTimeStr( bool decade )
+String Time::GetTimeStr( bool decade ) 
 {
 	return ( ( (i_year < 10 && decade) ? str_0 + i_year : i_year ) + str_colon 
 		+ ( ( i_month < 10 && decade ) ? str_0 + i_month: i_month ) + str_colon 
