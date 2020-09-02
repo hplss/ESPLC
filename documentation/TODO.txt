@@ -11,15 +11,21 @@ With regards to the scope of the project as it pertains to the demonstration for
 
 - Sleeker look for web UI (css style editing).
 
--Finish implementing basic math objects.
+- Finish implementing basic math objects.
 
--Finish implementing NOT logic operator
+- Implementation of remote ESPLC (IO expander/cluster mode) and related ladder objects. **Andrew may use this for another project or EE5430
 
--Finish implementing variable objects.
+- Write the documentation for the project, noting all functions and possible awrguments/types/etc.
 
--Finish support for analog inputs and outputs.
+- Finish implementing variable objects.
+
+- Finish support for analog inputs and outputs.
 
 - Finish IO expansion via network interface between ESPLC devices.
+
+- Implement OTA (over the air) updating.
+
+- Implementation of uploader for files (CSS/JS) to local file system. 
 
 - Allow for declaration of inline objects (for basic math comparisons, etc.). 
 		- Inline declaration syntax INPUT(NAME,PIN,ARGS). 
