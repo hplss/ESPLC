@@ -1,7 +1,7 @@
 /* The purpose of this file is to hold the function definitions related to the MathBlockOBJ Ladder Object.
  -- Created by Andrew Ward - 7/15/2020
 */
-#include "math_basic.h"
+#include "obj_math_basic.h"
 
 void MathBlockOBJ::setLineState(uint16_t rung, bool state)
 { 

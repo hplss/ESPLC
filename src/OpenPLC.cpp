@@ -38,7 +38,15 @@
 #include "Arduino.h"
 
 //other ladder logic object includes
-#include "./PLC/OBJECTS/MATH/math_basic.h"
+#include "./PLC/OBJECTS/MATH/obj_math_basic.h"
+#include "./PLC/OBJECTS/MATH/obj_math_basic.h"
+#include "./PLC/OBJECTS/obj_remote.h"
+#include "./PLC/OBJECTS/obj_var.h"
+#include "./PLC/OBJECTS/obj_input_basic.h"
+#include "./PLC/OBJECTS/obj_output_basic.h"
+#include "./PLC/OBJECTS/obj_timer.h"
+#include "./PLC/OBJECTS/obj_counter.h"
+//
 
 PLC_Main PLCObj; //PLC ladder logic processing object. 
 UICore Core; //UI object init -- for web and serial interfaces, as well as settings storage, etc.
@@ -53,7 +61,6 @@ void setup()
 	Core.setup(); //Initialize all core UI stuff. Should always be before the PLC_Main object is initialized (script is parsed), because certain settings in the FS should be loaded first.
 	Core.loadPLCScript(PLCObj.getScript()); //load the script from the flash file system, 
 	PLCObj.parseScript(PLCObj.getScript()); //Parses the PLC logic script given above (testing).
-	Core.setupAccessPoint("ESPLC-DEV",""); //Create an access point by default to facilitate easier testing. (Not Secured)
 }
 
 

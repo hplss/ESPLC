@@ -13,13 +13,9 @@ With regards to the scope of the project as it pertains to the demonstration for
 
 -Finish implementing basic math objects.
 
--Nested Object Support in logic script.
-
 -Finish implementing NOT logic operator
 
 -Finish implementing variable objects.
-
--Possibly work on external client interface (probably using QT framework).
 
 -Finish support for analog inputs and outputs.
 

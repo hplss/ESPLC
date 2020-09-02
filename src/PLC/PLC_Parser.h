@@ -2,9 +2,9 @@
 #define PLC_PARSER_H_
 
 #include <map>
+#include "./OBJECTS/obj_var.h"
 
 using namespace std;
-
 
 struct NestContainer
 {

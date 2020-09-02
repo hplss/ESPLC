@@ -8,6 +8,16 @@
 #include "PLC_Parser.h"
 #include <HardwareSerial.h>
 
+//other object includes
+#include "OBJECTS/MATH/obj_math_basic.h"
+#include "OBJECTS/obj_remote.h"
+#include "OBJECTS/obj_var.h"
+#include "OBJECTS/obj_input_basic.h"
+#include "OBJECTS/obj_output_basic.h"
+#include "OBJECTS/obj_timer.h"
+#include "OBJECTS/obj_counter.h"
+//
+
 void PLC_Main::resetAll()
 {
 	ladderRungs.clear(); //Empty created ladder rungs vector

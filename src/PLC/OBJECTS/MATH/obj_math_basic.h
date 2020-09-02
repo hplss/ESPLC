@@ -1,10 +1,11 @@
-#ifndef MATH_BASIC
-#define MATH_BASIC
+#ifndef PLC_IO_OBJ_MATH_BASIC
+#define PLC_IO_OBJ_MATH_BASIC
 
 #include <vector>
 #include <memory>
 #include "PLC/PLC_IO.h"
 #include "CORE/GlobalDefs.h"
+#include "../obj_var.h"
 #include <math.h>
 
 //Basic math operations block. Math function are Addition, multiplication, division, clear (set to zero), square root, absolute value, cosine, sine, tangent, greater than, Less than, equal to
