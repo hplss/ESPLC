@@ -41,7 +41,7 @@ class InputOBJ : public Ladder_OBJ
 	} //Return the value of the input from the assigned pin.
 	uint8_t getInputPin(){ return iPin; }
 	virtual void updateObject();
-	virtual void setLineState(bool &);
+	virtual void setLineState(bool &, bool);
 	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String &id )
 	{
 		return inputValue; //There's only one Ladder_VAR for this type of object.

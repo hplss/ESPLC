@@ -15,7 +15,7 @@ class ClockOBJ : public Ladder_OBJ
 		pPresetTime = make_shared<Time>(yr, mo, da, hr, min, sec); //should remain static (not updated unless explicitly told to do so)
 	}
 	~ClockOBJ(){  }
-	virtual void setLineState(bool &state){ Ladder_OBJ::setLineState(state); }
+	virtual void setLineState(bool &state, bool bNot){ Ladder_OBJ::setLineState(state, bNot); }
 	virtual void updateObject(bool); //this handles the updating of the clock
 	
 	bool getENBit(){ return enableBit; }

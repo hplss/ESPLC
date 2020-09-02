@@ -1,28 +1,54 @@
 #include "obj_var.h"
 
-void Ladder_VAR::setLineState(bool &state)
+void Ladder_VAR::setLineState(bool &state, bool bNot)
 { 
     if ( state ) //active up till this point
     {
         switch(getType())
         {
             case OBJ_TYPE::TYPE_VAR_BOOL:
-                state = getBoolValue();
+                state = (bNot ? !getBoolValue() : getBoolValue());
                 break;
             case OBJ_TYPE::TYPE_VAR_FLOAT:
-                state = getFloatValue() > 1 ? true : false;
+                {
+                    if ( bNot ) //inverted logic
+                        state = getFloatValue() > 1 ? false : true;
+                    else
+                        state = getFloatValue() > 1 ? true : false;
+                }
                 break;
             case OBJ_TYPE::TYPE_VAR_INT:
-                state = getIntValue() > 1 ? true : false;
+                {
+                    if ( bNot )
+                        state = getIntValue() > 1 ? false : true;
+                    else
+                        state = getIntValue() > 1 ? true : false;
+                }   
                 break;
             case OBJ_TYPE::TYPE_VAR_LONG:
-                state = getLongValue() > 1 ? true : false;
+                {
+                    if ( bNot )
+                        state = getLongValue() > 1 ? false : true;
+                    else
+                        state = getLongValue() > 1 ? true : false;
+                }
                 break;
             case OBJ_TYPE::TYPE_VAR_ULONG:
-                state = getULongValue() > 1 ? true : false;
+                {
+                    if ( bNot )
+                        state = getULongValue() > 1 ? false : true;
+                    else
+                        state = getULongValue() > 1 ? true : false;
+                }
                 break;
             case OBJ_TYPE::TYPE_VAR_UINT: 
-                state = getUIntValue() > 1 ? true : false;
+                {
+                    if ( bNot )
+                        state = getUIntValue() > 1 ? false : true;
+                    else
+                        state = getUIntValue() > 1 ? true : false;
+                }
+                
                 break;
             default:
                 state = false;
@@ -30,7 +56,7 @@ void Ladder_VAR::setLineState(bool &state)
         }
     }
 
-    Ladder_OBJ::setLineState(state); 
+    Ladder_OBJ::setLineState(state, bNot); 
 }
 
 template <class T>

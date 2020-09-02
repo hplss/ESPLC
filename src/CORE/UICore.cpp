@@ -79,7 +79,7 @@ void UICore::applySettings( bool loadFromFile )
 		loadSettings(); //load the saved settings from flash memory and apply them to our settings variables.
 	}
 
-	if ( b_enableAP && getWiFiAPSSID().length() ) //set after load?
+	if ( b_enableAP ) //set after load?
 	{
 		wifi_config_t conf;
     	esp_wifi_get_config(WIFI_IF_AP, &conf);
@@ -92,7 +92,7 @@ void UICore::applySettings( bool loadFromFile )
 			b_enableAP = setupAccessPoint(getWiFiAPSSID(), getWiFiAPPWD()); //verify proper setup of AP
 		}
 	}
-	else if ( !b_enableAP && getWiFiSSID().length() ) //connect to network instead?
+	else
 	{
 		wifi_config_t conf;
     	esp_wifi_get_config(WIFI_IF_STA, &conf);
@@ -113,7 +113,7 @@ void UICore::applySettings( bool loadFromFile )
 		}
 	}
 	
-	if ( b_enableDNS && getDNSHostname().length() > 1 && WiFi.isConnected() ) //must have a valid hostname
+	if ( b_enableDNS && getDNSHostname().length() && ( WiFi.isConnected() || b_enableAP ) ) //must have a valid hostname
 	{
 		b_enableDNS = MDNS.begin( getDNSHostname().c_str() );
 		if ( b_enableDNS ) //verify
@@ -228,9 +228,11 @@ bool UICore::beginConnection( const String &ssid, const String &password )
 	else 
 	{
 		uint8_t i_retries = 0;
-		while ( WiFi.status() != WL_CONNECTED && i_retries < i_timeoutLimit ) //We'll give it 10 seconds to try to connect?
+		uint32_t nextMillis = millis() + 1000;
+		while ( !WiFi.isConnected() && i_retries < i_timeoutLimit ) //We'll give it 10 seconds to try to connect?
 		{
-			delay(1000); //THIS COULD CAUSE PROBLEMS FOR THE PLC LOGIC -- FIX THIS
+			while ( nextMillis > millis()){}
+			nextMillis = millis() + 1000; //delay 1 second at a time
 			i_retries++;
 		}
 		if ( WiFi.isConnected() )
@@ -339,7 +341,7 @@ bool UICore::UpdateNIST( bool force )
 		if ( p_currentTime->IsBehind( p_nextNISTUpdateTime.get() ) && !force ) //too soon for an update?
 			return false;
 		
-		sendMessage( F("Updating time." ) );
+		sendMessage( PSTR("Updating time." ) );
 		
 		if ( !i_nistMode )
 		{

@@ -41,7 +41,7 @@ class Ladder_VAR : public Ladder_OBJ
 	template <typename T>
 	void setValue( const T );
 
-	virtual void setLineState(bool &);
+	virtual void setLineState(bool &, bool);
 
 	private:
 	template <typename T>

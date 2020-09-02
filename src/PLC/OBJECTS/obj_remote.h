@@ -13,9 +13,9 @@ class Remote_Ladder_OBJ : public Ladder_OBJ
 		iRemoteID = remoteID;
 	}
 	
-	virtual void setLineState(bool &state)
+	virtual void setLineState(bool &state, bool bNot)
 	{ 
-		Ladder_OBJ::setLineState(state); 
+		Ladder_OBJ::setLineState(state, bNot); 
 	}
 	virtual void updateObject()
 	{

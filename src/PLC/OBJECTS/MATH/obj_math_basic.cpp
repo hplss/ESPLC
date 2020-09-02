@@ -3,7 +3,7 @@
 */
 #include "obj_math_basic.h"
 
-void MathBlockOBJ::setLineState(uint16_t rung, bool state)
+void MathBlockOBJ::setLineState(bool &state, bool bNot)
 { 
     if (state) //must have a HIGH state before computing.
     {
@@ -61,7 +61,7 @@ void MathBlockOBJ::setLineState(uint16_t rung, bool state)
             break;
         }
     }
-    Ladder_OBJ::setLineState(state); 
+    Ladder_OBJ::setLineState(state, bNot); 
 }
 
 void MathBlockOBJ::computeMUL()

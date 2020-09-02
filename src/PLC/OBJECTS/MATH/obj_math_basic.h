@@ -36,7 +36,7 @@ class MathBlockOBJ : public Ladder_OBJ
     }
 	~MathBlockOBJ() //deconstructor
     {}
-	virtual void setLineState(uint16_t rung, bool state);
+	virtual void setLineState(bool &, bool);
     //Outputs the tangent of Source A to DEST
     void computeTAN()
     {

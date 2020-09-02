@@ -25,7 +25,7 @@ class TimerOBJ : public Ladder_OBJ
 		#endif
 	}
 	virtual void updateObject();
-	virtual void setLineState(bool &state){ Ladder_OBJ::setLineState(state); }
+	virtual void setLineState(bool &state, bool bNot){ Ladder_OBJ::setLineState(state, bNot); }
 	virtual shared_ptr<Ladder_VAR> addObjectVAR( const String &id );
 	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String &id )
 	{

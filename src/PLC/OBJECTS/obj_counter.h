@@ -21,7 +21,7 @@ class CounterOBJ : public Ladder_OBJ
 		Serial.println(PSTR("Counter Destructor"));
 		#endif
 	}
-	virtual void setLineState(bool &state){ Ladder_OBJ::setLineState(state); }
+	virtual void setLineState(bool &state, bool bNot){ Ladder_OBJ::setLineState(state, bNot); }
 	virtual void updateObject(bool);
 	//returns the current value of the counter's enable bit 
 	void setENBitVal(bool val){ enableBit = val; }

@@ -17,7 +17,7 @@ class OutputOBJ: public Ladder_OBJ
 	}
 	virtual void updateObject();
 	uint8_t getOutputPin(){ return iPin; }
-	virtual void setLineState(bool &state){ Ladder_OBJ::setLineState(state); }
+	virtual void setLineState(bool &state, bool bNot){ Ladder_OBJ::setLineState(state, bNot); }
 	
 	private:
 	uint8_t iPin;

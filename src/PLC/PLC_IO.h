@@ -33,7 +33,7 @@ public:
 	bool setState(uint8_t state) { objState = state; return true; }
 	//Sets the PLC Ladder Logic object type. This tells us whether the object is an INPUT/OUTPUT,TIMER, etc.
 	void setType(uint8_t type) { iType = type; }
-	virtual void setLineState(bool &state){ bLineState = state; } //save the state. Possibly consider latching the state if state is HIGH (duplicate outputs?)
+	virtual void setLineState(bool &state, bool bNot){ if (state) bLineState = state; } //save the state. Possibly consider latching the state if state is HIGH (duplicate outputs?)
 	void setLogic(uint8_t logic) { objLogic = logic; }
 
 	//Returns enabled/disabled
@@ -87,7 +87,7 @@ struct Ladder_OBJ_Wrapper
 
 	void setLineState(bool state)
 	{
-		getObject()->setLineState(state); //line state needs to be set per wrapper, not per ladder object
+		getObject()->setLineState(state, getNot()); //line state needs to be set per wrapper, not per ladder object
 		
 		for(uint8_t x = 0; x < nextObjects.size(); x++ )
 			nextObjects[x]->setLineState(state);
