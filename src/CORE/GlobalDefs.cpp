@@ -70,8 +70,8 @@ const String &transmission_HTML PROGMEM = PSTR("text/html"),
 			 &html_form_Middle PROGMEM = PSTR("\" method=\"post\" id=\"form\">"),
 			 &html_form_End PROGMEM = PSTR("</FORM>"),
 			 &table_title_messages PROGMEM = PSTR("System Messages"),
-			 &html_paragraph_begin PROGMEM = PSTR("<P>"),
-			 &html_paragraph_end PROGMEM = PSTR("</P>"),
+			 &html_paragraph_begin PROGMEM = PSTR("<ul>"),
+			 &html_paragraph_end PROGMEM = PSTR("</ul>"),
 			 &field_title_alerts PROGMEM = PSTR("System Alerts");
 //
 

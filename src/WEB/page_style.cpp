@@ -36,11 +36,9 @@ void UICore::handleStyleSheet() //Generate the HTML for our main page.
 	
 	//HTML += PSTR("<FORM action=\".") + styleDir + PSTR("\" method=\"post\" id=\"form\">");
 	HTML += html_form_Begin + styleDir + html_form_Middle;
-	HTML += html_paragraph_begin;
 	for ( uint8_t x = 0; x < p_UIDataTables.size(); x++ )
 		HTML += p_UIDataTables[x]->GenerateTableHTML(); //Add each datafield to the HTML body
 		
-	HTML += html_paragraph_end;
 	HTML += generateAlertsScript( 1 ); //hackhack for now -- index may vary, unless explicitly assigned to '1'
 	HTML += html_form_End;
 	HTML += generateFooter(); //Add the footer stuff.

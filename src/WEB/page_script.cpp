@@ -50,11 +50,9 @@ void UICore::handleScript() //Generate the HTML for our main page.
 	HTML += generateAlertsScript( 1 ); //hackhack for now -- index may vary, unless explicitly assigned to '1'
 	
 	HTML += html_form_Begin + scriptDir + html_form_Middle;
-	HTML += html_paragraph_begin;
 	for ( uint8_t x = 0; x < p_UIDataTables.size(); x++ )
 		HTML += p_UIDataTables[x]->GenerateTableHTML(); //Add each datafield to the HTML body
 		
-	HTML += html_paragraph_end;
 	HTML += html_form_End;
 	HTML += generateFooter(); //Add the footer stuff.
 	p_server->send(200, transmission_HTML, HTML ); //And we're off.

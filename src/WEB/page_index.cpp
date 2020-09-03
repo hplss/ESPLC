@@ -33,11 +33,9 @@ void UICore::handleIndex() //Generate the HTML for our main page.
 	
 	String HTML = generateHeader();
 	HTML += generateTitle();
-	HTML += html_paragraph_begin;
 	for ( uint8_t x = 0; x < p_UIDataTables.size(); x++ )
 		HTML += p_UIDataTables[x]->GenerateTableHTML(); //Add each datafield to the HTML body
 		
-	HTML += html_paragraph_end;
 	HTML += generateFooter(); //Add the footer stuff.
 	p_server->send(200, transmission_HTML, HTML ); //And we're off.
 	p_UIDataTables.clear();

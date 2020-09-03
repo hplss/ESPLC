@@ -234,14 +234,14 @@ String DataTable::GenerateTableHTML()
 	String HTML;
 	//sprintf_P(HTML.c_str(), " ", "");
 	HTML += PSTR("<h2>") + s_tableName + PSTR("</h2>");
-	HTML += PSTR("<table id =\"\"  style=\"width:100%\" > ");
+	//HTML += PSTR("<table id =\"\" > ");
 	HTML += html_paragraph_begin;
 	for ( uint8_t x = 0; x < p_fields.size(); x++ )
 	{
 		HTML += p_fields[x]->GenerateHTML();
 	}
 	HTML += html_paragraph_end;
-	HTML += PSTR("</table>");
+	//HTML += PSTR("</table>");
 	return HTML;
 }
 
@@ -253,9 +253,9 @@ String DataTable::GenerateTableHTML()
 
 String Hyperlink_Datafield::GenerateHTML()
 {
-	String HTML = PSTR("<a href=\"") + GetFieldValue() + "\">" + GetFieldLabel() + "</a>";
+	String HTML = PSTR("<li><a href=\"") + GetFieldValue() + "\">" + GetFieldLabel() + "</a></li>";
 	if ( DoNewline() )	//Generate newline?
-		HTML += F("<br>");
+		HTML += PSTR("<br>");
 	return HTML;
 }
 
