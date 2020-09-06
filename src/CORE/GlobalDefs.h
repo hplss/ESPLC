@@ -39,6 +39,7 @@ extern const String &styleDir PROGMEM,
 			 		&adminDir PROGMEM,
 					&statusDir PROGMEM,
 					&alertsDir PROGMEM,
+					&updateDir PROGMEM,
 			 		&scriptDir PROGMEM;
 //
 
@@ -65,11 +66,14 @@ extern const String &file_Stylesheet PROGMEM,
 extern const String &transmission_HTML PROGMEM,
 			 		&html_form_Begin PROGMEM,
 			 		&html_form_Middle PROGMEM,
+					&html_form_Middle_Upload PROGMEM,
 			 		&html_form_End PROGMEM,
 					&table_title_messages PROGMEM,
 					&html_paragraph_begin PROGMEM,
 					&html_paragraph_end PROGMEM,
-					&field_title_alerts PROGMEM;
+					&field_title_alerts PROGMEM,
+					&http_header_connection PROGMEM,
+					&http_header_close PROGMEM;
 
 //
 
@@ -239,10 +243,47 @@ vector<String> splitString( const String &, const vector<char> &, const vector<c
 vector<String> splitString( const String &, const vector<char> &, bool = true, const char = 0, const char = 0);
 //This function breaks strings apart based on a single inputted char and optional delimiter.
 vector<String> splitString(const String &, const char, bool = true, const char = 0, const char = 0);
-//Converts a 64bit unsigned integer into a string.
-String uLongToStr(uint64_t, uint8_t = 10);
-//Converts a signed 64-bit integer to a string.
-String longToStr(int64_t, uint8_t = 10);
+
+void reverse(char* begin, char* end); //taken from 'stdlib_noniso.c'
+
+template <typename T>
+char* intToASCII(T value, char* result, uint8_t base = 10) 
+{
+    if(base < 2 || base > 16) {
+        *result = 0;
+        return result;
+    }
+
+    char* out = result;
+    T quotient = llabs(value);
+
+    do {
+        const T tmp = quotient / base;
+        *out = "0123456789abcdef"[quotient - (tmp * base)];
+        ++out;
+        quotient = tmp;
+    } while(quotient);
+
+    // Apply negative sign
+    if(value < 0)
+        *out++ = '-';
+
+    reverse(result, out);
+    *out = 0;
+    return result;
+}
+
+template <typename T>
+String intToStr( const T value, uint8_t base = 10 )
+{
+	char buf[2 + 8 * sizeof(T)];
+    intToASCII(value, buf, base);
+    
+	String str(buf);
+    return str;
+}
+
+
 //Returns a vector containing tiers of text that are nested within specific inputted characters
 multimap<int8_t, String> textWithin(const String &, char, char, int8_t = -1);
 //Performs a check to see if a given set of characters are present in the inputted string.

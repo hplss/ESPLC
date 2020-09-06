@@ -7,12 +7,14 @@
  */ 
 
 #include "GlobalDefs.h"
+#include <stdlib.h>
 
 //directories for individual web pages
 const String &styleDir PROGMEM = PSTR("/style"),
              &adminDir PROGMEM = PSTR("/admin"),
 			 &statusDir PROGMEM = PSTR("/status"),
 			 &alertsDir PROGMEM = PSTR("/alerts"),
+			 &updateDir PROGMEM = PSTR("/update"),
              &scriptDir PROGMEM = PSTR("/script");
 //
 
@@ -68,11 +70,14 @@ const String &file_Stylesheet PROGMEM = PSTR("/style.css"),
 const String &transmission_HTML PROGMEM = PSTR("text/html"),
 			 &html_form_Begin PROGMEM = PSTR("<FORM action=\"."),
 			 &html_form_Middle PROGMEM = PSTR("\" method=\"post\" id=\"form\">"),
+			 &html_form_Middle_Upload PROGMEM = PSTR("\" method=\"post\" enctype=\"multipart/form-data\" id=\"form\">"), 
 			 &html_form_End PROGMEM = PSTR("</FORM>"),
 			 &table_title_messages PROGMEM = PSTR("System Messages"),
 			 &html_paragraph_begin PROGMEM = PSTR("<ul>"),
 			 &html_paragraph_end PROGMEM = PSTR("</ul>"),
-			 &field_title_alerts PROGMEM = PSTR("System Alerts");
+			 &field_title_alerts PROGMEM = PSTR("System Alerts"),
+			 &http_header_connection PROGMEM = PSTR("Connection"),
+			 &http_header_close PROGMEM = PSTR("close");
 //
 
 //PLC Error Messages
@@ -253,34 +258,19 @@ float parseFloat( const String &str )
 	return tempstr.toFloat(); //Will return 0 if buffer does not contain data. (safe)
 }
 
-//Generic functions below here
-String uLongToStr(uint64_t value, uint8_t base) 
-{
-    char buf[2 + 8 * sizeof(uint64_t)];
-    if (base==10) {
-        sprintf(buf, "%llud", value);
-    } else {
-        ltoa(value, buf, base);
+//taken from 'stdlib_noniso.c'
+void reverse(char* begin, char* end) {
+    char *is = begin;
+    char *ie = end - 1;
+    while(is < ie) {
+        char tmp = *ie;
+        *ie = *is;
+        *is = tmp;
+        ++is;
+        --ie;
     }
-	String str(buf);
-    return str;
 }
-
-String longToStr(int64_t value, uint8_t base) 
-{
-    char buf[2 + 8 * sizeof(uint64_t)];
-    if (base==10) 
-	{
-        sprintf(buf, "%lld", value);
-    } 
-	else 
-	{
-        ltoa(value, buf, base);
-    }
-	String str(buf);
-    return str;
-}
-
+//
 bool strContains( const String &str, const vector<char> &c )
 {
 	for ( uint16_t x = 0; x < str.length(); x++ )

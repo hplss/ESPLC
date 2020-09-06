@@ -73,7 +73,8 @@ public:
 		//
 		//Default stuff for now, until EEPROM values are loaded (also initializes shared pointers -- VERY IMPORTANT)
 		i_verboseMode = PRIORITY_LOW; //Do this by default for now, will probably have an eeprom setting for this later.
-		i_timeoutLimit = 15; //20 second default, will probably be an eeprom config later
+		i_timeoutLimit = 3; //3 seconds is good enough
+		i_connectionRetries = 3; //3 attempts to reconnect
 		b_enableNIST = true;
 		b_enableAP = false;
 		b_enableDNS = false;
@@ -103,10 +104,6 @@ public:
 	}
 	~UICore()
 	{
-		//p_indexDataTables.clear();
-		//p_adminDataTables.clear();
-		//p_styleDataTables.clear();
-		//p_scriptDataTables.clear();
 		p_UIDataTables.clear();
 		closeConnection(); //end all wifi/webserver stuff
 	}
@@ -162,6 +159,8 @@ public:
 	void handleScript(); 
 	//Generates the page HTML for the CSS editor Page. Used to edit the web UI graphics properties.
 	void handleStyleSheet(); 
+	//Generates the page HTML for the firmware updater page.
+	void handleUpdater();
 	//This function handles the user authorization prompt that is present on certain device configuration pages.
 	bool handleAuthorization();
 	//generates the page HTML for viewing initialized PLC ladder logic objects in the web UI.
@@ -171,12 +170,16 @@ public:
 	//Sends ystem alerts and other info over the web interface.
 	void handleAlerts();
 
+	void resestFieldContainers();
+
 	//Creates static data fields for admin page.
 	void createAdminFields(); 
 	//Creates static data fields for index page.
 	void createIndexFields(); 
 	//Creates static data fields for style page.
 	void createStyleSheetFields(); 
+	//Creates statis data fields for firmware updater page.
+	void createUpdaterFields();
 	//Creates static data fields for PLC Logic page.
 	void createScriptFields(); 
 	//Creates any necessary fields/tables for PLC ladder object status. 
@@ -207,6 +210,8 @@ public:
 	static void applyStyleSheet(); 
 	//Applies changes for device settings (admin panel)
 	static void applyDeviceSettings(); 
+	//This function handles the application of OTA (over the air) firmware updates via the Web UI
+	static void applyRemoteFirmwareUpdate();
 
 	//Determines if a NIST server check should be performed.
 	bool CheckUpdateNIST(); 
@@ -224,6 +229,7 @@ public:
 	//This function applies current settings to the systems that use them (IE: Updating WiFi AP with new SSID, etc.)
 	//arg(s) <bool> : load from storage
 	void applySettings( bool = false ); 
+	
 	//Loads the default logic script for the PLC system from the flash file system.
 	bool loadPLCScript( String & ); 
 	//Loads a custom stylesheet (CSS) for web the based UI from the flash file system.
@@ -257,11 +263,13 @@ public:
 private:
 	//Acts as storage for the data tables for the WEB UI for all pages.
 	vector <shared_ptr<DataTable>> p_UIDataTables; 
+	vector <shared_ptr<DataTable>> p_StaticDataTables; 
 
 	shared_ptr<WebServer> p_server; //web server object
 	shared_ptr<WiFiUDP> p_UDP; //UDP protocol object.
 	
 	uint8_t i_timeoutLimit;
+	uint8_t i_connectionRetries;
 	uint8_t i_verboseMode; //Used to determine what messages should be sent over the serial channel
 	
 	//device specific settings

@@ -2,7 +2,8 @@
  * data_fields.cpp
  *
  * Created: 2/2/2018 11:26:31 AM
- *  Author: Andrew
+ *  Author: Andrew Ward
+ * This file contains the function definitions for all types of fields that are displayed in the WebUI for ESPLC.
  */ 
 
 
@@ -19,12 +20,18 @@ bool DataField::SetFieldValue( shared_ptr<String> input )
 
 bool DataField::SetFieldValue( const String &input )
 {
-	if ( input.length() > iCols && GetType() != FIELD_TYPE::TEXTAREA ) //columns used as a data limiter size for non-textarea fields.
+	if ( GetType() == FIELD_TYPE::FILE_UPLOAD )
+		return true;
+
+	else if ( input.length() > iCols && GetType() != FIELD_TYPE::TEXTAREA ) //columns used as a data limiter size for non-textarea fields.
+	{
 		return false; //Die here, data string too long.
+	}
 
 	*s_fieldValue = input;
 	return true;
 }
+
 String DataField::GenerateHTML() //Baseclass GenerateHTML
 {
 	String HTML;
@@ -34,7 +41,7 @@ String DataField::GenerateHTML() //Baseclass GenerateHTML
 	
 	if ( GetType() != FIELD_TYPE::TEXTAREA )
 	{
-		HTML += F("<INPUT ");
+		HTML += PSTR("<INPUT ");
 
 		switch ( GetType() )
 		{
@@ -42,23 +49,23 @@ String DataField::GenerateHTML() //Baseclass GenerateHTML
 				HTML += PSTR("type=\"text\" maxlength=\"") + String(iCols) + PSTR("\"") + PSTR("size=\"") + String(iCols) + PSTR("\"");
 				break;
 			case FIELD_TYPE::SUBMIT:
-				HTML += F("type=\"submit\" ");
+				HTML += PSTR("type=\"submit\" ");
 				break;
 			case FIELD_TYPE::RADIO:
-				HTML += F("type=\"radio\" ");
+				HTML += PSTR("type=\"radio\" ");
 				break;
 			case FIELD_TYPE::CHECKBOX:
-				HTML += F("type=\"checkbox\" ");
+				HTML += PSTR("type=\"checkbox\" ");
 				break;
 			case FIELD_TYPE::PASSWORD:
-				HTML += PSTR("type=\"password\" maxlength=\"") + String(iCols) + PSTR("\" ") + PSTR("size=\"") + String(iCols) + PSTR("\" ");;
+				HTML += PSTR("type=\"password\" maxlength=\"") + String(iCols) + PSTR("\" ") + PSTR("size=\"") + String(iCols) + PSTR("\" ");
 				break;
 			case FIELD_TYPE::NUMBER:
-				HTML += PSTR("type=\"number\" min=\"0\" size=\"") + String(iCols) + PSTR("\" oninput=\"validity.valid||(value=min);\" ");;
+				HTML += PSTR("type=\"number\" min=\"0\" size=\"") + String(iCols) + PSTR("\" oninput=\"validity.valid||(value=min);\" ");
 				break;
 		}
 	
-		switch ( GetType() )
+		switch ( GetType() ) //This switch case is exclusively used for setting the "value" html tag for certain forms. 
 		{
 			case FIELD_TYPE::CHECKBOX: //Checkboxes are special
 				if ( strlen( GetFieldValue().c_str() ) && GetFieldValue() != String(false) ) //Only set this if we have some value there, otherwise it'll just count as "enabled" - weird.
@@ -70,7 +77,8 @@ String DataField::GenerateHTML() //Baseclass GenerateHTML
 			default: //Everything else does this.
 				HTML += PSTR("value=\"") + GetFieldValue() + "\" ";
 				break;
-		}	
+		}
+
 		if ( strlen( GetFieldName().c_str() ) && GetType() != FIELD_TYPE::SUBMIT ) //If we even have a name.
 			HTML += PSTR("name=\"") + GetFieldName() + "\" ";		
 
@@ -79,7 +87,10 @@ String DataField::GenerateHTML() //Baseclass GenerateHTML
 	}
 	else
 	{
-		HTML += PSTR("<textarea form=\"form\" id=\"") + String(GetAddress()) + PSTR("\" rows=\"") + String(iRows) + PSTR("\" cols=\"") + String (iCols) + "\"";//"form" is the default form name. It'll work for now
+		HTML += PSTR("<textarea form=\"");
+		if ( getSpecialParams().size() )
+			HTML += getSpecialParams().front(); //first only	
+		HTML += PSTR("\" id=\"") + String(GetAddress()) + PSTR("\" rows=\"") + String(iRows) + PSTR("\" cols=\"") + String (iCols) + "\"";//"form" is the default form name. It'll work for now
 		if ( strlen( GetFieldName().c_str() ) ) //If we even have a name.
 			HTML += PSTR("name=\"") + GetFieldName() + "\"";	
 		HTML += ">";
@@ -88,7 +99,7 @@ String DataField::GenerateHTML() //Baseclass GenerateHTML
 	}
 
 	if ( DoNewline() )	//Generate newline?
-		HTML += F("<br>");
+		HTML += PSTR("<br>");
 
 	return HTML;
 }
@@ -100,7 +111,7 @@ String SSID_Datafield::GenerateHTML() //This is a specific type of field, tailor
 	int16_t networks = WiFi.scanNetworks(false, false, false, 200); //200MS instead of 300ms - make scans faster
 
 	if ( strlen( GetFieldLabel().c_str() ) ) //Is there a label?
-		HTML += GetFieldLabel() + ": ";
+		HTML += PSTR("<label for=\"") + String(GetAddress()) + "\">" + GetFieldLabel() + PSTR(": </label>");
 	
 	HTML += PSTR("<select ");
 	HTML += PSTR("id=\"") + String(GetAddress()) + PSTR("\" name=\"") + GetFieldName() + PSTR("\" >");
@@ -141,23 +152,23 @@ String Select_Datafield::GenerateHTML()
 {
 	String HTML;
 	if ( strlen( GetFieldLabel().c_str() ) ) //Is there a label?
-		HTML += GetFieldLabel() + ": ";
+		HTML += PSTR("<label for=\"") + String(GetAddress()) + "\">" + GetFieldLabel() + PSTR(": </label>");
 	
 	HTML += PSTR("<select ");
 	HTML += PSTR("id=\"") + String(GetAddress()) + PSTR("\" name=\"") + GetFieldName() + PSTR("\" >");
 	
-	if ( options.size() > 0 )
+	if ( getSpecialParams().size() > 0 )
 	{
-		for ( uint8_t x = 0; x < options.size(); x++ ) //more than 255 networks? Hmm
+		for ( uint8_t x = 0; x < getSpecialParams().size(); x++ ) //more than 255 networks? Hmm
 		{
 			HTML += PSTR("<option value=\"") + String(x) + "\"";
 			if ( x == intFromValue() )
 			{
 				HTML += PSTR(" selected ");
-				HTML += ">" + options[x] + PSTR(" (Selected)");
+				HTML += ">" + getSpecialParams()[x] + PSTR(" (Selected)");
 			}
 			else
-				HTML += ">" + options[x]; 
+				HTML += ">" + getSpecialParams()[x]; 
 				
 			HTML += PSTR("</option>");
 		}
@@ -168,6 +179,30 @@ String Select_Datafield::GenerateHTML()
 	if ( DoNewline() )	//Generate newline?
 		HTML += PSTR("<br>");
 
+	return HTML;
+}
+
+String FILE_Datafield::GenerateHTML()
+{
+	String HTML;
+	if ( strlen( GetFieldLabel().c_str() ) ) //Is there a label for the field?
+		HTML += PSTR("<label for=\"") + String(GetAddress()) + "\">" + GetFieldLabel() + PSTR(": </label>");
+
+	HTML += PSTR("<Input type=\"file\" accept=\"");
+
+	for (uint8_t x = 0; x < getFileTypes().size(); x++ ) //iterate through the list of available file types.
+	{
+		if ( !x ) //first iteration
+			HTML += "." + getFileTypes()[x];
+		else //all others
+			HTML += ",." + getFileTypes()[x];
+	}
+	HTML += "\" "; //end accept param
+	HTML += PSTR("name=\"") + GetFieldName() + "\" ";		
+	HTML += PSTR("id=\"") + String(GetAddress()) + "\" ";
+	if (b_multiple)
+		HTML += PSTR("multiple");
+	HTML += ">"; //End of the <INPUT 
 	return HTML;
 }
 
@@ -253,7 +288,7 @@ String DataTable::GenerateTableHTML()
 
 String Hyperlink_Datafield::GenerateHTML()
 {
-	String HTML = PSTR("<li><a href=\"") + GetFieldValue() + "\">" + GetFieldLabel() + "</a></li>";
+	String HTML = PSTR("<li><a href=\"") + GetFieldValue() + "\">" + GetFieldLabel() + PSTR("</a></li>");
 	if ( DoNewline() )	//Generate newline?
 		HTML += PSTR("<br>");
 	return HTML;
@@ -265,28 +300,32 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 	{
 		case TYPE_VAR_BOOL:
 		{
-			bool temp = parseInt( value );
-			if ( *variablePtr.bVar != temp )
+			bool temp = false;
+			int64_t parsed = parseInt( value );
+			if ( parsed > 0 || value.length() )
+				temp = true;
+
+			if ( *variablePtr.bVar != temp && DataField::SetFieldValue(intToStr(temp)) ) //only update if different
 			{
 				*variablePtr.bVar = temp;
-				return true;
-			}
-			else if ( value.length() )
-			{
-				*variablePtr.bVar = true;
-				return true;
-			}
-			else
-			{
-				*variablePtr.bVar = false;
 				return true;
 			}
 		}
 		break;
 		case TYPE_VAR_UBYTE:
 		{
-			uint8_t temp = parseInt( value );
-			if ( *variablePtr.uByteVar != temp )
+			uint8_t temp = 0;
+			int64_t parsed = parseInt( value );
+			if ( parsed > UINT8_MAX )
+			{
+				temp = UINT8_MAX;
+			}
+			else if ( parsed > 0 )
+			{
+				temp = parsed;
+			}
+
+			if ( *variablePtr.uByteVar != temp && DataField::SetFieldValue(intToStr(temp)) ) //only update if different
 			{
 				*variablePtr.uByteVar = temp;
 				return true;
@@ -295,8 +334,18 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 		break;
 		case TYPE_VAR_UINT:
 		{
-			uint_fast32_t temp = parseInt( value );
-			if ( *variablePtr.uiVar != temp )
+			uint_fast32_t temp = 0;
+			int64_t parsed = parseInt( value );
+			if ( parsed > UINT_FAST32_MAX )
+			{
+				temp = UINT_FAST32_MAX;
+			}
+			else if ( parsed > 0 )
+			{
+				temp = parsed;
+			}
+				
+			if ( *variablePtr.uiVar != temp && DataField::SetFieldValue(intToStr(temp)) ) //only update if different
 			{
 				*variablePtr.uiVar = temp;
 				return true;
@@ -305,8 +354,20 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 		break;
 		case TYPE_VAR_INT:
 		{
-			int_fast32_t temp = parseInt( value );
-			if ( *variablePtr.iVar != temp )
+			int_fast32_t temp = 0;
+			int64_t parsed = parseInt( value );
+			if ( parsed > INT_FAST32_MAX )
+			{
+				temp = INT_FAST32_MAX;
+			}
+			else if ( parsed < INT_FAST32_MIN )
+			{
+				temp = INT_FAST32_MIN;
+			}
+			else
+				temp = parsed;
+
+			if ( *variablePtr.iVar != temp && DataField::SetFieldValue(intToStr(temp)) ) //only update if different
 			{
 				*variablePtr.iVar = temp;
 				return true;
@@ -315,10 +376,46 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 		break;
 		case TYPE_VAR_USHORT:
 		{
-			uint16_t temp = parseInt( value );
-			if ( *variablePtr.uiShortVar != temp )
+			uint16_t temp = 0;
+			int64_t parsed = parseInt( value );
+			if ( parsed > UINT16_MAX )
+			{
+				temp = UINT16_MAX;
+			}
+			else if ( parsed > 0 )
+			{
+				temp = parsed;
+			}	
+
+			if ( *variablePtr.uiShortVar != temp && DataField::SetFieldValue(intToStr(temp)) ) //only update if different
 			{
 				*variablePtr.uiShortVar = temp;
+				return true;
+			}
+		}
+		break;
+		case TYPE_VAR_LONG:
+		{
+			int64_t temp = parseInt( value ); //same data type as parser function
+			if ( *variablePtr.lVar != temp && DataField::SetFieldValue(intToStr(temp)) ) //only update if different
+			{
+				*variablePtr.lVar = temp;
+				return true;
+			}
+		}
+		break;
+		case TYPE_VAR_ULONG:
+		{
+			uint64_t temp = 0;
+			int64_t parsed = parseInt( value );
+			if ( parsed > 0 )
+			{
+				temp = parsed;
+			}
+
+			if ( *variablePtr.ulVar != temp && DataField::SetFieldValue(intToStr(temp)) ) //only update if different
+			{
+				*variablePtr.ulVar = temp;
 				return true;
 			}
 		}
@@ -326,10 +423,10 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 		case TYPE_VAR_FLOAT:
 		{
 			float temp = parseFloat( value );
-			if ( *variablePtr.fVar != temp )
+			if ( *variablePtr.fVar != temp ) //only update if different
 			{
 				*variablePtr.fVar = temp;
-				return true;
+				return true; //BUGBUG here - Updated value won't be immediately written to the datafield value (fix later)
 			}
 		}
 		break;
@@ -339,7 +436,8 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 		}
 		break;
 	}
-	return false;
+
+	return false; //default return path
 }
 int_fast32_t VAR_Datafield::intFromValue()
 {
