@@ -363,14 +363,8 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 			
 		if (isFloat)
 			return make_shared<Ladder_VAR>( val.toFloat(), id );
-		
-		int64_t value = atoll(val.c_str());
-		if ( value < 0 && abs( value ) <= INT_MAX )
-			return make_shared<Ladder_VAR>( static_cast<int_fast32_t>(value), id ); //must be signed
-		else if (value <= INT_MAX )
-			return make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(value), id ); //we can use unsigned
 		else
-			return make_shared<Ladder_VAR>( static_cast<uint64_t>(value), id ); //assume a long (geater than 32 bits)
+			return make_shared<Ladder_VAR>( atoll(val.c_str()), id ); //assume a long (greater than 32 bits) This is a safe data type to use as it is a signed 64 bit int
 	}
 
 	return 0;
