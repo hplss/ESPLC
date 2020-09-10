@@ -1,24 +1,47 @@
-html{height:97%;}
-
 @import url('https://fonts.googleapis.com/css?family=Exo:400,700');
 
+html{height:97%;}
+
 body {
-	background: linear-gradient(-45deg, #778899,#20B2AA, #2F4F4F,#778899);
-	background-size: 400% 400%;
+	background:linear-gradient(-45deg, #778899,#20B2AA, #2F4F4F,#778899);
+	background-size:400% 400%;
 }
 
+h2{
+	font-family: 'Exo', sans-serif; 
+	margin:auto;
+	text-align:center; 
+	font-size:32pt;
+	padding-bottom:10px;
+}
 
-h2{font-family: 'Exo', sans-serif margin: auto; text-align:center; font-size: 32pt; padding-bottom: 10px;}
-
-a{font-family: 'Exo', sans-serif; font-size: 18pt; color:darkblue;  width:100%;}
+a{
+	font-family: 'Exo', sans-serif;
+	font-size: 18pt;
+	color:darkblue;
+	width:100%;
+}
 
 a:hover {
   color: blue;
 }
 
-ul{padding: 0%; list-style-type:none; text-align:center;}
+ul{
+	padding:0%;
+	list-style-type:none;
+	text-align:center;
+}
 
-li{margin:auto; text-align:center; padding:1%}
+li{
+	margin:auto;
+	text-align:center;
+	padding:1%
+}
 
-label{padding-right:10px;}
+label{
+	padding-right:10px;
+}
 
+p{
+	text-align:center;
+}
