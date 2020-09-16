@@ -12,7 +12,7 @@ class Ladder_VAR : public Ladder_OBJ
 	Ladder_VAR( int_fast32_t *value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_INT ){ values.i.val_ptr = value; b_usesPtr = true; }
 	Ladder_VAR( uint_fast32_t *value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_UINT ){ values.ui.val_ptr = value; b_usesPtr = true; }
 	Ladder_VAR( bool *value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_BOOL ){ values.b.val_ptr = value; b_usesPtr = true; }
-	Ladder_VAR( float *value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_FLOAT ){ values.f.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( double *value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_FLOAT ){ values.d.val_ptr = value; b_usesPtr = true; }
 	Ladder_VAR( uint64_t *value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_ULONG ){ values.ul.val_ptr = value; b_usesPtr = true; }
 	Ladder_VAR( int64_t *value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_LONG ){ values.l.val_ptr = value; b_usesPtr = true; }
 	//
@@ -20,7 +20,7 @@ class Ladder_VAR : public Ladder_OBJ
 	Ladder_VAR( int_fast32_t value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_INT ){ values.i.val = value; b_usesPtr = false; }
 	Ladder_VAR( uint_fast32_t value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_UINT ){ values.ui.val = value; b_usesPtr = false; }
 	Ladder_VAR( bool value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_BOOL ){ values.b.val = value; b_usesPtr = false; }
-	Ladder_VAR( float value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_FLOAT ){ values.f.val = value; b_usesPtr = false; }
+	Ladder_VAR( double value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_FLOAT ){ values.d.val = value; b_usesPtr = false; }
 	Ladder_VAR( uint64_t value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_ULONG ){ values.ul.val = value; b_usesPtr = false; }
 	Ladder_VAR( int64_t value, const String &id = "" ) : Ladder_OBJ( id, TYPE_VAR_LONG ){ values.l.val = value; b_usesPtr = false; }
 	//
@@ -28,12 +28,12 @@ class Ladder_VAR : public Ladder_OBJ
 	{ 
 		Ladder_OBJ::updateObject(); 
 	}
-	bool getBoolValue(){ if (b_usesPtr && values.b.val_ptr) return *values.b.val_ptr; else return 0; }
-	int64_t getLongValue(){ if (b_usesPtr && values.l.val_ptr) return *values.l.val_ptr; else return 0; }
-	uint64_t getULongValue(){ if (b_usesPtr && values.ul.val_ptr) return *values.ul.val_ptr; else return 0; }
-	float getFloatValue(){ if (b_usesPtr && values.f.val_ptr) return *values.f.val_ptr; else return 0; }
-	int_fast32_t getIntValue(){ if (b_usesPtr && values.i.val_ptr) return *values.i.val_ptr; else return 0; }
-	uint_fast32_t getUIntValue(){ if (b_usesPtr && values.ui.val_ptr) return *values.ui.val_ptr; else return 0; }
+	bool getBoolValue(){ if (b_usesPtr && values.b.val_ptr) return *values.b.val_ptr; else return values.b.val; }
+	int64_t getLongValue(){ if (b_usesPtr && values.l.val_ptr) return *values.l.val_ptr; else return values.l.val; }
+	uint64_t getULongValue(){ if (b_usesPtr && values.ul.val_ptr) return *values.ul.val_ptr; else return values.ul.val; }
+	float getDoubleValue(){ if (b_usesPtr && values.d.val_ptr) return *values.d.val_ptr; else return values.d.val; }
+	int_fast32_t getIntValue(){ if (b_usesPtr && values.i.val_ptr) return *values.i.val_ptr; else return values.i.val; }
+	uint_fast32_t getUIntValue(){ if (b_usesPtr && values.ui.val_ptr) return *values.ui.val_ptr; else return values.ui.val; }
 
 	template <class T>
 	T getValue();
@@ -56,7 +56,7 @@ class Ladder_VAR : public Ladder_OBJ
 		group<uint64_t> ul;
 		group<int_fast32_t> i;
 		group<uint_fast32_t> ui;
-		group<float> f;
+		group<double> d;
 		group<bool> b;
 	} values;
 

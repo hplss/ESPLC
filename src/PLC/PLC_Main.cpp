@@ -333,7 +333,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 {
 	if ( args.size() > 1 )
 	{
-		bool isFloat = false;
+		bool isDouble = false;
 		String val;
 		for (uint8_t x = 0; x < args[1].length(); x++ )
 		{
@@ -344,12 +344,11 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 			{
 				if ( args[1][x] == '.' )
 				{
-					if ( isFloat )// multiple '.' chars should be ignored
+					if ( isDouble )// multiple '.' chars should be ignored
 						continue;
 						
-					isFloat = true;
+					isDouble = true;
 				}
-				
 				val += args[1][x];
 			}
 		}
@@ -360,9 +359,74 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 		#ifdef DEBUG
 		Serial.println(PSTR("NEW VARIABLE"));
 		#endif
+
+		if (args.size() > 2)
+		{
+			if (args[2] == VAR_INT32)
+			{
+				#ifdef DEBUG
+				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(atoll(val.c_str())), id );
+				Serial.println(test->getIntValue());
+				#endif
+				return make_shared<Ladder_VAR>( static_cast<int_fast32_t>(atoll(val.c_str())), id );
+			}
+			else if (args[2] == VAR_UINT32)
+			{
+				
+				#ifdef DEBUG
+				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(strtoul(val.c_str(), NULL, 10)), id );
+				Serial.println(test->getUIntValue());
+				#endif
+				return make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(strtoul(val.c_str(), NULL, 10)), id );
+			}
+			else if (args[2] == VAR_INT64)
+			{
+				#ifdef DEBUG
+				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(atoll(val.c_str())), id );
+				Serial.println(intToStr(test->getLongValue()));
+				#endif
+				return make_shared<Ladder_VAR>( atoll(val.c_str()), id );
+			}
+			else if (args[2] == VAR_UINT64)
+			{
+				#ifdef DEBUG
+				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<uint64_t>(strtoul(val.c_str(), NULL, 10)), id );
+				Serial.println(intToStr(test->getULongValue()));
+				#endif
+				return make_shared<Ladder_VAR>( static_cast<uint64_t>(strtoull(val.c_str(), NULL, 10)), id );
+			}
+			else if (args[2] == VAR_DOUBLE)
+			{
+				#ifdef DEBUG
+				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<float>(atof(val.c_str())), id );
+				Serial.println(test->getDoubleValue());
+				#endif
+				return make_shared<Ladder_VAR>( atof(val.c_str()), id );
+			}
+			else if (args[2] == VAR_BOOL || args[2] == VAR_BOOLEAN)
+			{
+				#ifdef DEBUG
+				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>(static_cast<bool>(val.c_str()), id );
+				Serial.println(test->getBoolValue());
+				#endif
+				return make_shared<Ladder_VAR>(static_cast<bool>(val.c_str()), id );
+			}
+			else 
+			{
+				sendError(ERR_DATA::ERR_INCORRECT_VAR_TYPE, args[2]);
+				return 0;
+			}
+		}
 			
-		if (isFloat)
-			return make_shared<Ladder_VAR>( val.toFloat(), id );
+		if (isDouble)
+		{
+			#ifdef DEBUG
+			shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<float>(atof(val.c_str())), id );
+			Serial.println(test->getDoubleValue());
+			Serial.println(static_cast<float>(atof(val.c_str())));
+			#endif
+			return make_shared<Ladder_VAR>( static_cast<float>(atof(val.c_str())), id );
+		}
 		else
 			return make_shared<Ladder_VAR>( atoll(val.c_str()), id ); //assume a long (greater than 32 bits) This is a safe data type to use as it is a signed 64 bit int
 	}
@@ -489,6 +553,11 @@ void PLC_Main::sendError( uint8_t err, const String &info )
 		case ERR_DATA::ERR_NAME_TOO_LONG:
 		{
 			error = err_failed_creation + CHAR_SPACE + err_name_too_long;
+		}
+		break;
+		case ERR_DATA::ERR_INCORRECT_VAR_TYPE:
+		{
+			error = err_var_type_invalid;
 		}
 		break;
 	}

@@ -90,8 +90,18 @@ const String &err_failed_creation PROGMEM = PSTR("Failed to create object."),
 			 &err_unknown_obj PROGMEM = PSTR("Invalid Object"),
 			 &err_invalid_bit PROGMEM = PSTR("Invalid Bit"),
 			 &err_name_too_long PROGMEM = PSTR("Object Name Too Long"),
-			 &err_parser_failed PROGMEM = PSTR("Parser operation failed.");
+			 &err_parser_failed PROGMEM = PSTR("Parser operation failed."),
+			 &err_var_type_invalid PROGMEM = PSTR("Invalid variable type");
 //
+//Variable string definitions
+const String &VAR_INT32 PROGMEM = PSTR("INT32"),
+					&VAR_UINT32 PROGMEM = PSTR("UINT32"),
+					&VAR_INT64 PROGMEM = PSTR("INT64"),
+					&VAR_UINT64 PROGMEM = PSTR("UINT64"),
+					&VAR_DOUBLE PROGMEM = PSTR("DOUBLE"),
+					&VAR_BOOL PROGMEM = PSTR("BOOL"),
+					&VAR_BOOLEAN PROGMEM = PSTR("BOOLEAN");
+
 
 vector<String> splitString( const String &str, const vector<char> &c, const vector<char> &start_limiters, const vector<char> &end_limiters, bool removeChar )
 {

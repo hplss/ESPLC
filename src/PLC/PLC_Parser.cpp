@@ -126,6 +126,11 @@ bool PLC_Parser::buildObjectStr(const String &str)
             {
                 if ( !getArgsOP() ) //Must not currently be parsing args
                     setBitOP(true); //chars parsed are now an operator to an object variable (or bit tag)
+                else
+                {
+                    appendToObjArgs( str[char_index] );
+                }
+                
             }
             break;
             case CHAR_NOT_OPERATOR: //Indicates NOT logic
