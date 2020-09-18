@@ -364,15 +364,26 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 		{
 			if (args[2] == VAR_INT32)
 			{
+				int64_t value = static_cast<int64_t>(atoll(val.c_str()));
+				if(value < INT32_MIN || value > INT32_MAX )
+				{
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
+					return 0;
+				}
 				#ifdef DEBUG
-				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(atoll(val.c_str())), id );
+				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<int32_t>(atoll(val.c_str())), id );
 				Serial.println(test->getIntValue());
 				#endif
-				return make_shared<Ladder_VAR>( static_cast<int_fast32_t>(atoll(val.c_str())), id );
+				return make_shared<Ladder_VAR>( static_cast<int32_t>(atoll(val.c_str())), id );
 			}
 			else if (args[2] == VAR_UINT32)
 			{
-				
+				uint64_t value = static_cast<uint64_t>(atoll(val.c_str()));
+				if(value < 0 || value > UINT32_MAX )
+				{
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
+					return 0;
+				}
 				#ifdef DEBUG
 				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(strtoul(val.c_str(), NULL, 10)), id );
 				Serial.println(test->getUIntValue());
@@ -381,6 +392,12 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 			}
 			else if (args[2] == VAR_INT64)
 			{
+				int64_t value = static_cast<int64_t>(atoll(val.c_str())); //variable > int64 needed?
+				if(value < INT64_MIN || value > INT64_MAX )
+				{
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
+					return 0;
+				}
 				#ifdef DEBUG
 				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(atoll(val.c_str())), id );
 				Serial.println(intToStr(test->getLongValue()));
@@ -389,6 +406,12 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 			}
 			else if (args[2] == VAR_UINT64)
 			{
+				uint64_t value = static_cast<uint64_t>(atoll(val.c_str())); //variable > uint64 needed?
+				if(value < UINT64_MIN || value > UINT64_MAX )
+				{
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
+					return 0;
+				}
 				#ifdef DEBUG
 				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<uint64_t>(strtoul(val.c_str(), NULL, 10)), id );
 				Serial.println(intToStr(test->getULongValue()));
@@ -397,6 +420,12 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 			}
 			else if (args[2] == VAR_DOUBLE)
 			{
+				double value = static_cast<double>(atoll(val.c_str())); //variable > double needed? not sure 100%
+				if(value < DOUBLE_MIN || value > DOUBLE_MAX )
+				{
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
+					return 0;
+				}
 				#ifdef DEBUG
 				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<float>(atof(val.c_str())), id );
 				Serial.println(test->getDoubleValue());
@@ -558,6 +587,11 @@ void PLC_Main::sendError( uint8_t err, const String &info )
 		case ERR_DATA::ERR_INCORRECT_VAR_TYPE:
 		{
 			error = err_var_type_invalid;
+		}
+		break;
+		case ERR_DATA::ERR_OUT_OF_RANGE:
+		{
+			error = err_var_out_of_range;
 		}
 		break;
 	}
