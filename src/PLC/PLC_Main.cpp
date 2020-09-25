@@ -376,6 +376,11 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 	return 0;
 }
 
+shared_ptr<Ladder_OBJ> PLC_Main::createOneshotOBJ( const String &id, const vector<String> & args)
+{
+	return 0;
+}
+
 shared_ptr<Ladder_OBJ> PLC_Main::createMathOBJ( const String &id, const vector<String> & args)
 {
 	return 0;

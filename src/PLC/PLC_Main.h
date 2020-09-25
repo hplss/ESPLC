@@ -130,6 +130,8 @@ class PLC_Main
 	shared_ptr<Ladder_OBJ> createTimerOBJ( const String &, const vector<String> &);
 	//Creates a new basic math object, which is capable of performing a series of simple calculations based on inputted arguments.
 	shared_ptr<Ladder_OBJ> createMathOBJ( const String &, const vector<String> &);
+	//Creates a oneshot object, which pulses HIGH for one cycle, then LOW until reset. Declared inline.
+	shared_ptr<Ladder_OBJ> createOneshotOBJ( const String &, const vector<String> &);
 	//Creates a new virtual type object, which represents a stored value in memory, to be accessed by other objects such as counters or timers or comparison blocks, etc.
 	shared_ptr<Ladder_OBJ> createVariableOBJ( const String &, const vector<String> &);
 	//performs a lookup to make sure the inputted pin number corresponds to a pin that is valid for the device. Used for some basic error checking in the parser. 
