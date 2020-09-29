@@ -331,6 +331,26 @@ shared_ptr<Ladder_OBJ> PLC_Main::createCounterOBJ( const String &id, const vecto
 //TODO - Implement some way where a user can easily dictate which variable type to use for memory purposes, otherwise default to auto-detection (maybe always estimate high? 64-bit?).
 shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vector<String> &args )
 {
+	if(args[1] == "TRUE")
+	{
+		#ifdef DEBUG
+		shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>(true, id );
+		Serial.println(test->getBoolValue());
+		Serial.println("made it in true");
+		#endif
+		return make_shared<Ladder_VAR>(true, id );
+	}
+	else if(args[1] == "FALSE")
+	{
+		#ifdef DEBUG
+		shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>(false, id );
+		Serial.println("made it in false");
+		Serial.println(test->getBoolValue());
+		#endif
+		return make_shared<Ladder_VAR>(false, id );
+	}
+
+	//could use an else here for but it really doesn't matter
 	if ( args.size() > 1 )
 	{
 		bool isDouble = false;
@@ -439,6 +459,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 				Serial.println(test->getBoolValue());
 				#endif
 				return make_shared<Ladder_VAR>(static_cast<bool>(val.c_str()), id );
+				
 			}
 			else 
 			{
