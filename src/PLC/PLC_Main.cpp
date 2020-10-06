@@ -16,6 +16,7 @@
 #include "OBJECTS/obj_output_basic.h"
 #include "OBJECTS/obj_timer.h"
 #include "OBJECTS/obj_counter.h"
+#include "OBJECTS/obj_oneshot.h"
 //
 
 void PLC_Main::resetAll()
