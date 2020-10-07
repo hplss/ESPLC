@@ -398,7 +398,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 			}
 			else if (args[2] == VAR_UINT32)
 			{
-				uint64_t value = static_cast<uint64_t>(atoll(val.c_str()));
+				int64_t value = static_cast<int64_t>(atoll(val.c_str()));
 				if(value < 0 || value > UINT32_MAX )
 				{
 					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
@@ -440,7 +440,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 			}
 			else if (args[2] == VAR_DOUBLE)
 			{
-				double value = static_cast<double>(atoll(val.c_str())); //variable > double needed? not sure 100%
+				double value = static_cast<double>(atof(val.c_str())); //variable > double needed? not sure 100%
 				if(value < DOUBLE_MIN || value > DOUBLE_MAX )
 				{
 					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
