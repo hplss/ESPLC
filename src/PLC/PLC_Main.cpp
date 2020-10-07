@@ -427,7 +427,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 			else if (args[2] == VAR_UINT64)
 			{
 				uint64_t value = static_cast<uint64_t>(atoll(val.c_str())); //variable > uint64 needed?
-				if(value < UINT64_MIN || value > UINT64_MAX )
+				if(value < 0 || value > UINT64_MAX )
 				{
 					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
 					return 0;
@@ -440,17 +440,11 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 			}
 			else if (args[2] == VAR_DOUBLE)
 			{
-				double value = static_cast<double>(atof(val.c_str())); //variable > double needed? not sure 100%
-				if(value < DOUBLE_MIN || value > DOUBLE_MAX )
-				{
-					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
-					return 0;
-				}
 				#ifdef DEBUG
-				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<float>(atof(val.c_str())), id );
+				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<double>(atof(val.c_str())), id );
 				Serial.println(test->getDoubleValue());
 				#endif
-				return make_shared<Ladder_VAR>( atof(val.c_str()), id );
+				return make_shared<Ladder_VAR>(static_cast<double>(atof(val.c_str())), id );
 			}
 			else if (args[2] == VAR_BOOL || args[2] == VAR_BOOLEAN)
 			{
@@ -459,7 +453,6 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 				Serial.println(test->getBoolValue());
 				#endif
 				return make_shared<Ladder_VAR>(static_cast<bool>(val.c_str()), id );
-				
 			}
 			else 
 			{
@@ -471,11 +464,11 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 		if (isDouble)
 		{
 			#ifdef DEBUG
-			shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<float>(atof(val.c_str())), id );
+			shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<double>(atof(val.c_str())), id );
 			Serial.println(test->getDoubleValue());
-			Serial.println(static_cast<float>(atof(val.c_str())));
+			Serial.println(static_cast<double>(atof(val.c_str())));
 			#endif
-			return make_shared<Ladder_VAR>( static_cast<float>(atof(val.c_str())), id );
+			return make_shared<Ladder_VAR>( static_cast<double>(atof(val.c_str())), id );
 		}
 		else
 			return make_shared<Ladder_VAR>( atoll(val.c_str()), id ); //assume a long (greater than 32 bits) This is a safe data type to use as it is a signed 64 bit int
