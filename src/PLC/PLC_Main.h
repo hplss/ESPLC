@@ -98,6 +98,7 @@ class PLC_Main
 	{
 		ladderRungs.clear(); //empty our vectors -- should also delete the objects once they are no longer referenced (smart pointers)
 		ladderObjects.clear();
+		ladderVars.clear();
 	}
 	//Generates the map that stores pin data in relation to availability and capability. 
 	void generatePinMap();
@@ -150,6 +151,9 @@ class PLC_Main
 	//Returns the created ladder object that corresponds to it's unique ID
 	//Args: Ladder Object Vector, Unique ID
 	shared_ptr<Ladder_OBJ> findLadderObjByID( const String & );
+	//Returns the created variable object that corresponds to it's unique ID
+	//Args: Ladder Var Vector, Unique ID
+	shared_ptr<Ladder_VAR> findLadderVarByID( const String & );
 	//Returns the created ladder object that corresponds to it's unique ID
 	//Returns the ladder rung based on its index in the rung vector.
 	//potentially unsafe? Hmm
@@ -164,6 +168,7 @@ class PLC_Main
 	private:
 	vector<shared_ptr<Ladder_Rung>> ladderRungs; //Container for all ladder rungs present in the parsed ladder logic script.
 	vector<shared_ptr<Ladder_OBJ>> ladderObjects; //Container for all ladder objects present in the parsed ladder logic script. Used for easy status query.
+	vector<shared_ptr<Ladder_VAR>> ladderVars; //Container for all ladder variables present in the parsed ladder logic script. Used for easy status query.
 	shared_ptr<String> currentScript; //save the current script in RAM?.. Hmm..
 	uint8_t nodeMode; //Networking mode - 0 = disabled. 1 = dependent, 2 = cluster
 

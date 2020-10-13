@@ -22,6 +22,7 @@ void PLC_Main::resetAll()
 {
 	ladderRungs.clear(); //Empty created ladder rungs vector
 	ladderObjects.clear(); //Empty the created ladder logic objects vector
+	ladderVars.clear(); //Empty the created ladder vars vector
 	generatePinMap(); //reset and fill the pinmap
 }
 
@@ -124,6 +125,18 @@ shared_ptr<Ladder_OBJ> PLC_Main::findLadderObjByID( const String &id ) //Search 
 	for ( uint16_t x = 0; x < ladderObjects.size(); x++ )
 	{
 		shared_ptr<Ladder_OBJ> pObj = ladderObjects[x];
+		if ( pObj && pObj->getID() == id )
+			return pObj;
+	}
+	
+	return 0; //default
+}
+
+shared_ptr<Ladder_VAR> PLC_Main::findLadderVarByID( const String &id ) //Search through all created objects thus far. This assumes that the object was created successfully.
+{
+	for ( uint16_t x = 0; x < ladderVars.size(); x++ )
+	{
+		shared_ptr<Ladder_VAR> pObj = ladderVars[x];
 		if ( pObj && pObj->getID() == id )
 			return pObj;
 	}
@@ -331,23 +344,33 @@ shared_ptr<Ladder_OBJ> PLC_Main::createCounterOBJ( const String &id, const vecto
 //TODO - Implement some way where a user can easily dictate which variable type to use for memory purposes, otherwise default to auto-detection (maybe always estimate high? 64-bit?).
 shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vector<String> &args )
 {
+	shared_ptr<Ladder_VAR> newObj = 0;
 	if(args[1] == "TRUE")
 	{
+		newObj = make_shared<Ladder_VAR>(true, id );
+		ladderObjects.emplace_back(newObj);
+		ladderVars.emplace_back(newObj);
 		#ifdef DEBUG
-		shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>(true, id );
-		Serial.println(test->getBoolValue());
+		Serial.println(newObj->getBoolValue());
 		Serial.println("made it in true");
 		#endif
-		return make_shared<Ladder_VAR>(true, id );
+		return newObj;
 	}
 	else if(args[1] == "FALSE")
 	{
+		newObj = make_shared<Ladder_VAR>(false, id );
+		ladderObjects.emplace_back(newObj);
+		ladderVars.emplace_back(newObj);
 		#ifdef DEBUG
-		shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>(false, id );
-		Serial.println("made it in false");
-		Serial.println(test->getBoolValue());
+		Serial.println(newObj->getBoolValue());
+		shared_ptr<Ladder_OBJ> obj = findLadderObjByID(id); 
+		if (obj)
+		{ 
+			Serial.println("Hi");
+			Serial.println(obj->getID());
+		}
 		#endif
-		return make_shared<Ladder_VAR>(false, id );
+		return newObj;
 	}
 
 	//could use an else here for but it really doesn't matter
@@ -385,74 +408,86 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 			if (args[2] == VAR_INT32)
 			{
 				int64_t value = static_cast<int64_t>(atoll(val.c_str()));
+				newObj = make_shared<Ladder_VAR>( static_cast<int32_t>(atoll(val.c_str())), id );
 				if(value < INT32_MIN || value > INT32_MAX )
 				{
 					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
 					return 0;
 				}
 				#ifdef DEBUG
-				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<int32_t>(atoll(val.c_str())), id );
-				Serial.println(test->getIntValue());
+				Serial.println(newObj->getIntValue());
 				#endif
-				return make_shared<Ladder_VAR>( static_cast<int32_t>(atoll(val.c_str())), id );
+				ladderObjects.emplace_back(newObj);
+				ladderVars.emplace_back(newObj);
+				return newObj;
 			}
 			else if (args[2] == VAR_UINT32)
 			{
 				int64_t value = static_cast<int64_t>(atoll(val.c_str()));
+				newObj = make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(strtoul(val.c_str(), NULL, 10)), id );
 				if(value < 0 || value > UINT32_MAX )
 				{
 					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
 					return 0;
 				}
 				#ifdef DEBUG
-				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(strtoul(val.c_str(), NULL, 10)), id );
-				Serial.println(test->getUIntValue());
+				Serial.println(newObj->getUIntValue());
 				#endif
-				return make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(strtoul(val.c_str(), NULL, 10)), id );
+				ladderObjects.emplace_back(newObj);
+				ladderVars.emplace_back(newObj);
+				return newObj;
 			}
 			else if (args[2] == VAR_INT64)
 			{
 				int64_t value = static_cast<int64_t>(atoll(val.c_str())); //variable > int64 needed?
+				newObj = make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(atoll(val.c_str())), id );
 				if(value < INT64_MIN || value > INT64_MAX )
 				{
 					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
 					return 0;
 				}
 				#ifdef DEBUG
-				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(atoll(val.c_str())), id );
-				Serial.println(intToStr(test->getLongValue()));
+				Serial.println(intToStr(newObj->getLongValue()));
 				#endif
-				return make_shared<Ladder_VAR>( atoll(val.c_str()), id );
+				ladderObjects.emplace_back(newObj);
+				ladderVars.emplace_back(newObj);
+				return newObj;
 			}
 			else if (args[2] == VAR_UINT64)
 			{
 				uint64_t value = static_cast<uint64_t>(atoll(val.c_str())); //variable > uint64 needed?
+				newObj = make_shared<Ladder_VAR>( static_cast<uint64_t>(strtoul(val.c_str(), NULL, 10)), id );
 				if(value < 0 || value > UINT64_MAX )
 				{
 					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
 					return 0;
 				}
 				#ifdef DEBUG
-				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<uint64_t>(strtoul(val.c_str(), NULL, 10)), id );
-				Serial.println(intToStr(test->getULongValue()));
+				Serial.println(intToStr(newObj->getULongValue()));
 				#endif
-				return make_shared<Ladder_VAR>( static_cast<uint64_t>(strtoull(val.c_str(), NULL, 10)), id );
+				ladderObjects.emplace_back(newObj);
+				ladderVars.emplace_back(newObj);
+				return newObj;
 			}
 			else if (args[2] == VAR_DOUBLE)
 			{
+				newObj = make_shared<Ladder_VAR>( static_cast<double>(atof(val.c_str())), id );
+				ladderObjects.emplace_back(newObj);
+				ladderVars.emplace_back(newObj);
 				#ifdef DEBUG
-				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<double>(atof(val.c_str())), id );
-				Serial.println(test->getDoubleValue());
+				Serial.println(newObj->getDoubleValue());
 				#endif
-				return make_shared<Ladder_VAR>(static_cast<double>(atof(val.c_str())), id );
+				return newObj;
 			}
 			else if (args[2] == VAR_BOOL || args[2] == VAR_BOOLEAN)
 			{
+				newObj = make_shared<Ladder_VAR>(static_cast<bool>(val.c_str()), id );
+				ladderObjects.emplace_back(newObj);
+				ladderVars.emplace_back(newObj);
 				#ifdef DEBUG
-				shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>(static_cast<bool>(val.c_str()), id );
-				Serial.println(test->getBoolValue());
+				Serial.println(newObj->getBoolValue());
 				#endif
-				return make_shared<Ladder_VAR>(static_cast<bool>(val.c_str()), id );
+				return newObj;
 			}
 			else 
 			{
@@ -463,15 +498,20 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 			
 		if (isDouble)
 		{
+			newObj = make_shared<Ladder_VAR>( static_cast<double>(atof(val.c_str())), id );
+			ladderObjects.emplace_back(newObj);
+			ladderVars.emplace_back(newObj);
 			#ifdef DEBUG
-			shared_ptr<Ladder_VAR> test = make_shared<Ladder_VAR>( static_cast<double>(atof(val.c_str())), id );
-			Serial.println(test->getDoubleValue());
+			Serial.println(newObj->getDoubleValue());
 			Serial.println(static_cast<double>(atof(val.c_str())));
 			#endif
-			return make_shared<Ladder_VAR>( static_cast<double>(atof(val.c_str())), id );
+			return newObj;
 		}
 		else
-			return make_shared<Ladder_VAR>( atoll(val.c_str()), id ); //assume a long (greater than 32 bits) This is a safe data type to use as it is a signed 64 bit int
+			newObj = make_shared<Ladder_VAR>( atoll(val.c_str()), id );
+			ladderObjects.emplace_back(newObj);
+			ladderVars.emplace_back(newObj);
+			return newObj; //assume a long (greater than 32 bits) This is a safe data type to use as it is a signed 64 bit int
 	}
 
 	return 0;
@@ -479,6 +519,87 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 
 shared_ptr<Ladder_OBJ> PLC_Main::createMathOBJ( const String &id, const vector<String> & args)
 {
+	if(args.size() >= 2)
+	{
+		String function = args[0];
+		//shared_ptr<Ladder_OBJ> newObj = 0;
+		shared_ptr<Ladder_VAR> var1ptr = findLadderVarByID(args[1]);
+		if(args.size() >= 3)
+		{
+			shared_ptr<Ladder_VAR> var2ptr = findLadderVarByID(args[2]);
+		}
+		if(function == typeTagMTAN)
+		{
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, TYPE_MATH_TAN, var1ptr));
+			newObj->computeTAN();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
+		}
+		else if(function == typeTagMSIN)
+		{
+			//Sin
+		}
+		else if(function == typeTagMCOS)
+		{
+			//Cos
+		}
+		else if(function == typeTagMMUL)
+		{
+			//Multiply
+		}
+		else if(function == typeTagMDIV)
+		{
+			//Divide
+		}
+		else if(function == typeTagMADD)
+		{
+			//Add
+		}
+		else if(function == typeTagMSUB)
+		{
+			//Subtraction
+		}
+		else if(function == typeTagMEQ)
+		{
+			//Equal to
+		}
+		else if(function == typeTagMNEQ)
+		{
+			//Not Equal to
+		}
+		else if(function == typeTagMGRE)
+		{
+			//Greater than
+		}
+		else if(function == typeTagMLES)
+		{
+			//Less than
+		}
+		else if(function == typeTagMGREE)
+		{
+			 //Greater than or equal to
+		}
+		else if(function == typeTagMLESE)
+		{
+			//Less than or equal to
+		}
+		else if(function == typeTagMINC)
+		{
+			//Increment
+		}
+		else if(function == typeTagMDEC)
+		{
+			//Decrement
+		}
+		else if(function == typeTagMMOV)
+		{
+			//Move value
+		}
+		else
+		{
+			//Throw error
+		}
+	}
 	return 0;
 }
 

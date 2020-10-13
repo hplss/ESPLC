@@ -44,6 +44,11 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &typeTagMSIN PROGMEM = PSTR("SIN"), //TYPE: MATH - Sine function
 			 &typeTagMCOS PROGMEM = PSTR("COS"), //TYPE: MATH - Cosine function
 			 &typeTagMTAN PROGMEM = PSTR("TAN"), //TYPE: MATH - Tangent function
+			 &typeTagMMUL PROGMEM = PSTR("MUL"), //TYPE: MATH - Multiply function
+			 &typeTagMDIV PROGMEM = PSTR("DIV"), //TYPE: MATH - Division function
+			 &typeTagMADD PROGMEM = PSTR("ADD"), //TYPE: MATH - Addition function
+			 &typeTagMSUB PROGMEM = PSTR("SUB"), //TYPE: MATH - Subtraction function
+			 &typeTagMMOV PROGMEM = PSTR("MOV"), //TYPE: MATH - Subtraction function
 			 &typeTagAnalog PROGMEM = PSTR("ANALOG"), //input (and possibly output) identifier - for analog signals
 			 &typeTagDigital PROGMEM = PSTR("DIGITAL"), //input (and possibly output) identifier - for digital signals
 
