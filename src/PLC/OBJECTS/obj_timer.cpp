@@ -33,7 +33,7 @@ void TimerOBJ::updateObject()
 	
 	enableBit = lineState; //enable bit always matches line state. Set last.
 	setState(lineState); //between enabled/disabled
-	Ladder_OBJ::updateObject(); //parent class
+	Ladder_OBJ_Logical::updateObject(); //parent class
 }
 
 shared_ptr<Ladder_VAR> TimerOBJ::addObjectVAR( const String &id )
@@ -65,4 +65,17 @@ shared_ptr<Ladder_VAR> TimerOBJ::addObjectVAR( const String &id )
     Serial.println(PSTR("Failed: Object Tag: ") + id ); 
     #endif
     return 0; //failed to add
+}
+
+shared_ptr<Ladder_VAR> TimerOBJ::getObjectVAR( const String &id )
+{
+	std::map<const String, shared_ptr<Ladder_VAR>>::iterator bititr = bitMap.find(id);
+	if (bititr != bitMap.end())
+	{
+		return bititr->second; //return the shared pointer to the var
+	}
+	else
+	{
+		return Ladder_OBJ_Logical::getObjectVAR(id); //default case.
+	}
 }

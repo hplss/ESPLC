@@ -43,13 +43,43 @@ extern const String &styleDir PROGMEM,
 			 		&scriptDir PROGMEM;
 //
 
+//PLC_Remote Constants for queries (non printable chars)
+const char CMD_REQUEST_UPDATE = 17, //Data prefix for requesting (by a client) an update of relevant values associated with a given object ID
+		   CMD_REQUEST_INIT = 18, //Data prefix for requesting (by a client) a complete detailing of an object with a given ID.
+		   CMD_REQUEST_INVALID = 16, //Reply sent in the event that a request is invalid or was incorrectly parsed by the remote host.
+		   CMD_SEND_UPDATE = 19, //Data prefix (from a host) for updating specific ladder objects. After a request for an update, this prefix is expected. 
+		   CMD_SEND_INIT = 21, //Data prefix (from a host) indicating that the included data is meant to initialize a new object on the client for later reference.
+		   CMD_SEND_REFRESH = 20, //Data prefix (from a host) indicating that all objects on the client should be refreshed and re-initialized. Possibly after an abrupt disconnect or device reset, or ogic script cahnge.
+		   CHAR_UPDATE_GROUP = 29, //This character is used to denote the separation of a set of data records (pertaining to individual ladder objects) for serial or web updates.
+		   CHAR_UPDATE_RECORD = 30, //This character is used to denote the separation of a data record as it pertains to receiving updates from serial or a web interface.
+		   CHAR_QUERY_END = 15; //This character is appended to the end of the update string, and denotes the end of all update info. This must be included before updates are applied.
+//
+
+const char CHAR_EQUALS = '=',
+		   CHAR_P_START = '(',
+		   CHAR_P_END = ')',
+		   CHAR_BRACKET_START = '[',
+		   CHAR_BRACKET_END = ']',
+		   CHAR_SPACE = ' ',
+		   CHAR_COMMA = ',',
+		   CHAR_AND = '*',
+		   CHAR_OR = '+',
+		   CHAR_VAR_OPERATOR = '.', //EX: Timer1.DN '.' indicates that we are accessing an object variable to get a state.
+		   CHAR_NOT_OPERATOR = '/', //EX: /IN1 returns opposite state of IN1 logic state
+		   CHAR_ACCESSOR_OPERATOR = ':', //EX: REMOTE:OBJECT.BIT
+		   CHAR_MODIFIER_START = '{',
+		   CHAR_MODIFIER_END = '}',
+		   CHAR_NEWLINE = '\n',
+		   CHAR_CARRIAGE = '\r',
+		   CHAR_NONE = 0;
+
 const char CMD_PREFIX = '/', // "\"
-		   DATA_SPLIT = ':'; //Char used to split multiple strings of data in a serial commamnd stream
+		   DATA_SPLIT = ':'; //Char used to split multiple strings of data in a serial or network command stream
 
 const char CMD_DISCONNECT = 'd',
 		   CMD_CONNECT = 'c', //"SSID":"Password"
 		   CMD_NETWORKS = 's', //scan
-		   CMD_NETINFO = 'i', //request current network info <if connected>
+		   CMD_NETINFO = 'i', //request current system status info
 		   CMD_AP = 'a', //"ssid":"password"
 		   CMD_VERBOSE = 'v', //<mode> can be 0 or any non-zero value, as well as 'on' or 'off'
 		   CMD_PROGRAM = 'p', //stores specified values to eeprom so that they will load automatically in the future
@@ -79,6 +109,7 @@ extern const String &transmission_HTML PROGMEM,
 
 //PLC related error messages
 extern const String &err_failed_creation PROGMEM,
+					&err_failed_accessor PROGMEM,
 			 		&err_unknown_args PROGMEM,
 			 		&err_insufficient_args PROGMEM,
 			 		&err_unknown_type PROGMEM,
@@ -93,6 +124,7 @@ extern const String &err_failed_creation PROGMEM,
 
 //End storage related constants
 
+//The OBJ_TYPE enum contains identifiers that indicate a given LADDER_OBJ object's functionality. This is typically used by the parser and object creation functions.
 enum OBJ_TYPE
 {
 	TYPE_INPUT = 0,		//physical input (digital read)
@@ -143,14 +175,17 @@ enum OBJ_LOGIC
 	LOGIC_NO		//Normally Open
 };
 
-enum OBJ_STATE
+//This enum denotes the varying states that an object may have. 
+enum OBJ_STATE 
 {
 	STATE_DISABLED = 0,  //line state to this object is high(true)
 	STATE_ENABLED, //line state to this object is low(false)
 	STATE_LATCHED, //worry about this later
-	STATE_UNLATCHED
+	STATE_UNLATCHED 
 };
 
+//This enum contains a list of valid pin types as it pertains to the IO capability of the ESP-32. 
+//This is typically used by the logic parser to verify that a requested pin argument is valid.
 enum PIN_TYPE
 {
 	PIN_I = 0, //indicates that the pin is a digital input only pin
@@ -162,6 +197,7 @@ enum PIN_TYPE
 	PIN_INVALID //indicates that a requested pin id invalid, and not available for use at any time.
 };
 
+//This enum contains identifiers that indicate specific error types.
 enum ERR_DATA
 {
 	ERR_CREATION_FAILED = 0, //This error indicates that the creation of a specified ladder object has failed for unknown reasons (generic failure)
@@ -169,27 +205,13 @@ enum ERR_DATA
 	ERR_UNKNOWN_ARGS,	//This error indicates that the arguments given to the parser through the script cannot be interpreted, or they do not exist
 	ERR_INSUFFICIENT_ARGS, //This error type indicates that a ladder logic object creation has failed due to insufficient arguments provided by the end-user.
 	ERR_INVALID_OBJ,	//This error type indicates that a ladder object defined by the user does not exist or is not recognized by the parser.
+	ERR_INVALID_ACCESSOR, //This error type indicates that an accessor used to access other adder objects failed to initialize or is invalid.
 	ERR_INVALID_BIT, //This error type indicates that a bit referece to a given ladder logic object is not valid or associated with the given object.
 	ERR_PIN_INVALID, //This error indicates that a given pin number used for IO operations is invalid (doesn't exist on the device, or is used for special operations)
 	ERR_PIN_TAKEN, //This error indicates that a given pin number used for IO operations is already occupied by another object.
 	ERR_PARSER_FAILED, //This error indicatews that the parser failed to exit properly.
 	ERR_NAME_TOO_LONG //This indicates that the name of an object being parsed is too long to be stored (exceeds allowed memory usage)
 };
-
-const char CHAR_EQUALS = '=',
-		   CHAR_P_START = '(',
-		   CHAR_P_END = ')',
-		   CHAR_BRACKET_START = '[',
-		   CHAR_BRACKET_END = ']',
-		   CHAR_SPACE = ' ',
-		   CHAR_COMMA = ',',
-		   CHAR_AND = '*',
-		   CHAR_OR = '+',
-		   CHAR_VAR_OPERATOR = '.', //EX: Timer1.DN '.' indicates that we are accessing an object variable to get a state.
-		   CHAR_NOT_OPERATOR = '/', //EX: /IN1 returns opposite state of IN1 logic state
-		   CHAR_NEWLINE = '\n',
-		   CHAR_CARRIAGE = '\r',
-		   CHAR_NONE = 0;
 
 
 extern const String &bitTagDN PROGMEM,
@@ -229,7 +251,8 @@ extern const String &bitTagDN PROGMEM,
 			 		&variableTag1 PROGMEM,
 			 		&variableTag2 PROGMEM,
 			 		&outputTag1 PROGMEM,
-			 		&outputTag2 PROGMEM;
+			 		&outputTag2 PROGMEM,
+					&remoteTag PROGMEM;
 
 
 //Generic Function Declarations 
@@ -291,8 +314,11 @@ bool strContains( const String &, const vector<char> & );
 //Performs a check to see if a specific character is present in the inputted string.
 bool strContains( const String &, const char );
 
-bool strBeginsWith( const String &str, const vector<char> &c );
-bool strBeginsWith( const String &str, const char c );
-bool strEndsWith( const String &str, const vector<char> &c );
-bool strEndsWith( const String &str, const char c );
+bool strBeginsWith( const String &, const vector<char> & );
+bool strBeginsWith( const String &, const char  );
+bool strEndsWith( const String &, const vector<char> & );
+bool strEndsWith( const String &, const char );
+//Remove specific character(s) from a given string.
+String removeFromStr( const String &, const vector<char> &);
+String removeFromStr( const String &, const char);
 #endif /* GLOBALDEFS_H_ */

@@ -10,18 +10,19 @@
 
 //other object includes
 #include "OBJECTS/MATH/obj_math_basic.h"
-#include "OBJECTS/obj_remote.h"
 #include "OBJECTS/obj_var.h"
 #include "OBJECTS/obj_input_basic.h"
 #include "OBJECTS/obj_output_basic.h"
 #include "OBJECTS/obj_timer.h"
 #include "OBJECTS/obj_counter.h"
+#include "ACCESSORS/acc_remote.h"
 //
 
 void PLC_Main::resetAll()
 {
 	ladderRungs.clear(); //Empty created ladder rungs vector
 	ladderObjects.clear(); //Empty the created ladder logic objects vector
+	accessorObjects.clear();
 	generatePinMap(); //reset and fill the pinmap
 }
 
@@ -94,14 +95,23 @@ String PLC_Main::getObjName( const String &parsedString )
 
 void PLC_Main::processLogic()
 {
-	if ( !getNumRungs() ) //are there no available rungs?
-		return; //Do nothing if that's the case.
+	//Update accessor objects first in the scan, as the state in some of the Ladder_OBJ_Logical objects they contain may be of use.
+	for ( uint8_t x = 0; x < getNumAccessors(); x++ )
+	{
+		getAccessorObjects()[x]->updateObject();
+	}
+	//
 
 	for (uint16_t x = 0; x < getNumRungs(); x++) //iterate through all available rungs
 	{
-		getLadderRung(x)->processRung(x); //perform logic 'scan' on the selected rung
+		getLadderRungs()[x]->processRung(x); //perform logic 'scan' on the selected rung
 	}
 
+	if ( getRemoteServer() ) //handle the web server (if applicable)
+	{
+		getRemoteServer()->processRequests(); //handle any remote requests/etc.
+	}
+		
 	//After the logic scans, the object's state is known. Perform the update on the objects (for some objects, this is the "action" function.)
 	for ( uint16_t y = 0; y < ladderObjects.size(); y++ )
 		ladderObjects[y]->updateObject(); 
@@ -119,16 +129,27 @@ bool PLC_Main::addLadderRung(shared_ptr<Ladder_Rung> rung)
 	return true;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::findLadderObjByID( const String &id ) //Search through all created objects thus far. This assumes that the object was created successfully.
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::findLadderObjByID( const String &id ) //Search through all created objects thus far. This assumes that the object was created successfully.
 {
 	for ( uint16_t x = 0; x < ladderObjects.size(); x++ )
 	{
-		shared_ptr<Ladder_OBJ> pObj = ladderObjects[x];
+		shared_ptr<Ladder_OBJ_Logical> pObj = ladderObjects[x];
 		if ( pObj && pObj->getID() == id )
 			return pObj;
 	}
 	
 	return 0; //default
+}
+
+shared_ptr<Ladder_OBJ_Accessor> PLC_Main::findAccessorByID( const String &id )
+{
+	for ( uint8_t x = 0; x < accessorObjects.size(); x++ )
+	{
+		shared_ptr<Ladder_OBJ_Accessor> pObj = accessorObjects[x];
+		if ( pObj && pObj->getID() == id )
+			return pObj;
+	}
+	return 0;
 }
 
 bool PLC_Main::parseScript(const char *script)
@@ -164,7 +185,7 @@ bool PLC_Main::parseScript(const char *script)
 	return true; //success
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createNewObject(const String &name, const vector<String> &ObjArgs )
+shared_ptr<Ladder_OBJ> PLC_Main::createNewLadderObject(const String &name, const vector<String> &ObjArgs )
 {
 	if ( name.length() > MAX_PLC_OBJ_NAME ) //name is too long. Gotta keep memory in mind
 	{
@@ -195,10 +216,10 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewObject(const String &name, const vecto
 			{
 				return createCounterOBJ(name, ObjArgs);
 			}
-			/*else if ( type == counterTag2 ) 
+			else if ( type == remoteTag )
 			{
-				return make_shared<ladderOBJdata>(name, createMathOBJ(ObjArgs));
-			}*/
+				return createRemoteClient(name, ObjArgs);
+			}
 			else //if we don't find a valid object type
 				sendError(ERR_DATA::ERR_UNKNOWN_TYPE, type);
 		}
@@ -209,7 +230,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewObject(const String &name, const vecto
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createInputOBJ( const String &id, const vector<String> &args )
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::createInputOBJ( const String &id, const vector<String> &args )
 {
 	uint8_t pin = 0, logic = LOGIC_NO, type = TYPE_INPUT, numArgs = args.size();
 
@@ -242,7 +263,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createInputOBJ( const String &id, const vector<
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createOutputOBJ( const String &id, const vector<String> &args )
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOutputOBJ( const String &id, const vector<String> &args )
 {
 	uint8_t pin = 0, logic = LOGIC_NO, numArgs = args.size();
 	if ( numArgs > 2 ) //caveat here is that outputs would NEVER normally be normally closed (ON)
@@ -266,7 +287,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createOutputOBJ( const String &id, const vector
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createTimerOBJ( const String &id, const vector<String> &args )
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::createTimerOBJ( const String &id, const vector<String> &args )
 {
 	uint8_t numArgs = args.size();
 	uint32_t delay = 0, accum = 0, subType = TYPE_TON;
@@ -298,7 +319,8 @@ shared_ptr<Ladder_OBJ> PLC_Main::createTimerOBJ( const String &id, const vector<
 
 	return 0;
 }
-shared_ptr<Ladder_OBJ> PLC_Main::createCounterOBJ( const String &id, const vector<String> &args )
+
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::createCounterOBJ( const String &id, const vector<String> &args )
 {
 	uint16_t count = 0, accum = 0; 
 	uint8_t subType = TYPE_CTU, numArgs = args.size();
@@ -329,7 +351,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createCounterOBJ( const String &id, const vecto
 }
 
 //TODO - Implement some way where a user can easily dictate which variable type to use for memory purposes, otherwise default to auto-detection (maybe always estimate high? 64-bit?).
-shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vector<String> &args )
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, const vector<String> &args )
 {
 	if ( args.size() > 1 )
 	{
@@ -363,21 +385,81 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 			
 		if (isFloat)
 			return make_shared<Ladder_VAR>( val.toFloat(), id );
-		
-		int64_t value = atoll(val.c_str());
-		if ( value < 0 && abs( value ) <= INT_MAX )
-			return make_shared<Ladder_VAR>( static_cast<int_fast32_t>(value), id ); //must be signed
-		else if (value <= INT_MAX )
-			return make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(value), id ); //we can use unsigned
 		else
-			return make_shared<Ladder_VAR>( static_cast<uint64_t>(value), id ); //assume a long (geater than 32 bits)
+			return make_shared<Ladder_VAR>( atoll(val.c_str()), id ); //assume a long (geater than 32 bits)
 	}
 
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createMathOBJ( const String &id, const vector<String> & args)
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const vector<String> & args)
 {
+	return 0;
+}
+
+shared_ptr<Ladder_OBJ_Accessor> PLC_Main::createRemoteClient( const String &id, const vector<String> &args )
+{
+	//Args: IP, Port, Timeout Time
+	uint32_t timeout = 2000, updfreq = 1000; //default
+    uint8_t numArgs = args.size();
+    if ( numArgs > 5 )
+    {
+        for ( uint8_t x = 5; x < numArgs; x++ )
+        {
+            sendError(ERR_DATA::ERR_UNKNOWN_ARGS, args[0] + args[x]);
+        }
+    }
+    if ( numArgs > 4 )
+    {
+        long tempInt = args[4].toInt();
+        if ( tempInt > 0 ) //maybe a minimum here? 
+		    updfreq = tempInt;
+    }
+	if ( numArgs > 3)
+	{
+        long tempInt = args[3].toInt();
+        if ( tempInt > 0 )
+		    timeout = tempInt;
+	}
+	if ( numArgs > 2) //must have IP and port
+	{
+		IPAddress serverIP;
+
+        uint16_t port = 5000; //default port
+
+        long tempPort = args[2].toInt();
+        if ( tempPort > 0 && tempPort <= UINT16_MAX )
+            port = tempPort;
+		
+		if ( WiFi.hostByName(args[1].c_str(), serverIP ) )
+		{
+			for ( uint8_t x = 0; x < getNumAccessors(); x++ )
+            {
+                if ( getAccessorObjects()[x]->getType() == TYPE_REMOTE )
+                {
+                    PLC_Remote_Client *currentClient = static_cast<PLC_Remote_Client *>(getAccessorObjects()[x].get());
+                    if ( currentClient && currentClient->getHostAddress() == serverIP )
+                    {
+                        sendError( ERR_CREATION_FAILED, String(CHAR_SPACE) + PSTR("Duplicate IP"));
+                        return 0; //already exists based on IP -- some error here?
+                    }
+                } 
+            }
+
+            if ( port == 80 ) //invalid port?
+            {
+                sendError( ERR_CREATION_FAILED, String(CHAR_SPACE) + PSTR("Invalid Port"));
+                return 0; //some error here?
+            }
+
+            shared_ptr<PLC_Remote_Client> accessorClient = make_shared<PLC_Remote_Client>(id, serverIP, port, timeout, updfreq );
+            getAccessorObjects().push_back( accessorClient );
+            return accessorClient;
+		}
+		else
+			Core.sendMessage(PSTR("Unknown host: ") + args[1]);
+	}
+
 	return 0;
 }
 
@@ -475,6 +557,11 @@ void PLC_Main::sendError( uint8_t err, const String &info )
 		case ERR_DATA::ERR_INVALID_OBJ:
 		{
 			error = err_failed_creation + CHAR_SPACE + err_unknown_obj;
+		}
+		break;
+		case ERR_DATA::ERR_INVALID_ACCESSOR:
+		{
+
 		}
 		break;
 		case ERR_DATA::ERR_PIN_INVALID:

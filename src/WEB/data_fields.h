@@ -196,20 +196,22 @@ class VAR_Datafield : public DataField
 	uint8_t iVarType;
 };
 
+//Args:<Function>,<External Variable>,<Address>,<Type>,<Label>,<Special Params>,<Cols>,<Rows>,<Force Function Exec>,<NewLine>
 class VAR_S_Datafield : public VAR_Datafield
 {
 	public:
 	template <typename T>
-	VAR_S_Datafield(const function<void(void)> &onChanged, T *var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true ) : VAR_Datafield( var, address, type, fieldLabel, params, cols, rows, newLine, true )
-	{ func = onChanged; }
+	VAR_S_Datafield(const function<void(void)> &onChanged, T *var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool force = false, bool newLine = true ) : VAR_Datafield( var, address, type, fieldLabel, params, cols, rows, newLine, true )
+	{ func = onChanged;  forceExec = force; }
 	template <typename T>
-	VAR_S_Datafield(const function<void(void)> &onChanged, shared_ptr<T> var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true ) : VAR_Datafield( var, address, type, fieldLabel, params, cols, rows, newLine, true )
-	{ func = onChanged; }
+	VAR_S_Datafield(const function<void(void)> &onChanged, shared_ptr<T> var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool force = false, bool newLine = true ) : VAR_Datafield( var, address, type, fieldLabel, params, cols, rows, newLine, true )
+	{ func = onChanged; forceExec = force; }
 	~VAR_S_Datafield(){}
-	bool SetFieldValue( const String &str ){ if(VAR_Datafield::SetFieldValue(str)){ func(); return true; } return false; }
+	bool SetFieldValue( const String &str ){ if(VAR_Datafield::SetFieldValue(str) || forceExec ){ func(); return true; } return false; }
 
 	private:
 	function<void(void)> func;//function reference to be executed on change
+	bool forceExec;
 };
 
 //This field is used specifically for selecting and setting the device WiFi SSID for direct connection vie the web UI.

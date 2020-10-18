@@ -4,10 +4,10 @@
 #include "../PLC_IO.h"
 
 //An output object typically represents a physical pin or boolean, and represents the final logic state on a rung after all other logic operations have been performed. 
-class OutputOBJ: public Ladder_OBJ
+class OutputOBJ: public Ladder_OBJ_Logical
 {
 	public:
-	OutputOBJ( const String &id, uint8_t pin, uint8_t logic = LOGIC_NO ) : Ladder_OBJ(id, TYPE_OUTPUT){ iPin = pin; pinMode(pin, OUTPUT); setLogic(logic); }
+	OutputOBJ( const String &id, uint8_t pin, uint8_t logic = LOGIC_NO ) : Ladder_OBJ_Logical(id, TYPE_OUTPUT){ iPin = pin; pinMode(pin, OUTPUT); setLogic(logic); }
 	~OutputOBJ()
 	{
 		 #ifdef DEBUG 
@@ -17,7 +17,7 @@ class OutputOBJ: public Ladder_OBJ
 	}
 	virtual void updateObject();
 	uint8_t getOutputPin(){ return iPin; }
-	virtual void setLineState(bool &state, bool bNot){ Ladder_OBJ::setLineState(state, bNot); }
+	virtual void setLineState(bool &state, bool bNot){ Ladder_OBJ_Logical::setLineState(state, bNot); }
 	
 	private:
 	uint8_t iPin;

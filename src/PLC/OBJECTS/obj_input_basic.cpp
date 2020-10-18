@@ -6,7 +6,7 @@
 //////////////////////////////////////////////////////////////////////////
 void InputOBJ::updateObject()
 {
-	Ladder_OBJ::updateObject(); //parent class - must be called last
+	Ladder_OBJ_Logical::updateObject(); //parent class - must be called last
 }
 
 void InputOBJ::setLineState( bool &state, bool bNot)
@@ -25,5 +25,5 @@ void InputOBJ::setLineState( bool &state, bool bNot)
 		}
 	}
 	
-	Ladder_OBJ::setLineState( state, bNot ); //let the parent handle anything else from here.
+	Ladder_OBJ_Logical::setLineState( state, bNot ); //let the parent handle anything else from here.
 }

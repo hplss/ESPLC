@@ -56,7 +56,7 @@ void Ladder_VAR::setLineState(bool &state, bool bNot)
         }
     }
 
-    Ladder_OBJ::setLineState(state, bNot); 
+    Ladder_OBJ_Logical::setLineState(state, bNot); 
 }
 
 template <class T>

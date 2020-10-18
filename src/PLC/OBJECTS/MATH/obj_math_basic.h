@@ -10,12 +10,12 @@
 
 //Basic math operations block. Math function are Addition, multiplication, division, clear (set to zero), square root, absolute value, cosine, sine, tangent, greater than, Less than, equal to
 //Also implement constructors that allow for constants to be passed in as default arguments. Basically just have the constructor create a set of ladder variables.
-class MathBlockOBJ : public Ladder_OBJ 
+class MathBlockOBJ : public Ladder_OBJ_Logical 
 {
 	public:
     template <typename A, typename B>
     MathBlockOBJ(const String &id, A var1, uint8_t type, B var2 = 0, shared_ptr<Ladder_VAR> dest = 0) : MathBlockOBJ(id, make_shared<Ladder_VAR>(var1), type, make_shared<Ladder_VAR>(var2), dest ) {}
-	MathBlockOBJ(const String &id, shared_ptr<Ladder_VAR> A, uint8_t type, shared_ptr<Ladder_VAR> B = 0, shared_ptr<Ladder_VAR> dest = 0) : Ladder_OBJ(id, type)
+	MathBlockOBJ(const String &id, shared_ptr<Ladder_VAR> A, uint8_t type, shared_ptr<Ladder_VAR> B = 0, shared_ptr<Ladder_VAR> dest = 0) : Ladder_OBJ_Logical(id, type)
     { 
         sourceA = A; //must always have a valid pointer
         sourceB = B;
@@ -86,7 +86,7 @@ class MathBlockOBJ : public Ladder_OBJ
     	}
 		else
 		{
-			return Ladder_OBJ::getObjectVAR(id); //default case. -- probably an error
+			return Ladder_OBJ_Logical::getObjectVAR(id); //default case. -- probably an error
 		}
 	}
     //returns true if either Ladder_Var object uses float type vairables. This is important for some math operations.

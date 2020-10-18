@@ -270,3 +270,43 @@ void UICore::parseTime( const vector<String> &args )
 	}	
 }
 
+vector<IPAddress> UICore::parseIPAddress( const String &str, const vector<char> &delim )
+{
+	//Addresses should contain nothing but "." and integers
+	vector<IPAddress> addrVec;
+	if ( !delim.size() ) //must have some delimiter
+		return addrVec;
+
+	vector<String> IPstrs;
+
+	String currentStr;
+
+	for ( uint16_t x = 0; x < str.length(); x++ )
+	{
+		for ( uint8_t y = 0; y < delim.size(); y++ )
+		{
+			if ( delim[y] == '.' ) //sorry, we need this for the IP address octets
+				continue;
+
+			if ( str[x] == delim[y] ) //Found a limiter?
+			{
+				IPstrs.push_back(currentStr);
+				currentStr.clear();
+			}
+		}
+
+		currentStr += str[x];
+
+		if ( x >= (str.length() - 1) ) //end of the line
+			IPstrs.push_back(currentStr);
+	}
+
+	for ( uint8_t x = 0; x < IPstrs.size(); x++ )
+	{
+		IPAddress newIP = IPAddress();
+		if ( newIP.fromString(IPstrs[x]) )
+			addrVec.push_back(newIP);
+	}
+
+	return addrVec;
+}

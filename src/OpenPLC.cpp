@@ -39,9 +39,6 @@
 
 //other ladder logic object includes
 #include "./PLC/OBJECTS/MATH/obj_math_basic.h"
-//other object includes
-#include "./PLC/OBJECTS/MATH/obj_math_basic.h"
-#include "./PLC/OBJECTS/obj_remote.h"
 #include "./PLC/OBJECTS/obj_var.h"
 #include "./PLC/OBJECTS/obj_input_basic.h"
 #include "./PLC/OBJECTS/obj_output_basic.h"
@@ -52,8 +49,6 @@
 PLC_Main PLCObj; //PLC ladder logic processing object. 
 UICore Core; //UI object init -- for web and serial interfaces, as well as settings storage, etc.
 
-//
-//const String &script = PSTR("TIMER1=TIMER(1000)\n SW4=INPUT(13)\n SW3=INPUT(25)\n SW2=INPUT(33)\n SW1=INPUT(32)\n POTENTIOMETER=INPUT(26)\n WHITE=OUTPUT(16)\n YELLOW=OUTPUT(17)\n BLUE=OUTPUT(18)\n GREEN=OUTPUT(19)\n RED=OUTPUT(21)\n SW1+SW2+SW3+SW4+POTENTIOMETER=WHITE=TIMER1\n SW2*TIMER1.DN=YELLOW\n SW3=BLUE\n SW4=GREEN\n SW1*SW3*POTENTIOMETER=RED\n");
 //Main device setup function, called once at device power-up
 void setup()
 {

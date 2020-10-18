@@ -57,6 +57,7 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &variableTag2 PROGMEM = PSTR("VAR"), //Virtual object alias
 			 &outputTag1 PROGMEM = PSTR("OUTPUT"), //Output object
 			 &outputTag2 PROGMEM = PSTR("OUT"), //Output object alias
+			 &remoteTag PROGMEM = PSTR("REMOTE"), //remote object
 			 &movTag PROGMEM = PSTR("MOV"); //MOV blocks are responsible for transferring (copying) data between two variable objects.
 //END PLC TAGS
 
@@ -82,6 +83,7 @@ const String &transmission_HTML PROGMEM = PSTR("text/html"),
 
 //PLC Error Messages
 const String &err_failed_creation PROGMEM = PSTR("Failed to create object."),
+			 &err_failed_accessor PROGMEM = PSTR("Failed to create accessor."),
 			 &err_unknown_args PROGMEM = PSTR("Unknown argument."),
 			 &err_insufficient_args PROGMEM = PSTR("Insufficient arguments."),
 			 &err_unknown_type PROGMEM = PSTR("Unknown object type."),
@@ -283,7 +285,7 @@ bool strContains( const String &str, const vector<char> &c )
 	}
 	return false;
 }
-bool strContains( const String &str, const char c ){ return strContains(str,vector<char>{c}); }
+bool strContains( const String &str, const char c ){ return strContains(str, vector<char>{c}); }
 
 bool strBeginsWith( const String &str, const vector<char> &c )
 {
@@ -294,7 +296,7 @@ bool strBeginsWith( const String &str, const vector<char> &c )
 	}
 	return false;
 }
-bool strBeginsWith( const String &str, const char c ){ return strContains(str,vector<char>{c}); }
+bool strBeginsWith( const String &str, const char c ){ return strContains(str, vector<char>{c}); }
 
 bool strEndsWith( const String &str, const vector<char> &c )
 {
@@ -305,4 +307,29 @@ bool strEndsWith( const String &str, const vector<char> &c )
 	}
 	return false;
 }
-bool strEndsWith( const String &str, const char c ){ return strContains(str,vector<char>{c}); }
+bool strEndsWith( const String &str, const char c ){ return strContains(str, vector<char>{c}); }
+
+String removeFromStr( const String &str, const vector<char> &c )
+{
+	String output;
+	bool skipChar = false;
+
+	for ( uint16_t x = 0; x < str.length(); x++ )
+	{
+		for ( uint8_t y = 0; y < c.size(); y++ )
+		{
+			if ( c[y] == str[x] )
+			{
+				skipChar = true;
+				break; //no need to look further this cycle.
+			}
+		}
+
+		if ( !skipChar )
+			output += str[x]; //append the char
+	}
+
+	return output;
+}
+
+String removeFromStr( const String &str, const char c, String &output ){ return removeFromStr( str, vector<char>{c} ); }

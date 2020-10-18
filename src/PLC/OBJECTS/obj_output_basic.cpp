@@ -10,5 +10,5 @@ void OutputOBJ::updateObject() //Logic used to update the coil
 	digitalWrite(iPin, lineState);
 	//Serial.print("Output State: ");
 	//Serial.println(state);
-	Ladder_OBJ::updateObject();
+	Ladder_OBJ_Logical::updateObject();
 }

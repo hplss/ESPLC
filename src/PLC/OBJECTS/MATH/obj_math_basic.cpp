@@ -61,7 +61,7 @@ void MathBlockOBJ::setLineState(bool &state, bool bNot)
             break;
         }
     }
-    Ladder_OBJ::setLineState(state, bNot); 
+    Ladder_OBJ_Logical::setLineState(state, bNot); 
 }
 
 void MathBlockOBJ::computeMUL()

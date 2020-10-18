@@ -5,10 +5,10 @@
 #include "obj_var.h"
 
 //Inputs objects check the state of a physical pin and perform logic opertions based on the state of that pin. This may entail setting the rung state to high or low depending on the logic script.
-class InputOBJ : public Ladder_OBJ
+class InputOBJ : public Ladder_OBJ_Logical
 {
 	public:
-	InputOBJ( const String &id, uint8_t pin, uint8_t type = TYPE_INPUT, uint8_t logic = LOGIC_NO ) : Ladder_OBJ(id, type)
+	InputOBJ( const String &id, uint8_t pin, uint8_t type = TYPE_INPUT, uint8_t logic = LOGIC_NO ) : Ladder_OBJ_Logical(id, type)
 	{ 
 		iPin = pin; 
 
