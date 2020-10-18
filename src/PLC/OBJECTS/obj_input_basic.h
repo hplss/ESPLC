@@ -13,10 +13,7 @@ class InputOBJ : public Ladder_OBJ_Logical
 	{ 
 		iPin = pin; 
 
-		if ( type == OBJ_TYPE::TYPE_INPUT_ANALOG ) //only create variable object if we are an analog type
-		{
-			getObjectVARs().emplace_back(make_shared<Ladder_VAR>(&iValue, bitTagVAL)); 
-		}
+		getObjectVARs().emplace_back(make_shared<Ladder_VAR>(&iValue, bitTagVAL)); 
 
 		uint64_t gpioBitMask = 1ULL<<pin;
 		gpio_mode_t gpioMode = GPIO_MODE_INPUT;
@@ -37,7 +34,7 @@ class InputOBJ : public Ladder_OBJ_Logical
 		#endif
 	}
 
-	uint_fast32_t getInput()
+	uint16_t getInput()
 	{ 
 		if ( getType() == OBJ_TYPE::TYPE_INPUT_ANALOG )
 			return analogRead(iPin);
@@ -61,7 +58,7 @@ class InputOBJ : public Ladder_OBJ_Logical
 	
 	private:
 	uint8_t iPin;
-	uint_fast32_t iValue; 
+	uint16_t iValue; //input value that was read and stored off
 };
 
 #endif

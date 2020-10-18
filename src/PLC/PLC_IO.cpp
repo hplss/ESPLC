@@ -66,7 +66,7 @@ shared_ptr<Ladder_OBJ_Logical> Ladder_OBJ_Accessor::handleInit(const String &str
 	if(strBeginsWith(str,CMD_SEND_INIT)) //should only be initializing individual objects (not groups of them? Hmm...)
 	{
 		vector<String> objRecords = splitString(removeFromStr(str, CMD_SEND_INIT), CHAR_UPDATE_RECORD );
-		//[0] = ID, [1] = type, [2] = state, [3] = logic, [4] = value, [5] = other args (tbd)
+		//Record ID's: [0] = ID, [1] = type, [2] = state, [3] = logic, [4] = value, [5] = other args (tbd)
 		//perform object creation here - hopefully piggybacking off of the CreateNewObject code.
 		//newObj = createLadderObj
 	}

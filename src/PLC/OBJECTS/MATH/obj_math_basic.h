@@ -14,25 +14,32 @@ class MathBlockOBJ : public Ladder_OBJ_Logical
 {
 	public:
     template <typename A, typename B>
-    MathBlockOBJ(const String &id, OBJ_TYPE type, A var1,  B var2 = 0, shared_ptr<Ladder_VAR> dest = 0) : MathBlockOBJ(id, type, make_shared<Ladder_VAR>(var1), make_shared<Ladder_VAR>(var2), dest ) {}
+    MathBlockOBJ(const String &id, OBJ_TYPE type, A var1,  B var2 = 0, shared_ptr<Ladder_VAR> dest = 0) : MathBlockOBJ(id, type, make_shared<Ladder_VAR>(var1, bitTagSRCA), make_shared<Ladder_VAR>(var2, bitTagSRCB), dest ) {}
 	MathBlockOBJ(const String &id, OBJ_TYPE type, shared_ptr<Ladder_VAR> A, shared_ptr<Ladder_VAR> B = 0, shared_ptr<Ladder_VAR> dest = 0) : Ladder_OBJ_Logical(id, type)
     { 
         sourceA = A; //must always have a valid pointer
+        getObjectVARs().emplace_back(sourceA); //add to the storage vector for local VAR object pointers.
         sourceB = B;
+
+        if ( sourceB )
+            getObjectVARs().emplace_back(sourceB);
 
         if (!dest) //no destination object given so create one for later reference by other objects. This is also the equivalent to an output stored in memory.
         {
             if ( usesFloat() || type == OBJ_TYPE::TYPE_MATH_COS || type == OBJ_TYPE::TYPE_MATH_SIN || type == OBJ_TYPE::TYPE_MATH_TAN ) //floating point operation
-                destination = make_shared<Ladder_VAR>( &destValues.fValue );
+                dest = make_shared<Ladder_VAR>( &destValues.dValue, bitTagDEST );
             else if ( usesUnsignedInt() ) //both have unsigned integers, so default to unsigned long for storage
             {
-                destination = make_shared<Ladder_VAR>( &destValues.ulValue );
+                dest = make_shared<Ladder_VAR>( &destValues.ulValue, bitTagDEST );
             }
             else //default to signed integer (long)
             {
-                destination = make_shared<Ladder_VAR>( &destValues.lValue );
+                dest = make_shared<Ladder_VAR>( &destValues.lValue, bitTagDEST );
             }
         } 
+
+        destination = dest; //store it off
+        getObjectVARs().emplace_back(destination); //push to storage vector for all variables
     }
 	~MathBlockOBJ() //deconstructor
     {}
@@ -80,14 +87,13 @@ class MathBlockOBJ : public Ladder_OBJ_Logical
 	virtual void updateObject();
     virtual shared_ptr<Ladder_VAR> getObjectVAR( const String &id )
 	{
-		if (id == bitTagDEST) //DEST is the only available bit operator tag for this object type.
-    	{
-			return destination;
-    	}
-		else
-		{
-			return Ladder_OBJ_Logical::getObjectVAR(id); //default case. -- probably an error
-		}
+		for ( uint8_t x = 0; x < getObjectVARs().size(); x++ )
+        {
+            if ( id == getObjectVARs()[x]->getID() )
+                return getObjectVARs()[x]; //found the stored var, so return it
+        }
+
+		return Ladder_OBJ_Logical::getObjectVAR(id); //default case. -- probably an error
 	}
     //returns true if either Ladder_Var object uses float type vairables. This is important for some math operations.
     bool usesFloat()
@@ -110,7 +116,7 @@ class MathBlockOBJ : public Ladder_OBJ_Logical
     union
 	{
 		bool bValue;
-		float fValue;
+		double dValue;
 		int_fast32_t iValue; //signed int
 		uint_fast32_t uiValue; //unsigned int
 		int64_t lValue;

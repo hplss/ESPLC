@@ -140,7 +140,8 @@ enum class OBJ_TYPE : uint8_t
 {
 	TYPE_INPUT,		//physical input (digital read)
 	TYPE_INPUT_ANALOG,  //physical input (analog read)
-	TYPE_OUTPUT,		//physical output
+	TYPE_OUTPUT,		//physical output - digital (1/0)
+	TYPE_OUTPUT_PWM, 	//physical output - PWM output type
 	TYPE_VIRTUAL,		//internal coil (variable)
 	TYPE_CLOCK,			//clock object type 
 	TYPE_TON,			//timed on
@@ -184,6 +185,12 @@ enum OBJ_LOGIC : uint8_t
 {
 	LOGIC_NC,	//Normally Closed
 	LOGIC_NO		//Normally Open
+};
+
+enum class PWM_STATUS : uint8_t 
+{
+	PWM_AVAILABLE,
+	PWM_TAKEN
 };
 
 //This enum denotes the varying states that an object may have. 
@@ -232,6 +239,8 @@ extern const String &bitTagDN PROGMEM,
 			 		&bitTagTT PROGMEM,
 			 		&bitTagACC PROGMEM,
 			 		&bitTagPRE PROGMEM,
+					&bitTagSRCA PROGMEM,
+					&bitTagSRCB PROGMEM,
 					&bitTagDEST PROGMEM,
 					&bitTagVAL PROGMEM,
 
@@ -260,6 +269,7 @@ extern const String &bitTagDN PROGMEM,
 					&typeTagMMOV PROGMEM,
 					&typeTagAnalog PROGMEM,
 					&typeTagDigital PROGMEM,
+					&typeTagPWM PROGMEM,
 
 			 		&timerTag1 PROGMEM,
 			 		&timerTag2 PROGMEM,

@@ -24,6 +24,8 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &bitTagTT PROGMEM = PSTR("TT"), //Timer Timing
 			 &bitTagACC PROGMEM = PSTR("ACC"), //Accumulated value
 			 &bitTagPRE PROGMEM = PSTR("PRE"), //Preset Value
+			 &bitTagSRCA PROGMEM = PSTR("A"), //Source A variable input
+			 &bitTagSRCB PROGMEM = PSTR("B"), //Source B variabel input
 			 &bitTagDEST PROGMEM = PSTR("DEST"), //Destination
 			 &bitTagVAL PROGMEM = PSTR("VAL"), //Value bit - generic
 
@@ -52,6 +54,7 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &typeTagMMOV PROGMEM = PSTR("MOV"), //TYPE: MATH - Subtraction function
 			 &typeTagAnalog PROGMEM = PSTR("ANALOG"), //input (and possibly output) identifier - for analog signals
 			 &typeTagDigital PROGMEM = PSTR("DIGITAL"), //input (and possibly output) identifier - for digital signals
+			 &typeTagPWM PROGMEM = PSTR("PWM"), //Pulse width modulation 
 
              &timerTag1 PROGMEM = PSTR("TIMER"), //Timer object
 			 &timerTag2 PROGMEM = PSTR("TMR"), //Timer object alias

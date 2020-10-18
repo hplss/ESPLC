@@ -88,6 +88,11 @@ class PLC_Main
 	}
 	//Generates the map that stores pin data in relation to availability and capability. 
 	void generatePinMap();
+	//Generates the map used for determining the available PWM output channels that can be used by an output (if applicable).
+	void generatePWMMap();
+	//This is used to reserve an available PWM channel from the PWM map. A return value of -1 indicatces a failure
+	int8_t reservePWMChannel();
+
 	//Overloaded function that parses a logic script by string reference.
 	//Returns true on success.
 	bool parseScript(const String &script){ return parseScript(script.c_str()); }
@@ -178,6 +183,7 @@ class PLC_Main
 	unique_ptr<PLC_Remote_Server> remoteServer; //PLC_Remote_Server object
 	
 	std::map<uint8_t, PIN_TYPE> pinMap; //This map stores information about which physical pins are available on the ESP32 that IO can use.
+	std::map<uint8_t, PWM_STATUS> pwmMap; //This map stores information about the available PWM channels that a newly declared output can use. 
 };
 
 //Generic functions here

@@ -25,6 +25,7 @@ void PLC_Main::resetAll()
 	accessorObjects.clear(); // Empty the accessor objects vector
 	ladderVars.clear(); //Empty the created ladder vars vector
 	generatePinMap(); //reset and fill the pinmap
+	generatePWMMap(); //generate the list of available PWM channels for outputs
 }
 
 char toUpper( char x )
@@ -77,6 +78,28 @@ void PLC_Main::generatePinMap()
 	pinMap.emplace(35, PIN_TYPE::PIN_AI );
 	pinMap.emplace(36, PIN_TYPE::PIN_AI );
 	pinMap.emplace(39, PIN_TYPE::PIN_AI );
+}
+
+void PLC_Main::generatePWMMap()
+{
+	pwmMap.clear(); //just in case
+	for ( uint8_t x = 0; x < 15; x++ )
+	{
+		pwmMap.emplace(x, PWM_STATUS::PWM_AVAILABLE);
+	}
+}
+int8_t PLC_Main::reservePWMChannel()
+{
+	for ( uint8_t x = 0; x < 15; x++ )
+	{
+		if ( pwmMap[x] == PWM_STATUS::PWM_AVAILABLE )
+		{
+			pwmMap[x] = PWM_STATUS::PWM_TAKEN; //reserve the channel
+			return x;
+		}
+	}
+
+	return -1; //default path indicates an error (cannot reserve)
 }
 
 String PLC_Main::getObjName( const String &parsedString )
@@ -196,6 +219,7 @@ bool PLC_Main::parseScript(const char *script)
 	}
 
 	pinMap.clear(); //free some memory
+	pwmMap.clear();
 	return true; //success
 }
 
@@ -259,6 +283,9 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createInputOBJ( const String &id, const
 			type = OBJ_TYPE::TYPE_INPUT_ANALOG;
 		else if (args[2] == "D" || args[2] == typeTagDigital )
 			type = OBJ_TYPE::TYPE_INPUT;
+		else
+			sendError( ERR_DATA::ERR_UNKNOWN_ARGS, args[2] ); 
+		
 	}
 	
 	if ( numArgs > 1 ) //needed
@@ -282,15 +309,69 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createInputOBJ( const String &id, const
 shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOutputOBJ( const String &id, const vector<String> &args )
 {
 	uint8_t pin = 0, logic = LOGIC_NO, numArgs = args.size();
+	OBJ_TYPE type = OBJ_TYPE::TYPE_OUTPUT; //default
+	uint16_t duty_cycle = 0;
+	uint8_t resolution = 10;
+	int8_t pwm_channel = 0; //signed because possible -1 (error) value
+
+	double frequency = 5000;
+
+	if ( numArgs > 6 ) //PWM resolution (bits)
+	{
+		int32_t tempInt = args[6].toInt();
+		if ( tempInt > 0 && tempInt <= 16 ) //max 16 bit
+			resolution = tempInt;
+		else
+			sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[6] );
+	}
+
+	if ( numArgs > 5 ) //frequency
+	{
+		double tempDbl = args[5].toDouble();
+		if ( tempDbl > 0 && tempDbl < (80000000/exp2(resolution) ) ) //80Mhz may or may not be the right value here. Look into later.
+			frequency = tempDbl;
+		else
+			sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[5] );
+	}
+
+	if ( numArgs > 4 ) //duty cycle
+	{
+		int32_t tempInt = args[4].toInt();
+		if ( tempInt > 0 && tempInt < exp2(resolution) ) 
+			duty_cycle = tempInt;
+		else
+			sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[4] );
+	}
+
+	if ( numArgs > 3 )
+		logic = parseLogic(args[3]);
+
 	if ( numArgs > 2 ) //caveat here is that outputs would NEVER normally be normally closed (ON)
-		logic = parseLogic(args[2]);
+	{
+		if ( args[2] == typeTagPWM || args[2] == "P" ) //PWM output
+			type = OBJ_TYPE::TYPE_OUTPUT_PWM;
+		else if ( args[2] == typeTagDigital || args[2] == "D" )
+			type = OBJ_TYPE::TYPE_OUTPUT;
+		else
+			sendError(ERR_DATA::ERR_UNKNOWN_ARGS, args[2]);
+	}
 		
 	if ( numArgs > 1 )
 	{
 		pin = args[1].toInt();
-		if ( isValidPin(pin, OBJ_TYPE::TYPE_OUTPUT) )
+		if ( isValidPin(pin, OBJ_TYPE::TYPE_OUTPUT) ) //all outputs can also use PWM
 		{
-			shared_ptr<OutputOBJ> newObj(new OutputOBJ(id, pin, logic));
+			if ( type == OBJ_TYPE::TYPE_OUTPUT_PWM )
+			{
+				pwm_channel = reservePWMChannel(); //get the next available pwm channel and return it.
+				if ( pwm_channel < 0 )
+				{
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, String(pwm_channel) );
+					return 0; //must be able to reserve a PWM channel for PWM outputs
+				}
+			}
+
+			shared_ptr<OutputOBJ> newObj(new OutputOBJ(id, pin, type, logic, pwm_channel, duty_cycle, frequency, resolution));
 			ladderObjects.emplace_back(newObj);
 			setClaimedPin( pin ); //claim the pin for this object.
 			#ifdef DEBUG
