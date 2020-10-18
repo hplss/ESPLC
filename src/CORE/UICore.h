@@ -189,8 +189,6 @@ public:
 	//Creates any necessary fields/tables for PLC ladder object status. 
 	void createStatusFields();
 
-	//Generates the JSON array for handling object status updates, etc.
-	String generateStatusJSON();
 	//Generates the JSON array for sending device alerts to a client that is viewing the web UI.
 	String generateAlertsJSON();
 

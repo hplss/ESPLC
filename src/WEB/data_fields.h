@@ -32,7 +32,7 @@ enum FIELD_TYPE : uint8_t
 	SELECT, //This special field is used for creating a field that allows for a drop-down selection menu.
 	TEXTAREA, //This field type creates a large text area (multiple lines) in which a user can enter long messages.
 	HYPERLINK, //This special field type is used for creating hyperlinks that redirect to other pages.
-	FILE_UPLOAD
+	FILE_UPLOAD 
 };
 
 class UICore; //predefinition for linker purposes
@@ -274,7 +274,7 @@ class FILE_Datafield : public DataField
 class LADDER_OBJ_Datafield : public DataField
 {
 	public:
-	LADDER_OBJ_Datafield( shared_ptr<Ladder_OBJ> obj, uint8_t address, const String &fieldLabel = "", bool newLine = true ) : 
+	LADDER_OBJ_Datafield( shared_ptr<Ladder_OBJ_Logical> obj, uint8_t address, const String &fieldLabel = "", bool newLine = true ) : 
 	DataField(address, FIELD_TYPE::NONE, fieldLabel, "", {}, newLine )
 	{
 		pObj = obj;
@@ -285,7 +285,7 @@ class LADDER_OBJ_Datafield : public DataField
 
 	String GenerateHTML();
 	private:
-	shared_ptr<Ladder_OBJ> pObj;
+	shared_ptr<Ladder_OBJ_Logical> pObj;
 };
 
 #endif /* DATA_FIELDS_H_ */

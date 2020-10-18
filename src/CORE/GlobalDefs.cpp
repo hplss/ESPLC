@@ -332,4 +332,4 @@ String removeFromStr( const String &str, const vector<char> &c )
 	return output;
 }
 
-String removeFromStr( const String &str, const char c, String &output ){ return removeFromStr( str, vector<char>{c} ); }
+String removeFromStr( const String &str, const char c ){ return removeFromStr( str, vector<char>{c} ); }

@@ -40,7 +40,7 @@ void PLC_Remote_Server::processRequests()
         {
             client.setNoDelay(true); 
             client.setTimeout(200);
-            client.println(handleRequest(client.readStringUntil(CHAR_NEWLINE))); //Figure out what the client wants a,d then write the reply
+            client.println(handleRequest(client.readStringUntil(CHAR_NEWLINE))); //Figure out what the client wants and then write the reply
         }
         
         client.stop(); //end this connection after sending the reply

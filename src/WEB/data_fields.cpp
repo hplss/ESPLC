@@ -460,11 +460,12 @@ int_fast32_t VAR_Datafield::intFromValue()
 	}
 	return 0;
 }
+
 String LADDER_OBJ_Datafield::GenerateHTML() 
 {
- 	String html = "<table>\n<thead>\n<tr>\n<th Colspan=\"2\">" + String(pObj->getID()) + "</th>\n</tr>\n<thead>\n</thead>\n<tbody>\n<tr>\n";
+ 	String html = PSTR("<table>\n<thead>\n<tr>\n<th Colspan=\"2\">") + String(pObj->getID()) + PSTR("</th>\n</tr>\n<thead>\n</thead>\n<tbody>\n<tr>\n");
 	 html += "<td id=\"" + String(pObj->getID()) + "\">" + String(pObj->getLineState()) + "</td>\n";
 	 html += "<td id=\"" + String(pObj->getID()) + "Type\">" + String(pObj->getType()) + "</td>";
-	 html += "</tr>\n</tbody>\n</table>\n";
+	 html += PSTR("</tr>\n</tbody>\n</table>\n");
 	return html;
 }
