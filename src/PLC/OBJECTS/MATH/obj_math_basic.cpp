@@ -108,19 +108,47 @@ bool MathBlockOBJ::computeEQ()
 }
 bool MathBlockOBJ::computeGRT()
 {
-    return false;
+    if ( usesUnsignedInt() )
+        destination->setValue( sourceA->getValue<uint64_t>() > sourceB->getValue<uint64_t>() ? true : false );
+    else if ( usesFloat() )
+        destination->setValue( sourceA->getValue<float>() > sourceB->getValue<float>() ? true : false );
+    else //assume signed int
+        destination->setValue( sourceA->getValue<int64_t>() > sourceB->getValue<int64_t>() ? true : false );
+
+    return destination->getValue<bool>();
 }
 bool MathBlockOBJ::computeGRQ()
 {
-    return false;
+    if ( usesUnsignedInt() )
+        destination->setValue( sourceA->getValue<uint64_t>() >= sourceB->getValue<uint64_t>() ? true : false );
+    else if ( usesFloat() )
+        destination->setValue( sourceA->getValue<float>() >= sourceB->getValue<float>() ? true : false );
+    else //assume signed int
+        destination->setValue( sourceA->getValue<int64_t>() >= sourceB->getValue<int64_t>() ? true : false );
+
+    return destination->getValue<bool>();
 }
 bool MathBlockOBJ::computeLES()
 {
-    return false;
+    if ( usesUnsignedInt() )
+        destination->setValue( sourceA->getValue<uint64_t>() < sourceB->getValue<uint64_t>() ? true : false );
+    else if ( usesFloat() )
+        destination->setValue( sourceA->getValue<float>() < sourceB->getValue<float>() ? true : false );
+    else //assume signed int
+        destination->setValue( sourceA->getValue<int64_t>() < sourceB->getValue<int64_t>() ? true : false );
+
+    return destination->getValue<bool>();
 }
 bool MathBlockOBJ::computeLEQ()
 {
-    return false;
+    if ( usesUnsignedInt() )
+        destination->setValue( sourceA->getValue<uint64_t>() <= sourceB->getValue<uint64_t>() ? true : false );
+    else if ( usesFloat() )
+        destination->setValue( sourceA->getValue<float>() <= sourceB->getValue<float>() ? true : false );
+    else //assume signed int
+        destination->setValue( sourceA->getValue<int64_t>() <= sourceB->getValue<int64_t>() ? true : false );
+
+    return destination->getValue<bool>();
 }
 
 void MathBlockOBJ::computeINC()

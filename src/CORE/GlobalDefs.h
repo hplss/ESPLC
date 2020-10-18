@@ -118,9 +118,20 @@ extern const String &err_failed_creation PROGMEM,
 					&err_unknown_obj PROGMEM,
 					&err_invalid_bit PROGMEM,
 					&err_name_too_long PROGMEM,
-					&err_parser_failed PROGMEM;
+					&err_parser_failed PROGMEM,
+					&err_var_type_invalid PROGMEM,
+					&err_var_out_of_range PROGMEM;
 
-//
+//Variable string definitions
+extern const String &VAR_INT32 PROGMEM,
+					&VAR_UINT32 PROGMEM,
+					&VAR_INT64 PROGMEM,
+					&VAR_UINT64 PROGMEM,
+					&VAR_DOUBLE PROGMEM,
+					&VAR_BOOL PROGMEM,
+					&VAR_BOOLEAN PROGMEM;
+
+
 
 //End storage related constants
 
@@ -210,7 +221,9 @@ enum ERR_DATA
 	ERR_PIN_INVALID, //This error indicates that a given pin number used for IO operations is invalid (doesn't exist on the device, or is used for special operations)
 	ERR_PIN_TAKEN, //This error indicates that a given pin number used for IO operations is already occupied by another object.
 	ERR_PARSER_FAILED, //This error indicatews that the parser failed to exit properly.
-	ERR_NAME_TOO_LONG //This indicates that the name of an object being parsed is too long to be stored (exceeds allowed memory usage)
+	ERR_NAME_TOO_LONG, //This indicates that the name of an object being parsed is too long to be stored (exceeds allowed memory usage)
+	ERR_INCORRECT_VAR_TYPE, //Error for an incorrect variable type when naming a variable type
+	ERR_OUT_OF_RANGE //This indicates that the value assigned exceeds the maximum value of the variable type
 };
 
 
@@ -239,6 +252,11 @@ extern const String &bitTagDN PROGMEM,
 			 		&typeTagMSIN PROGMEM,
 			 		&typeTagMCOS PROGMEM,
 			 		&typeTagMTAN PROGMEM,
+					&typeTagMMUL PROGMEM,
+					&typeTagMDIV PROGMEM,
+					&typeTagMADD PROGMEM,
+					&typeTagMSUB PROGMEM,
+					&typeTagMMOV PROGMEM,
 					&typeTagAnalog PROGMEM,
 					&typeTagDigital PROGMEM,
 

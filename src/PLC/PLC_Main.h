@@ -84,6 +84,7 @@ class PLC_Main
 		ladderRungs.clear(); //empty our vectors -- should also delete the objects once they are no longer referenced (smart pointers)
 		ladderObjects.clear();
 		accessorObjects.clear();
+		ladderVars.clear();
 	}
 	//Generates the map that stores pin data in relation to availability and capability. 
 	void generatePinMap();
@@ -140,10 +141,16 @@ class PLC_Main
 	//Returns the created ladder object that corresponds to it's unique ID
 	//Args: Ladder Object Vector, Unique ID
 	shared_ptr<Ladder_OBJ_Logical> findLadderObjByID( const String & );
+	//Returns the created accessor object that corresponds to it's unique ID
+	//Args: Ladder Object Vector, Unique ID
 	shared_ptr<Ladder_OBJ_Accessor> findAccessorByID( const String & );
+	//Returns the created variable object that corresponds to it's unique ID
+	//Args: Ladder Var Vector, Unique ID
+	shared_ptr<Ladder_VAR> findLadderVarByID( const String & );
 
 	//This function scan for nodes on the given port
 	vector<IPAddress> scanForRemoteNodes( uint16_t, uint8_t, uint8_t, uint16_t );
+
 	
 	//Returns a reference to the local storage container for all locally stored initialized logic rungs.
 	vector<shared_ptr<Ladder_Rung>> &getLadderRungs(){ return ladderRungs; }
@@ -161,9 +168,11 @@ class PLC_Main
 		
 	private:
 	vector<shared_ptr<Ladder_Rung>> ladderRungs; //Container for all ladder rungs present in the parsed ladder logic script.
+
 	vector<shared_ptr<Ladder_OBJ_Logical>> ladderObjects; //Container for all Ladder_OBJ_Logical objects present in the parsed ladder logic script. Used for easy status query.
 	vector<shared_ptr<Ladder_OBJ_Accessor>> accessorObjects; //Container for all Ladder_OBJ_Accessor objects present in the larsed ladder logic script.
-
+	vector<shared_ptr<Ladder_VAR>> ladderVars; //Container for all ladder variables present in the parsed ladder logic script. Used for easy status query.
+	
 	shared_ptr<String> currentScript; //save the current script in RAM?.. Hmm..
 
 	unique_ptr<PLC_Remote_Server> remoteServer; //PLC_Remote_Server object

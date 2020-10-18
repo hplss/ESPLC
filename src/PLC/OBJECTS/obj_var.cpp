@@ -12,9 +12,9 @@ void Ladder_VAR::setLineState(bool &state, bool bNot)
             case OBJ_TYPE::TYPE_VAR_FLOAT:
                 {
                     if ( bNot ) //inverted logic
-                        state = getFloatValue() > 1 ? false : true;
+                        state = getDoubleValue() > 1 ? false : true;
                     else
-                        state = getFloatValue() > 1 ? true : false;
+                        state = getDoubleValue() > 1 ? true : false;
                 }
                 break;
             case OBJ_TYPE::TYPE_VAR_INT:
@@ -73,7 +73,7 @@ T Ladder_VAR::getValue()
         case OBJ_TYPE::TYPE_VAR_FLOAT:
         {
             if ( b_usesPtr )
-                return static_cast<T>(*values.f.val_ptr);
+                return static_cast<T>(*values.d.val_ptr);
         }
         break;
         case OBJ_TYPE::TYPE_VAR_INT:
@@ -118,7 +118,7 @@ void Ladder_VAR::setValue( const T val )
         case OBJ_TYPE::TYPE_VAR_FLOAT:
         {
             if ( b_usesPtr )
-                *values.f.val_ptr = static_cast<float>(val);
+                *values.d.val_ptr = static_cast<float>(val);
         }
         break;
         case OBJ_TYPE::TYPE_VAR_INT:
