@@ -136,9 +136,9 @@ extern const String &VAR_INT32 PROGMEM,
 //End storage related constants
 
 //The OBJ_TYPE enum contains identifiers that indicate a given LADDER_OBJ object's functionality. This is typically used by the parser and object creation functions.
-enum OBJ_TYPE
+enum class OBJ_TYPE : uint8_t
 {
-	TYPE_INPUT = 0,		//physical input (digital read)
+	TYPE_INPUT,		//physical input (digital read)
 	TYPE_INPUT_ANALOG,  //physical input (analog read)
 	TYPE_OUTPUT,		//physical output
 	TYPE_VIRTUAL,		//internal coil (variable)
@@ -165,7 +165,7 @@ enum OBJ_TYPE
 	TYPE_MATH_INC,		//increment block - adds +1 to the inputted source variable
 	TYPE_MATH_DEC,		//decrement block - subtracts 1 from the inputted source variable
 	TYPE_MATH_CPT,		//compute block. Performs a math operation and sends the calculated value to the provided storage variable
-	TYPE_MATH_MOV,
+	TYPE_MATH_MOV,		//Move block, used for transferring data from a source to another destination (IE: From Source to Source, Dest to Source, etc.)
 	TYPE_REMOTE,		//Remote object. Ued in cluster and expander operations when multiple ESP devices are interconnected via networks.
 
 	//Variable Exclusive Types
@@ -180,16 +180,16 @@ enum OBJ_TYPE
 	TYPE_VAR_STRING,	//variable type, used to store information (String)
 };
 
-enum OBJ_LOGIC
+enum OBJ_LOGIC : uint8_t 
 {
-	LOGIC_NC = 0,	//Normally Closed
+	LOGIC_NC,	//Normally Closed
 	LOGIC_NO		//Normally Open
 };
 
 //This enum denotes the varying states that an object may have. 
-enum OBJ_STATE 
+enum OBJ_STATE : uint8_t 
 {
-	STATE_DISABLED = 0,  //line state to this object is high(true)
+	STATE_DISABLED,  //line state to this object is high(true)
 	STATE_ENABLED, //line state to this object is low(false)
 	STATE_LATCHED, //worry about this later
 	STATE_UNLATCHED 
@@ -197,9 +197,9 @@ enum OBJ_STATE
 
 //This enum contains a list of valid pin types as it pertains to the IO capability of the ESP-32. 
 //This is typically used by the logic parser to verify that a requested pin argument is valid.
-enum PIN_TYPE
+enum class PIN_TYPE : uint8_t
 {
-	PIN_I = 0, //indicates that the pin is a digital input only pin
+	PIN_I, //indicates that the pin is a digital input only pin
 	PIN_AI, //indicates that the pin can function as an analog and digital input only
 	PIN_O,	//indicates that the pin is a digital output only pin
 	PIN_IO,	//Indicates that the pin is a combination digital input/output pin
@@ -209,9 +209,9 @@ enum PIN_TYPE
 };
 
 //This enum contains identifiers that indicate specific error types.
-enum ERR_DATA
+enum class ERR_DATA : uint8_t 
 {
-	ERR_CREATION_FAILED = 0, //This error indicates that the creation of a specified ladder object has failed for unknown reasons (generic failure)
+	ERR_CREATION_FAILED, //This error indicates that the creation of a specified ladder object has failed for unknown reasons (generic failure)
 	ERR_UNKNOWN_TYPE, //This error indicates that an object type interpreted from the parser cannot be initialized, probably because it doesn't exist.
 	ERR_UNKNOWN_ARGS,	//This error indicates that the arguments given to the parser through the script cannot be interpreted, or they do not exist
 	ERR_INSUFFICIENT_ARGS, //This error type indicates that a ladder logic object creation has failed due to insufficient arguments provided by the end-user.
@@ -233,6 +233,7 @@ extern const String &bitTagDN PROGMEM,
 			 		&bitTagACC PROGMEM,
 			 		&bitTagPRE PROGMEM,
 					&bitTagDEST PROGMEM,
+					&bitTagVAL PROGMEM,
 
 			 		&logicTagNO PROGMEM,
 			 		&logicTagNC PROGMEM,

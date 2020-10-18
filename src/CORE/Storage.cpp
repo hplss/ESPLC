@@ -18,30 +18,32 @@ void Device_Setting::setSettingValue( const String &str )
 {
     switch(getType())
     {
-        case TYPE_VAR_BOOL:
+        case OBJ_TYPE::TYPE_VAR_BOOL:
         {
             getBOOL() = str.toInt() > 0 ? true : false;
         }
         break;
-        case TYPE_VAR_STRING:
+        case OBJ_TYPE::TYPE_VAR_STRING:
         {
             getSTRING() = str;
         }
         break;
-        case TYPE_VAR_UBYTE:
+        case OBJ_TYPE::TYPE_VAR_UBYTE:
         {
             getUINT8() = static_cast<uint8_t>(parseInt(str)); //we can only assume it won't overflow
         }
         break;
-        case TYPE_VAR_UINT:
+        case OBJ_TYPE::TYPE_VAR_UINT:
         {
             getUINT() = parseInt(str); //we can only assume it won't overflow
         }
         break;
-        case TYPE_VAR_USHORT:
+        case OBJ_TYPE::TYPE_VAR_USHORT:
         {
             getUINT16() = static_cast<uint16_t>(parseInt(str)); //we can only assume it won't overflow
         }
+        break;
+        default:
         break;
     }
 }
@@ -50,30 +52,32 @@ String Device_Setting::getSettingValue()
 {
     switch(getType())
     {
-        case TYPE_VAR_BOOL:
+        case OBJ_TYPE::TYPE_VAR_BOOL:
         {
             return String(getBOOL());
         }
         break;
-        case TYPE_VAR_STRING:
+        case OBJ_TYPE::TYPE_VAR_STRING:
         {
             return getSTRING();
         }
         break;
-        case TYPE_VAR_UBYTE:
+        case OBJ_TYPE::TYPE_VAR_UBYTE:
         {
             return String(getUINT8());
         }
         break;
-        case TYPE_VAR_UINT:
+        case OBJ_TYPE::TYPE_VAR_UINT:
         {
             return String(getUINT());
         }
         break;
-        case TYPE_VAR_USHORT:
+        case OBJ_TYPE::TYPE_VAR_USHORT:
         {
             return String(getUINT16());
         }
+        break;
+        default:
         break;
     }
 

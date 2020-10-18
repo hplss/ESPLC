@@ -22,7 +22,7 @@ void PLC_Main::resetAll()
 {
 	ladderRungs.clear(); //Empty created ladder rungs vector
 	ladderObjects.clear(); //Empty the created ladder logic objects vector
-	accessorObjects.clear();
+	accessorObjects.clear(); // Empty the accessor objects vector
 	ladderVars.clear(); //Empty the created ladder vars vector
 	generatePinMap(); //reset and fill the pinmap
 }
@@ -45,20 +45,20 @@ void PLC_Main::generatePinMap()
 {
 	pinMap.clear(); //empty first, just in case.
 	//Fill in the pin map with the appropriate pin relationships.
-	pinMap.emplace(0, PIN_TYPE::PIN_O );
+	pinMap.emplace(0, PIN_TYPE::PIN_O ); //WiFi dependent
 	pinMap.emplace(1, PIN_TYPE::PIN_INVALID ); //TX
-	pinMap.emplace(2, PIN_TYPE::PIN_AIO );
+	pinMap.emplace(2, PIN_TYPE::PIN_AIO ); //WiFi dependent
 	pinMap.emplace(3, PIN_TYPE::PIN_INVALID ); //RX
-	pinMap.emplace(4, PIN_TYPE::PIN_AIO );
+	pinMap.emplace(4, PIN_TYPE::PIN_AIO ); //WiFi dependent
 	pinMap.emplace(5, PIN_TYPE::PIN_IO );
 
 	for ( uint8_t x = 6; x < 11; x++ )
 		pinMap.emplace(x, PIN_TYPE::PIN_INVALID );
 
-	pinMap.emplace(12, PIN_TYPE::PIN_AIO );
-	pinMap.emplace(13, PIN_TYPE::PIN_AIO );
-	pinMap.emplace(14, PIN_TYPE::PIN_AIO );
-	pinMap.emplace(15, PIN_TYPE::PIN_AIO );
+	pinMap.emplace(12, PIN_TYPE::PIN_AIO ); //WiFi dependent
+	pinMap.emplace(13, PIN_TYPE::PIN_AIO ); //WiFi dependent
+	pinMap.emplace(14, PIN_TYPE::PIN_AIO ); //WiFi dependent
+	pinMap.emplace(15, PIN_TYPE::PIN_AIO ); //WiFi dependent
 
 	for ( uint8_t x = 16; x < 23; x++ )
 	{
@@ -68,9 +68,9 @@ void PLC_Main::generatePinMap()
 		pinMap.emplace(x, PIN_TYPE::PIN_IO );
 	}
 
-	pinMap.emplace(25, PIN_TYPE::PIN_AIO );
-	pinMap.emplace(26, PIN_TYPE::PIN_AIO );
-	pinMap.emplace(27, PIN_TYPE::PIN_AIO );
+	pinMap.emplace(25, PIN_TYPE::PIN_AIO ); //WiFi dependent 
+	pinMap.emplace(26, PIN_TYPE::PIN_AIO ); //WiFi dependent 
+	pinMap.emplace(27, PIN_TYPE::PIN_AIO ); //WiFi dependent
 	pinMap.emplace(32, PIN_TYPE::PIN_AIO );
 	pinMap.emplace(33, PIN_TYPE::PIN_AIO );
 	pinMap.emplace(34, PIN_TYPE::PIN_AI );
@@ -150,7 +150,7 @@ shared_ptr<Ladder_OBJ_Accessor> PLC_Main::findAccessorByID( const String &id )
 		if ( pObj && pObj->getID() == id )
 			return pObj;
 	}
-	
+
 	return 0;
 }
 
@@ -187,7 +187,7 @@ bool PLC_Main::parseScript(const char *script)
 			shared_ptr<PLC_Parser> parser = make_shared<PLC_Parser>(scriptLine, getNumRungs() );
 			if ( !parser->parseLine() )
 			{
-				sendError( ERR_PARSER_FAILED, PSTR("At Line: ") + String(iLine));
+				sendError( ERR_DATA::ERR_PARSER_FAILED, PSTR("At Line: ") + String(iLine));
 				return false; //error ocurred somewhere?
 			}
 
@@ -246,17 +246,19 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewLadderObject(const String &name, const
 
 shared_ptr<Ladder_OBJ_Logical> PLC_Main::createInputOBJ( const String &id, const vector<String> &args )
 {
-	uint8_t pin = 0, logic = LOGIC_NO, type = TYPE_INPUT, numArgs = args.size();
+	uint8_t pin = 0, logic = LOGIC_NO, numArgs = args.size();
+
+	OBJ_TYPE type = OBJ_TYPE::TYPE_INPUT;
 
 	if ( numArgs > 3 )
-		logic = parseLogic(args[3]);
+		logic = parseLogic(args[3]); //normally open or normally closed.
 
 	if ( numArgs > 2 )
 	{
 		if ( args[2] == "A" || args[2] == typeTagAnalog ) //Explicitly declare an analog input, otherwise assume it's a digital in only
-			type = TYPE_INPUT_ANALOG;
+			type = OBJ_TYPE::TYPE_INPUT_ANALOG;
 		else if (args[2] == "D" || args[2] == typeTagDigital )
-			type = TYPE_INPUT;
+			type = OBJ_TYPE::TYPE_INPUT;
 	}
 	
 	if ( numArgs > 1 ) //needed
@@ -286,7 +288,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOutputOBJ( const String &id, cons
 	if ( numArgs > 1 )
 	{
 		pin = args[1].toInt();
-		if ( isValidPin(pin, TYPE_OUTPUT) )
+		if ( isValidPin(pin, OBJ_TYPE::TYPE_OUTPUT) )
 		{
 			shared_ptr<OutputOBJ> newObj(new OutputOBJ(id, pin, logic));
 			ladderObjects.emplace_back(newObj);
@@ -304,13 +306,15 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOutputOBJ( const String &id, cons
 shared_ptr<Ladder_OBJ_Logical> PLC_Main::createTimerOBJ( const String &id, const vector<String> &args )
 {
 	uint8_t numArgs = args.size();
-	uint32_t delay = 0, accum = 0, subType = TYPE_TON;
+	uint32_t delay = 0, accum = 0;
+	OBJ_TYPE subType = OBJ_TYPE::TYPE_TON;
+
 	if ( numArgs > 3 )
 	{	  
 		if ( args[3] == typeTagTOF )
-			subType = TYPE_TOF;
+			subType = OBJ_TYPE::TYPE_TOF;
 		else if ( args[3] == typeTagTON )
-			subType = TYPE_TON;
+			subType = OBJ_TYPE::TYPE_TON;
 		else
 			sendError(ERR_DATA::ERR_UNKNOWN_ARGS, args[0] + args[3]); 
 	}
@@ -337,14 +341,15 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createTimerOBJ( const String &id, const
 shared_ptr<Ladder_OBJ_Logical> PLC_Main::createCounterOBJ( const String &id, const vector<String> &args )
 {
 	uint16_t count = 0, accum = 0; 
-	uint8_t subType = TYPE_CTU, numArgs = args.size();
+	uint8_t numArgs = args.size();
+	OBJ_TYPE subType = OBJ_TYPE::TYPE_CTU;
+
 	if ( numArgs > 3 )
 	{
-		subType = TYPE_CTU; //default
 		if ( args[3] == typeTagCTU )
-			subType = TYPE_CTU;
+			subType = OBJ_TYPE::TYPE_CTU;
 		else if ( args[3] == typeTagCTD )
-			subType = TYPE_CTD;
+			subType = OBJ_TYPE::TYPE_CTD;
 		else
 			sendError(ERR_DATA::ERR_UNKNOWN_ARGS, args[0] + args[3]);
 	}
@@ -519,12 +524,6 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 			}
 		}
 			
-<<<<<<< HEAD
-		if (isFloat)
-			return make_shared<Ladder_VAR>( val.toFloat(), id );
-		else
-			return make_shared<Ladder_VAR>( atoll(val.c_str()), id ); //assume a long (geater than 32 bits)
-=======
 		if (isDouble)
 		{
 			newObj = make_shared<Ladder_VAR>( static_cast<double>(atof(val.c_str())), id );
@@ -541,7 +540,6 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 			ladderObjects.emplace_back(newObj);
 			ladderVars.emplace_back(newObj);
 			return newObj; //assume a long (greater than 32 bits) This is a safe data type to use as it is a signed 64 bit int
->>>>>>> 60fca900824c131758d8f37b8dedb79156cd815d
 	}
 
 	return 0;
@@ -560,7 +558,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 		}
 		if(function == typeTagMTAN)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, TYPE_MATH_TAN, var1ptr));
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_TAN, var1ptr));
 			newObj->computeTAN();
 			ladderObjects.emplace_back(newObj);
 			return newObj;
@@ -636,7 +634,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 shared_ptr<Ladder_OBJ_Accessor> PLC_Main::createRemoteClient( const String &id, const vector<String> &args )
 {
 	//Args: IP, Port, Timeout Time
-	uint32_t timeout = 2000, updfreq = 1000; //default
+	uint32_t timeout = 2000, updfreq = 1000; //default values in ms
     uint8_t numArgs = args.size();
     if ( numArgs > 5 )
     {
@@ -649,13 +647,13 @@ shared_ptr<Ladder_OBJ_Accessor> PLC_Main::createRemoteClient( const String &id, 
     {
         long tempInt = args[4].toInt();
         if ( tempInt > 0 ) //maybe a minimum here? 
-		    updfreq = tempInt;
+		    updfreq = tempInt; //update freq in ms
     }
 	if ( numArgs > 3)
 	{
         long tempInt = args[3].toInt();
         if ( tempInt > 0 )
-		    timeout = tempInt;
+		    timeout = tempInt; //timeout time in ms
 	}
 	if ( numArgs > 2) //must have IP and port
 	{
@@ -671,12 +669,12 @@ shared_ptr<Ladder_OBJ_Accessor> PLC_Main::createRemoteClient( const String &id, 
 		{
 			for ( uint8_t x = 0; x < getNumAccessors(); x++ )
             {
-                if ( getAccessorObjects()[x]->getType() == TYPE_REMOTE )
+                if ( getAccessorObjects()[x]->getType() == OBJ_TYPE::TYPE_REMOTE )
                 {
                     PLC_Remote_Client *currentClient = static_cast<PLC_Remote_Client *>(getAccessorObjects()[x].get());
                     if ( currentClient && currentClient->getHostAddress() == serverIP )
                     {
-                        sendError( ERR_CREATION_FAILED, String(CHAR_SPACE) + PSTR("Duplicate IP"));
+                        sendError( ERR_DATA::ERR_CREATION_FAILED, String(CHAR_SPACE) + PSTR("Duplicate IP"));
                         return 0; //already exists based on IP -- some error here?
                     }
                 } 
@@ -684,7 +682,7 @@ shared_ptr<Ladder_OBJ_Accessor> PLC_Main::createRemoteClient( const String &id, 
 
             if ( port == 80 ) //invalid port?
             {
-                sendError( ERR_CREATION_FAILED, String(CHAR_SPACE) + PSTR("Invalid Port"));
+                sendError( ERR_DATA::ERR_CREATION_FAILED, String(CHAR_SPACE) + PSTR("Invalid Port"));
                 return 0; //some error here?
             }
 
@@ -699,9 +697,9 @@ shared_ptr<Ladder_OBJ_Accessor> PLC_Main::createRemoteClient( const String &id, 
 	return 0;
 }
 
-bool PLC_Main::isValidPin( uint8_t pin, uint8_t type)
+bool PLC_Main::isValidPin( uint8_t pin, OBJ_TYPE type)
 {
-	std::map<uint8_t, uint8_t>::iterator pinitr = pinMap.find(pin);
+	std::map<uint8_t, PIN_TYPE>::iterator pinitr = pinMap.find(pin);
 	if (pinitr != pinMap.end())
 	{
 		if ( pinitr->second == PIN_TYPE::PIN_TAKEN )
@@ -715,12 +713,12 @@ bool PLC_Main::isValidPin( uint8_t pin, uint8_t type)
 			return false;
 		}
 
-		if ( ( type == TYPE_INPUT_ANALOG && ( pinitr->second == PIN_AI || pinitr->second == PIN_AIO ) ) 
-			|| ( type == TYPE_INPUT &&  ( pinitr->second == PIN_AI || pinitr->second == PIN_AIO || pinitr->second == PIN_IO || pinitr->second == PIN_I ) ) )
+		if ( ( type == OBJ_TYPE::TYPE_INPUT_ANALOG && ( pinitr->second == PIN_TYPE::PIN_AI || pinitr->second == PIN_TYPE::PIN_AIO ) ) 
+			|| ( type == OBJ_TYPE::TYPE_INPUT && ( pinitr->second == PIN_TYPE::PIN_AI || pinitr->second == PIN_TYPE::PIN_AIO || pinitr->second == PIN_TYPE::PIN_IO || pinitr->second == PIN_TYPE::PIN_I ) ) )
 			{
 				return true;
 			}
-		else if ( type == TYPE_OUTPUT && ( pinitr->second == PIN_AIO || pinitr->second == PIN_IO || pinitr->second == PIN_O ) )
+		else if ( type == OBJ_TYPE::TYPE_OUTPUT && ( pinitr->second == PIN_TYPE::PIN_AIO || pinitr->second == PIN_TYPE::PIN_IO || pinitr->second == PIN_TYPE::PIN_O ) )
 		{
 			return true;
 		}
@@ -751,16 +749,16 @@ uint8_t PLC_Main::parseLogic( const String &arg )
 
 bool PLC_Main::setClaimedPin(uint8_t pin)
 {
-	std::map<uint8_t, uint8_t>::iterator pinitr = pinMap.find(pin);
+	std::map<uint8_t, PIN_TYPE>::iterator pinitr = pinMap.find(pin);
 	if (pinitr != pinMap.end())
 	{
-		pinitr->second = PIN_TAKEN;
+		pinitr->second = PIN_TYPE::PIN_TAKEN;
 		return true;
 	}
 	return false; //shouldn't happen
 }
 
-void PLC_Main::sendError( uint8_t err, const String &info )
+void PLC_Main::sendError(ERR_DATA err, const String &info )
 {
 	String error;
 	switch (err)

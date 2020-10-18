@@ -7,7 +7,7 @@
 class ClockOBJ : public Ladder_OBJ_Logical
 {
 	public:
-	ClockOBJ(const String &id, shared_ptr<Time> sys, uint8_t yr, uint8_t mo, uint8_t da, uint8_t hr, uint8_t min, uint8_t sec, uint8_t type = TYPE_CLOCK) : Ladder_OBJ_Logical(id, type)
+	ClockOBJ(const String &id, shared_ptr<Time> sys, uint8_t yr, uint8_t mo, uint8_t da, uint8_t hr, uint8_t min, uint8_t sec, OBJ_TYPE type = OBJ_TYPE::TYPE_CLOCK) : Ladder_OBJ_Logical(id, type)
 	{
 		pSysTime = sys;
 		doneBit = false;

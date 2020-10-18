@@ -175,7 +175,6 @@ bool PLC_Parser::buildObjectStr(const String &str)
         {
             case CHAR_VAR_OPERATOR: // For Bit operators for existing objects. Example: Timer1.DN, where DN is the DONE bit for the timer.
             {
-<<<<<<< HEAD
                 if ( !accessor ) //no var operators allowed when parsing accessor name
                 {
                     if ( !getArgsOP() ) //Must not currently be parsing args
@@ -183,15 +182,6 @@ bool PLC_Parser::buildObjectStr(const String &str)
                     else //Actually, this is a part of an argument being passed in
                         appendToObjArgs( str[char_index] );
                 }
-=======
-                if ( !getArgsOP() ) //Must not currently be parsing args
-                    setBitOP(true); //chars parsed are now an operator to an object variable (or bit tag)
-                else
-                {
-                    appendToObjArgs( str[char_index] );
-                }
-                
->>>>>>> 60fca900824c131758d8f37b8dedb79156cd815d
             }
             break;
             case CHAR_NOT_OPERATOR: //Indicates NOT logic
@@ -346,7 +336,7 @@ vector<String> PLC_Parser::parseObjectArgs()
     return ObjArgs;
 }
 
-void PLC_Parser::sendError(uint8_t err, const String &str)
+void PLC_Parser::sendError(ERR_DATA err, const String &str)
 { 
     PLCObj.sendError(err,str);
 }

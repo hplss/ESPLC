@@ -24,7 +24,8 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &bitTagTT PROGMEM = PSTR("TT"), //Timer Timing
 			 &bitTagACC PROGMEM = PSTR("ACC"), //Accumulated value
 			 &bitTagPRE PROGMEM = PSTR("PRE"), //Preset Value
-			 &bitTagDEST PROGMEM = PSTR("DEST"),
+			 &bitTagDEST PROGMEM = PSTR("DEST"), //Destination
+			 &bitTagVAL PROGMEM = PSTR("VAL"), //Value bit - generic
 
              &logicTagNO PROGMEM = PSTR("NO"), //Normally open contact
 			 &logicTagNC PROGMEM = PSTR("NC"), //Normally closed contact
@@ -98,8 +99,8 @@ const String &err_failed_creation PROGMEM = PSTR("Failed to create object."),
 			 &err_invalid_bit PROGMEM = PSTR("Invalid Bit"),
 			 &err_name_too_long PROGMEM = PSTR("Object Name Too Long"),
 			 &err_parser_failed PROGMEM = PSTR("Parser operation failed."),
-			 &err_var_type_invalid PROGMEM = PSTR("Invalid variable type"),
-			 &err_var_out_of_range PROGMEM = PSTR("Value assigned exceeds variable range");
+			 &err_var_type_invalid PROGMEM = PSTR("Invalid variable type."),
+			 &err_var_out_of_range PROGMEM = PSTR("Value assigned exceeds variable range.");
 //
 //Variable string definitions
 const String &VAR_INT32 PROGMEM = PSTR("INT32"),

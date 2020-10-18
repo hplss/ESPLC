@@ -28,15 +28,15 @@ using namespace std;
 class Device_Setting
 {
 	public:
-	Device_Setting( bool *ptr  ){ i_Type = TYPE_VAR_BOOL; data.b_Ptr = ptr; }
-	Device_Setting( uint8_t *ptr  ){ i_Type = TYPE_VAR_UBYTE; data.ui8_Ptr = ptr; }
-	Device_Setting( uint16_t *ptr  ){ i_Type = TYPE_VAR_USHORT; data.ui16_Ptr = ptr; }
-	Device_Setting( uint_fast32_t *ptr  ){ i_Type = TYPE_VAR_UINT; data.ui_Ptr = ptr; }
-	Device_Setting( String *ptr  ){ i_Type = TYPE_VAR_STRING; data.s_Ptr = ptr; }
-	Device_Setting( shared_ptr<String> ptr ){ i_Type = TYPE_VAR_STRING; data.s_Ptr = ptr.get(); }
+	Device_Setting( bool *ptr  ){ i_Type = OBJ_TYPE::TYPE_VAR_BOOL; data.b_Ptr = ptr; }
+	Device_Setting( uint8_t *ptr  ){ i_Type = OBJ_TYPE::TYPE_VAR_UBYTE; data.ui8_Ptr = ptr; }
+	Device_Setting( uint16_t *ptr  ){ i_Type = OBJ_TYPE::TYPE_VAR_USHORT; data.ui16_Ptr = ptr; }
+	Device_Setting( uint_fast32_t *ptr  ){ i_Type = OBJ_TYPE::TYPE_VAR_UINT; data.ui_Ptr = ptr; }
+	Device_Setting( String *ptr  ){ i_Type = OBJ_TYPE::TYPE_VAR_STRING; data.s_Ptr = ptr; }
+	Device_Setting( shared_ptr<String> ptr ){ i_Type = OBJ_TYPE::TYPE_VAR_STRING; data.s_Ptr = ptr.get(); }
 	virtual ~Device_Setting(){} //destructor
 
-	uint8_t getType(){ return i_Type; }
+	OBJ_TYPE getType(){ return i_Type; }
 
 	//This function converts a string to the proper value and stores it into the appropriate variable
 	void setSettingValue( const String & );
@@ -58,7 +58,8 @@ class Device_Setting
 		uint16_t *ui16_Ptr;
 		uint_fast32_t *ui_Ptr;
 	} data;
-	uint8_t i_Type; //stored the field type, because we can't cast
+
+	OBJ_TYPE i_Type; //stored the field type, because we can't cast
 };
 
 class UICore

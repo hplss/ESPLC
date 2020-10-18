@@ -14,15 +14,15 @@ class MathBlockOBJ : public Ladder_OBJ_Logical
 {
 	public:
     template <typename A, typename B>
-    MathBlockOBJ(const String &id, uint8_t type, A var1,  B var2 = 0, shared_ptr<Ladder_VAR> dest = 0) : MathBlockOBJ(id, type, make_shared<Ladder_VAR>(var1), make_shared<Ladder_VAR>(var2), dest ) {}
-	MathBlockOBJ(const String &id, uint8_t type, shared_ptr<Ladder_VAR> A, shared_ptr<Ladder_VAR> B = 0, shared_ptr<Ladder_VAR> dest = 0) : Ladder_OBJ_Logical(id, type)
+    MathBlockOBJ(const String &id, OBJ_TYPE type, A var1,  B var2 = 0, shared_ptr<Ladder_VAR> dest = 0) : MathBlockOBJ(id, type, make_shared<Ladder_VAR>(var1), make_shared<Ladder_VAR>(var2), dest ) {}
+	MathBlockOBJ(const String &id, OBJ_TYPE type, shared_ptr<Ladder_VAR> A, shared_ptr<Ladder_VAR> B = 0, shared_ptr<Ladder_VAR> dest = 0) : Ladder_OBJ_Logical(id, type)
     { 
         sourceA = A; //must always have a valid pointer
         sourceB = B;
 
         if (!dest) //no destination object given so create one for later reference by other objects. This is also the equivalent to an output stored in memory.
         {
-            if ( usesFloat() || type == TYPE_MATH_COS || type == TYPE_MATH_SIN || type == TYPE_MATH_TAN ) //floating point operation
+            if ( usesFloat() || type == OBJ_TYPE::TYPE_MATH_COS || type == OBJ_TYPE::TYPE_MATH_SIN || type == OBJ_TYPE::TYPE_MATH_TAN ) //floating point operation
                 destination = make_shared<Ladder_VAR>( &destValues.fValue );
             else if ( usesUnsignedInt() ) //both have unsigned integers, so default to unsigned long for storage
             {
@@ -92,15 +92,15 @@ class MathBlockOBJ : public Ladder_OBJ_Logical
     //returns true if either Ladder_Var object uses float type vairables. This is important for some math operations.
     bool usesFloat()
     {
-        return (sourceA->getType() == TYPE_VAR_FLOAT || ( sourceB && sourceB->getType() == TYPE_VAR_FLOAT));
+        return (sourceA->getType() == OBJ_TYPE::TYPE_VAR_FLOAT || ( sourceB && sourceB->getType() == OBJ_TYPE::TYPE_VAR_FLOAT));
     }
     //returns true if there are exclusively unsigned numbers at play.
     bool usesUnsignedInt()
     {
         if ( sourceB )
-            return (sourceA->getType() == TYPE_VAR_UINT || sourceA->getType() == TYPE_VAR_ULONG) && ( sourceB->getType() == TYPE_VAR_UINT || sourceB->getType() == TYPE_VAR_ULONG );
+            return (sourceA->getType() == OBJ_TYPE::TYPE_VAR_UINT || sourceA->getType() == OBJ_TYPE::TYPE_VAR_ULONG) && ( sourceB->getType() == OBJ_TYPE::TYPE_VAR_UINT || sourceB->getType() == OBJ_TYPE::TYPE_VAR_ULONG );
         
-        return (sourceA->getType() == TYPE_VAR_UINT || sourceA->getType() == TYPE_VAR_ULONG);
+        return (sourceA->getType() == OBJ_TYPE::TYPE_VAR_UINT || sourceA->getType() == OBJ_TYPE::TYPE_VAR_ULONG);
     }
 	
 	private:

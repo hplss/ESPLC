@@ -99,7 +99,7 @@ class PLC_Main
 	//Used to parse the appropriate logic tags from the logic script and return the associated byte.
 	uint8_t parseLogic( const String & );
 	//Used to send specific errors to both the web interface, as well as the serial.
-	void sendError(uint8_t, const String & = ""); 
+	void sendError(ERR_DATA, const String & = ""); 
 	//This function is responsible for destructing all rungs and objects before reconstructing the ladder logic program.
 	void resetAll(); 
 	//This function adds the inputted ladder rung into the ladder rung vector.
@@ -124,7 +124,7 @@ class PLC_Main
 	//performs a lookup to make sure the inputted pin number corresponds to a pin that is valid for the device. Used for some basic error checking in the parser. 
 	//Also lets us know if a given pin is already claimed by another object. 
 	//ARGS: <Pin>, <Device Type>
-	bool isValidPin( uint8_t, uint8_t );
+	bool isValidPin( uint8_t, OBJ_TYPE );
 	//Sets up the remote PLC server
 	bool createRemoteServer( uint16_t );
 	//attempts to claim the inputted pin as "taken", thereby preventing other objects from using the pin as they are initialized.
@@ -177,7 +177,7 @@ class PLC_Main
 
 	unique_ptr<PLC_Remote_Server> remoteServer; //PLC_Remote_Server object
 	
-	std::map<uint8_t, uint8_t> pinMap; //This map stores information about which physical pins are available on the ESP32 that IO can use.
+	std::map<uint8_t, PIN_TYPE> pinMap; //This map stores information about which physical pins are available on the ESP32 that IO can use.
 };
 
 //Generic functions here

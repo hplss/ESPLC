@@ -63,6 +63,8 @@ String DataField::GenerateHTML() //Baseclass GenerateHTML
 			case FIELD_TYPE::NUMBER:
 				HTML += PSTR("type=\"number\" min=\"0\" size=\"") + String(iCols) + PSTR("\" oninput=\"validity.valid||(value=min);\" ");
 				break;
+			default:
+			break;
 		}
 	
 		switch ( GetType() ) //This switch case is exclusively used for setting the "value" html tag for certain forms. 
@@ -298,7 +300,7 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 {
 	switch(iVarType)
 	{
-		case TYPE_VAR_BOOL:
+		case OBJ_TYPE::TYPE_VAR_BOOL:
 		{
 			bool temp = false;
 			int64_t parsed = parseInt( value );
@@ -312,7 +314,7 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 			}
 		}
 		break;
-		case TYPE_VAR_UBYTE:
+		case OBJ_TYPE::TYPE_VAR_UBYTE:
 		{
 			uint8_t temp = 0;
 			int64_t parsed = parseInt( value );
@@ -332,7 +334,7 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 			}
 		}
 		break;
-		case TYPE_VAR_UINT:
+		case OBJ_TYPE::TYPE_VAR_UINT:
 		{
 			uint_fast32_t temp = 0;
 			int64_t parsed = parseInt( value );
@@ -352,7 +354,7 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 			}
 		}
 		break;
-		case TYPE_VAR_INT:
+		case OBJ_TYPE::TYPE_VAR_INT:
 		{
 			int_fast32_t temp = 0;
 			int64_t parsed = parseInt( value );
@@ -374,7 +376,7 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 			}
 		}
 		break;
-		case TYPE_VAR_USHORT:
+		case OBJ_TYPE::TYPE_VAR_USHORT:
 		{
 			uint16_t temp = 0;
 			int64_t parsed = parseInt( value );
@@ -394,7 +396,7 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 			}
 		}
 		break;
-		case TYPE_VAR_LONG:
+		case OBJ_TYPE::TYPE_VAR_LONG:
 		{
 			int64_t temp = parseInt( value ); //same data type as parser function
 			if ( *variablePtr.lVar != temp && DataField::SetFieldValue(intToStr(temp)) ) //only update if different
@@ -404,7 +406,7 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 			}
 		}
 		break;
-		case TYPE_VAR_ULONG:
+		case OBJ_TYPE::TYPE_VAR_ULONG:
 		{
 			uint64_t temp = 0;
 			int64_t parsed = parseInt( value );
@@ -420,7 +422,7 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 			}
 		}
 		break;
-		case TYPE_VAR_FLOAT:
+		case OBJ_TYPE::TYPE_VAR_FLOAT:
 		{
 			float temp = parseFloat( value );
 			if ( *variablePtr.fVar != temp ) //only update if different
@@ -430,10 +432,12 @@ bool VAR_Datafield::SetFieldValue( const String &value )
 			}
 		}
 		break;
-		case TYPE_VAR_STRING:
+		case OBJ_TYPE::TYPE_VAR_STRING:
 		{
 			return DataField::SetFieldValue(value);
 		}
+		break;
+		default:
 		break;
 	}
 
@@ -443,20 +447,22 @@ int_fast32_t VAR_Datafield::intFromValue()
 {
 	switch(iVarType)
 	{
-		case TYPE_VAR_BOOL:
+		case OBJ_TYPE::TYPE_VAR_BOOL:
 			return *variablePtr.bVar;
-		case TYPE_VAR_INT:
+		case OBJ_TYPE::TYPE_VAR_INT:
 			return *variablePtr.iVar;
-		case TYPE_VAR_FLOAT:
+		case OBJ_TYPE::TYPE_VAR_FLOAT:
 			return *variablePtr.fVar;
-		case TYPE_VAR_LONG:
+		case OBJ_TYPE::TYPE_VAR_LONG:
 			return *variablePtr.lVar;
-		case TYPE_VAR_UBYTE:
+		case OBJ_TYPE::TYPE_VAR_UBYTE:
 			return *variablePtr.uByteVar;
-		case TYPE_VAR_USHORT:
+		case OBJ_TYPE::TYPE_VAR_USHORT:
 			return *variablePtr.uiShortVar;
-		case TYPE_VAR_STRING:
+		case OBJ_TYPE::TYPE_VAR_STRING:
 			return parseInt(GetFieldValue());
+		default:
+			break;
 	}
 	return 0;
 }
@@ -465,7 +471,7 @@ String LADDER_OBJ_Datafield::GenerateHTML()
 {
  	String html = PSTR("<table>\n<thead>\n<tr>\n<th Colspan=\"2\">") + String(pObj->getID()) + PSTR("</th>\n</tr>\n<thead>\n</thead>\n<tbody>\n<tr>\n");
 	 html += "<td id=\"" + String(pObj->getID()) + "\">" + String(pObj->getLineState()) + "</td>\n";
-	 html += "<td id=\"" + String(pObj->getID()) + "Type\">" + String(pObj->getType()) + "</td>";
+	 html += "<td id=\"" + String(pObj->getID()) + "Type\">" + String(static_cast<uint8_t>(pObj->getType())) + "</td>";
 	 html += PSTR("</tr>\n</tbody>\n</table>\n");
 	return html;
 }

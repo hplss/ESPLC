@@ -7,7 +7,7 @@
 class OutputOBJ: public Ladder_OBJ_Logical
 {
 	public:
-	OutputOBJ( const String &id, uint8_t pin, uint8_t logic = LOGIC_NO ) : Ladder_OBJ_Logical(id, TYPE_OUTPUT){ iPin = pin; pinMode(pin, OUTPUT); setLogic(logic); }
+	OutputOBJ( const String &id, uint8_t pin, uint8_t logic = LOGIC_NO ) : Ladder_OBJ_Logical(id, OBJ_TYPE::TYPE_OUTPUT){ iPin = pin; pinMode(pin, OUTPUT); setLogic(logic); }
 	~OutputOBJ()
 	{
 		 #ifdef DEBUG 

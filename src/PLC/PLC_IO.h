@@ -27,28 +27,37 @@ class Ladder_VAR;
 class Ladder_OBJ
 {
 public:
-	Ladder_OBJ( const String &id, uint8_t type ){ s_ObjID = id; i_Type = type; i_objState = 0; }
+	Ladder_OBJ( const String &id, OBJ_TYPE type ){ s_ObjID = id; i_Type = type; i_objState = 0; }
 	virtual ~Ladder_OBJ(){ }
 	//Sets the state of the Ladder_OBJ
 	void setState(uint8_t state) { i_objState = state; }
 	//Returns enabled/disabled/etc
 	uint8_t getState(){ return i_objState; } 
 	//Returns the object type identifier (OUTPUT/INPUT/TIMER,etc.)
-	const uint8_t getType(){ return i_Type; }
+	const OBJ_TYPE getType(){ return i_Type; }
 	//Returns the unique object ID
 	const String &getID(){ return s_ObjID; }
 
+	//Returns an object's bit (Ladder_VAR pointer) based on an inputted bit ID string
+	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String & );
+	//Adds a Ladder_VAR object to the logical object based on the given identifying string. Must pass the appropriate checks before it is initialized.
+	virtual shared_ptr<Ladder_VAR> addObjectVAR( const String & );
+	//This function returns a reference to the object's local variable storage container (this may or may not be used, depending on the object's type).
+	vector<shared_ptr<Ladder_VAR>> &getObjectVARs(){ return localVars; }
+
 private:
-	uint8_t i_Type, //Identifies the type of this object. 0 = input, 1 = Physical output, 2 = Virtual Output, 3 = timer, etc.	
-			i_objState; //Enabled or disabled?
+	OBJ_TYPE i_Type; //Identifies the type of this object. 0 = input, 1 = Physical output, 2 = Virtual Output, 3 = timer, etc.	
+	uint8_t i_objState; //Enabled or disabled?
 	String s_ObjID; //The unique ID for this object (globally)
+
+	vector<shared_ptr<Ladder_VAR>> localVars; //locally stored ladder var objects (that belong to this object)
 };
 
 //Ladder_OBJ_Logical objects are a subclass of Ladder_OBJ. These are objects that are used in performing logic operations via the logic script. 
 class Ladder_OBJ_Logical : public Ladder_OBJ
 {
 	public:
-	Ladder_OBJ_Logical( const String &id, uint8_t type ) : Ladder_OBJ( id, type ) {}
+	Ladder_OBJ_Logical( const String &id, OBJ_TYPE type ) : Ladder_OBJ( id, type ) {}
 	~Ladder_OBJ_Logical(){}
 	virtual void setLineState(bool &state, bool bNot){ if (state) b_lineState = state; } //save the state. Possibly consider latching the state if state is HIGH (duplicate outputs?)
 	//Returns the currently stored line state for the given object.
@@ -61,11 +70,6 @@ class Ladder_OBJ_Logical : public Ladder_OBJ
 	//Set the line state back to false for the next scan This should only be called by the rung manager (which applies the logic after processing)
 	virtual void updateObject(){ b_lineState = false; } 
 
-	//Returns an object's bit (Ladder_VAR pointer) based on an inputted bit ID string
-	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String & );
-	//Adds a Ladder_VAR object to the logical object based on the given identifying string. Must pass the appropriate checks before it is initialized.
-	virtual shared_ptr<Ladder_VAR> addObjectVAR( const String & );
-
 	private:
 	uint8_t i_objLogic;
 	bool b_lineState;
@@ -77,7 +81,7 @@ class Ladder_OBJ_Logical : public Ladder_OBJ
 class Ladder_OBJ_Accessor : public Ladder_OBJ 
 {
 	public:
-	Ladder_OBJ_Accessor( const String &id, uint8_t type ) : Ladder_OBJ( id, type ){}
+	Ladder_OBJ_Accessor( const String &id, OBJ_TYPE type ) : Ladder_OBJ( id, type ){}
 	~Ladder_OBJ_Accessor()
 	{
 		getObjects().clear();

@@ -8,7 +8,7 @@
 class CounterOBJ : public Ladder_OBJ_Logical
 {
 	public:
-	CounterOBJ(const String &id, uint_fast32_t count = 0, uint_fast32_t accum = 0, uint8_t type = TYPE_CTU) : Ladder_OBJ_Logical(id, type)
+	CounterOBJ(const String &id, uint_fast32_t count = 0, uint_fast32_t accum = 0, OBJ_TYPE type = OBJ_TYPE::TYPE_CTU) : Ladder_OBJ_Logical(id, type)
 	{ 
 		iCount = count;
 		iAccum = accum;
@@ -32,18 +32,7 @@ class CounterOBJ : public Ladder_OBJ_Logical
 	//returns the current value of the counter's "count-to" value
 	void setCountVal(uint_fast32_t val) {iCount = val; }
 	virtual shared_ptr<Ladder_VAR> addObjectVAR( const String & );
-	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String &id )
-	{
-		std::map<const String, shared_ptr<Ladder_VAR>>::iterator bititr = bitMap.find(id);
-		if (bititr != bitMap.end())
-    	{
-			return bititr->second; //return the shared pointer to the var
-    	}
-		else
-		{
-			return Ladder_OBJ_Logical::getObjectVAR(id); //default case. -- probably an error
-		}
-	}
+	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String &id );
 
 	bool getENBitVal(){ return enableBit; }
 	bool getDNbitVal(){ return doneBit; }
@@ -54,7 +43,6 @@ class CounterOBJ : public Ladder_OBJ_Logical
 	private:
 	uint_fast32_t iCount, iAccum;
 	bool doneBit, enableBit;
-	std::map<const String, shared_ptr<Ladder_VAR>> bitMap; //used for DN, EN, ACC, PRE, if they are accessed by the parser.
 };
 
 #endif

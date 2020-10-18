@@ -95,7 +95,7 @@ public:
 	}
 
 	//Forwards an error of a given type (with additional info message as second argument) to the client.
-    void sendError(uint8_t, const String & = "");
+    void sendError(ERR_DATA, const String & = "");
     //Parses the individual lines for logic operations and declarations (called from parseScript())
 	bool parseLine();
 	//This function breaks up the arguments that are passed in during object declaration and instantiation. Putting them into a vector of Strings

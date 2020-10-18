@@ -9,7 +9,7 @@
 class TimerOBJ : public Ladder_OBJ_Logical
 {
 	public:
-	TimerOBJ(const String &id, uint_fast32_t delay, uint_fast32_t accum = 0, uint8_t type = TYPE_TON) : Ladder_OBJ_Logical(id, type)
+	TimerOBJ(const String &id, uint_fast32_t delay, uint_fast32_t accum = 0, OBJ_TYPE type = OBJ_TYPE::TYPE_TON) : Ladder_OBJ_Logical(id, type)
 	{ 
 		//Defaults
 		ttBit = false;
@@ -28,18 +28,14 @@ class TimerOBJ : public Ladder_OBJ_Logical
 	virtual void setLineState(bool &state, bool bNot){ Ladder_OBJ_Logical::setLineState(state, bNot); }
 	virtual shared_ptr<Ladder_VAR> addObjectVAR( const String &id );
 	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String &id );
-	bool getTTBitVal(){ return ttBit; }
-	bool getENBitVal(){ return enableBit; }
-	bool getDNbitVal(){ return doneBit; }
-	uint_fast32_t getAccumVal(){ return lAccum; }
 	
 	private:
 	bool doneBit,
 		enableBit, 
 		ttBit;	
+		
 	uint_fast32_t timeStart, timeEnd, //Local variables only (used for calculations)
 				  lDelay, lAccum;
-	std::map<const String, shared_ptr<Ladder_VAR>> bitMap; //used for DN, EN, TT, ACC, PRE, if they are accessed by the parser.
 };
 
 #endif

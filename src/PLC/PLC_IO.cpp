@@ -18,12 +18,12 @@
 // BASECLASS OBJECT BEGIN
 //////////////////////////////////////////////////////////////////////////
 
-shared_ptr<Ladder_VAR> Ladder_OBJ_Logical::getObjectVAR( const String &id )
+shared_ptr<Ladder_VAR> Ladder_OBJ::getObjectVAR( const String &id )
 {
 	return 0;
 }
 
-shared_ptr<Ladder_VAR> Ladder_OBJ_Logical::addObjectVAR( const String &id )
+shared_ptr<Ladder_VAR> Ladder_OBJ::addObjectVAR( const String &id )
 {
 	//Error here? Should only be called if the derived class doesn't support the requested bit tag. Like a counter referencing the TT bit.
 	return 0;

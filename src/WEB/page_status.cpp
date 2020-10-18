@@ -63,7 +63,8 @@ void UICore::handleStatus()
 	  resestFieldContainers(); //empty the data table to free memory
 }
 
-void UICore::handleUpdateStatus(){
+void UICore::handleUpdateStatus()
+{
   String JSON = "{\"Status\":[\n";
   for (uint16_t i = 0; i < PLCObj.getLadderObjects().size(); i++)
   {

@@ -9,20 +9,20 @@ class Ladder_VAR : public Ladder_OBJ_Logical
 {
 	public:
 	//These constructors are for pointers to existing variables
-	Ladder_VAR( int_fast32_t *value, const String &id = "" ) : Ladder_OBJ_Logical( id, TYPE_VAR_INT ){ values.i.val_ptr = value; b_usesPtr = true; }
-	Ladder_VAR( uint_fast32_t *value, const String &id = "" ) : Ladder_OBJ_Logical( id, TYPE_VAR_UINT ){ values.ui.val_ptr = value; b_usesPtr = true; }
-	Ladder_VAR( bool *value, const String &id = "" ) : Ladder_OBJ_Logical( id, TYPE_VAR_BOOL ){ values.b.val_ptr = value; b_usesPtr = true; }
-	Ladder_VAR( double *value, const String &id = "" ) : Ladder_OBJ_Logical( id, TYPE_VAR_FLOAT ){ values.d.val_ptr = value; b_usesPtr = true; }
-	Ladder_VAR( uint64_t *value, const String &id = "" ) : Ladder_OBJ_Logical( id, TYPE_VAR_ULONG ){ values.ul.val_ptr = value; b_usesPtr = true; }
-	Ladder_VAR( int64_t *value, const String &id = "" ) : Ladder_OBJ_Logical( id, TYPE_VAR_LONG ){ values.l.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( int_fast32_t *value, const String &id = "" ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_INT ){ values.i.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( uint_fast32_t *value, const String &id = "" ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_UINT ){ values.ui.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( bool *value, const String &id = "" ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_BOOL ){ values.b.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( double *value, const String &id = "" ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_FLOAT ){ values.d.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( uint64_t *value, const String &id = "" ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_ULONG ){ values.ul.val_ptr = value; b_usesPtr = true; }
+	Ladder_VAR( int64_t *value, const String &id = "" ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_LONG ){ values.l.val_ptr = value; b_usesPtr = true; }
 	//
 	//These constructors are for locally stored values
-	Ladder_VAR( int_fast32_t value, const String &id = "" ) : Ladder_OBJ_Logical( id, TYPE_VAR_INT ){ values.i.val = value; b_usesPtr = false; }
-	Ladder_VAR( uint_fast32_t value, const String &id = "" ) : Ladder_OBJ_Logical( id, TYPE_VAR_UINT ){ values.ui.val = value; b_usesPtr = false; }
-	Ladder_VAR( bool value, const String &id = "" ) : Ladder_OBJ_Logical( id, TYPE_VAR_BOOL ){ values.b.val = value; b_usesPtr = false; }
-	Ladder_VAR( double value, const String &id = "" ) : Ladder_OBJ_Logical( id, TYPE_VAR_FLOAT ){ values.d.val = value; b_usesPtr = false; }
-	Ladder_VAR( uint64_t value, const String &id = "" ) : Ladder_OBJ_Logical( id, TYPE_VAR_ULONG ){ values.ul.val = value; b_usesPtr = false; }
-	Ladder_VAR( int64_t value, const String &id = "" ) : Ladder_OBJ_Logical( id, TYPE_VAR_LONG ){ values.l.val = value; b_usesPtr = false; }
+	Ladder_VAR( int_fast32_t value, const String &id = "" ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_INT ){ values.i.val = value; b_usesPtr = false; }
+	Ladder_VAR( uint_fast32_t value, const String &id = "" ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_UINT ){ values.ui.val = value; b_usesPtr = false; }
+	Ladder_VAR( bool value, const String &id = "" ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_BOOL ){ values.b.val = value; b_usesPtr = false; }
+	Ladder_VAR( double value, const String &id = "" ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_FLOAT ){ values.d.val = value; b_usesPtr = false; }
+	Ladder_VAR( uint64_t value, const String &id = "" ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_ULONG ){ values.ul.val = value; b_usesPtr = false; }
+	Ladder_VAR( int64_t value, const String &id = "" ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_LONG ){ values.l.val = value; b_usesPtr = false; }
 	//
 	virtual void updateObject()
 	{ 

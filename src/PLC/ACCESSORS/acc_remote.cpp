@@ -3,7 +3,7 @@
 const String PROGMEM &connection = PSTR("Connection to: ");
 
 PLC_Remote_Client::PLC_Remote_Client( const String &id, const IPAddress &addr, uint16_t port, uint32_t timeout, uint32_t updateFreq, uint8_t retries) 
-    : Ladder_OBJ_Accessor( id, TYPE_REMOTE )
+    : Ladder_OBJ_Accessor( id, OBJ_TYPE::TYPE_REMOTE )
 {
     i_hostPort = port;
     i_timeout = timeout;
