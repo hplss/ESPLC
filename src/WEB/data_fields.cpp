@@ -268,7 +268,7 @@ String DataTable::GenerateTableHTML()
 {
 	String HTML;
 	//sprintf_P(HTML.c_str(), " ", "");
-	HTML += PSTR("<h2>") + s_tableName + PSTR("</h2>");
+	//HTML += PSTR("<h2>") + s_tableName + PSTR("</h2>");
 	//HTML += PSTR("<table id =\"\" > ");
 	HTML += html_paragraph_begin;
 	for ( uint8_t x = 0; x < p_fields.size(); x++ )
@@ -462,26 +462,9 @@ int_fast32_t VAR_Datafield::intFromValue()
 }
 String LADDER_OBJ_Datafield::GenerateHTML() 
 {
-	/*<script>
-var xmlhttp = new XMLHttpRequest();
-var url = "myTutorials.txt";
-
-xmlhttp.onreadystatechange = function() {
-  if (this.readyState == 4 && this.status == 200) {
-    myFunction(JSON.parse(this.responseText));
-  }
-};
-xmlhttp.open("GET", url, true);
-xmlhttp.send();
-
-function myFunction(arr) {
-  var out = "";
-  var i;
-  for(i = 0; i < arr.length; i++) {
-    out = arr[i].display; 
-    document.getElementById("test" + i).innerHTML = out;
-  }
-}
-</script>*/
-	return "";
+ 	String html = "<table>\n<thead>\n<tr>\n<th Colspan=\"2\">" + String(pObj->getID()) + "</th>\n</tr>\n<thead>\n</thead>\n<tbody>\n<tr>\n";
+	 html += "<td id=\"" + String(pObj->getID()) + "\">" + String(pObj->getLineState()) + "</td>\n";
+	 html += "<td id=\"" + String(pObj->getID()) + "Type\">" + String(pObj->getType()) + "</td>";
+	 html += "</tr>\n</tbody>\n</table>\n";
+	return html;
 }

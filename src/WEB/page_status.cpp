@@ -15,18 +15,22 @@ extern PLC_Main PLCObj;
 
 void UICore::createStatusFields()
 {
-    shared_ptr<DataTable> alertsTable( new DataTable( table_title_messages ) );
-    shared_ptr<DataTable> localStatusTable( new DataTable( F("Local Objects") ) );
-
     uint8_t index = 2;
+    for (uint16_t x = 0; x < PLCObj.getLadderObjects().size(); x++ )
+    {
+      shared_ptr<Ladder_OBJ> ptr = PLCObj.getLadderObjects()[x];
+      shared_ptr<DataTable> newTable( new DataTable( ptr->getID() ) );
+      newTable->AddElement( make_shared<LADDER_OBJ_Datafield>(ptr, index++) );
+      p_UIDataTables.push_back( newTable );
+    }
+    shared_ptr<DataTable> alertsTable( new DataTable( table_title_messages ) );
+
+    
     alertsTable->AddElement( make_shared<Hyperlink_Datafield>( index++, PSTR("Back to Index"), "/" ) );
     alertsTable->AddElement( make_shared<VAR_Datafield>( make_shared<String>(""), 1, FIELD_TYPE::TEXTAREA, field_title_alerts, vector<String>{}, ALERTS_FIELD_COLS, ALERTS_FIELD_ROWS) );
     //Should display the IP/Hostname of the device that is hosting the object, as well as the info listed for local objects.
-    shared_ptr<DataTable> remoteStatusTable(new DataTable( F("Remote Objects") ) ); 
 
     p_StaticDataTables.push_back(alertsTable);
-    p_UIDataTables.push_back(remoteStatusTable);
-	  p_UIDataTables.push_back(localStatusTable);
 }
 
 void UICore::handleStatus()
@@ -41,7 +45,7 @@ void UICore::handleStatus()
 	
 	  String HTML = generateHeader();
 	  HTML += generateTitle(PSTR("Status Page"));
-    HTML += generateAlertsScript( 1 ); //hackhack for now -- index may vary, unless explicitly assigned to '1'
+    //HTML += generateAlertsScript( 1 ); //hackhack for now -- index may vary, unless explicitly assigned to '1'
     HTML += generateStatusScript(); //Currently not used
 	
     for ( uint8_t x = 0; x < p_StaticDataTables.size(); x++ ) //Generate static objects that are not included in the FORM
@@ -59,6 +63,21 @@ void UICore::handleStatus()
 	  resestFieldContainers(); //empty the data table to free memory
 }
 
+void UICore::handleUpdateStatus(){
+  String JSON = "{\"Status\":[\n";
+  for (uint16_t i = 0; i < PLCObj.getLadderObjects().size(); i++)
+  {
+    JSON += "{\"ID\":\"" +  String(PLCObj.getLadderObjects()[i]->getID()) + "\", \"Status\":\"" + String(PLCObj.getLadderObjects()[i]->getLineState()) + "\"}";
+    if (i != (PLCObj.getLadderObjects().size()-1))
+    JSON += ",\n";
+    else
+    {
+      JSON += "\n";
+    }
+  }
+  JSON += "]}";
+  getWebServer().send(200, "text/plain", JSON);
+}
 String UICore::generateStatusJSON()
 {
     String JSON = "";
@@ -67,7 +86,18 @@ String UICore::generateStatusJSON()
 
 String UICore::generateStatusScript()
 {
-  return "";
+  String HTML = "\n<script>";
+  HTML += "setInterval(getObjectStatus, 2000)\n"
+          "function getObjectStatus(){\n"
+          "$.get(\"/update\", function(data, status){\n"
+          "var objData = JSON.parse(data)\n"
+          "for(var i = 0; i < objData.Status.length; i++){\n"
+          "document.getElementById(String(objData.Status[i].ID)).innerHTML = String(objData.Status[i].Status);}\n"
+          "})\n"
+          "}\n";
+
+  HTML += "</script>\n";
+  return HTML;
 }
 /*
 <script>

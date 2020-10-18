@@ -167,6 +167,8 @@ public:
 	bool handleAuthorization();
 	//generates the page HTML for viewing initialized PLC ladder logic objects in the web UI.
 	void handleStatus();
+	//Updates the status page with the current logic object states.
+	void handleUpdateStatus();
 	//The actual style sheet file, for sending in chunks directly from flash to the user
 	void sendStyleSheet(); 
 	//Sends ystem alerts and other info over the web interface.
