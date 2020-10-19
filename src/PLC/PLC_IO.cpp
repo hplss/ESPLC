@@ -29,4 +29,46 @@ shared_ptr<Ladder_VAR> Ladder_OBJ::addObjectVAR( const String &id )
 	return 0;
 }
 
+void Ladder_OBJ_Accessor::handleUpdates( const String &str)
+{
+	//Update Record Order: <ID>,<TYPE>,<STATE>,<LOGIC>,<VALUE>,<Other args (for init - maybe)> --> Per object
+	if (strBeginsWith(str, CMD_SEND_UPDATE) ) //Updates only contain data that might change between updates (omitted: logic, type)
+	{
+		vector<String> groupData = splitString(removeFromStr(str, CMD_SEND_UPDATE), CHAR_UPDATE_GROUP); //remove the update prefix, then break the string up
 
+		for ( uint16_t x = 0; x < groupData.size(); x++ )
+		{
+			vector<String> recordData = splitString(groupData[x], CHAR_UPDATE_RECORD); //break the group string up by records
+
+			if( !recordData.size() )
+				continue;
+
+			//[0] = ID / [1] = STATE / [2] = VALUE/Linestate
+			shared_ptr<Ladder_OBJ_Logical> obj = findLadderObjByID(recordData[0]);
+
+			if( obj ) //found the object, perform the actual updates.
+			{
+				obj->setState(recordData[1].toInt());
+			}
+		}
+	}
+}
+
+void Ladder_OBJ_Accessor::handleUpdates( const vector<String> &strVec )
+{
+	for ( uint8_t x = 0; x < strVec.size(); x++ )
+		handleUpdates(strVec[x]);
+}
+
+shared_ptr<Ladder_OBJ_Logical> Ladder_OBJ_Accessor::handleInit(const String &str)
+{
+	shared_ptr<Ladder_OBJ_Logical> newObj = 0;
+	if(strBeginsWith(str,CMD_SEND_INIT)) //should only be initializing individual objects (not groups of them? Hmm...)
+	{
+		vector<String> objRecords = splitString(removeFromStr(str, CMD_SEND_INIT), CHAR_UPDATE_RECORD );
+		//Record ID's: [0] = ID, [1] = type, [2] = state, [3] = logic, [4] = value, [5] = other args (tbd)
+		//perform object creation here - hopefully piggybacking off of the CreateNewObject code.
+		//newObj = createLadderObj
+	}
+	return newObj;
+}

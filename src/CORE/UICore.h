@@ -28,15 +28,15 @@ using namespace std;
 class Device_Setting
 {
 	public:
-	Device_Setting( bool *ptr  ){ i_Type = TYPE_VAR_BOOL; data.b_Ptr = ptr; }
-	Device_Setting( uint8_t *ptr  ){ i_Type = TYPE_VAR_UBYTE; data.ui8_Ptr = ptr; }
-	Device_Setting( uint16_t *ptr  ){ i_Type = TYPE_VAR_USHORT; data.ui16_Ptr = ptr; }
-	Device_Setting( uint_fast32_t *ptr  ){ i_Type = TYPE_VAR_UINT; data.ui_Ptr = ptr; }
-	Device_Setting( String *ptr  ){ i_Type = TYPE_VAR_STRING; data.s_Ptr = ptr; }
-	Device_Setting( shared_ptr<String> ptr ){ i_Type = TYPE_VAR_STRING; data.s_Ptr = ptr.get(); }
+	Device_Setting( bool *ptr  ){ i_Type = OBJ_TYPE::TYPE_VAR_BOOL; data.b_Ptr = ptr; }
+	Device_Setting( uint8_t *ptr  ){ i_Type = OBJ_TYPE::TYPE_VAR_UBYTE; data.ui8_Ptr = ptr; }
+	Device_Setting( uint16_t *ptr  ){ i_Type = OBJ_TYPE::TYPE_VAR_USHORT; data.ui16_Ptr = ptr; }
+	Device_Setting( uint_fast32_t *ptr  ){ i_Type = OBJ_TYPE::TYPE_VAR_UINT; data.ui_Ptr = ptr; }
+	Device_Setting( String *ptr  ){ i_Type = OBJ_TYPE::TYPE_VAR_STRING; data.s_Ptr = ptr; }
+	Device_Setting( shared_ptr<String> ptr ){ i_Type = OBJ_TYPE::TYPE_VAR_STRING; data.s_Ptr = ptr.get(); }
 	virtual ~Device_Setting(){} //destructor
 
-	uint8_t getType(){ return i_Type; }
+	OBJ_TYPE getType(){ return i_Type; }
 
 	//This function converts a string to the proper value and stores it into the appropriate variable
 	void setSettingValue( const String & );
@@ -58,7 +58,8 @@ class Device_Setting
 		uint16_t *ui16_Ptr;
 		uint_fast32_t *ui_Ptr;
 	} data;
-	uint8_t i_Type; //stored the field type, because we can't cast
+
+	OBJ_TYPE i_Type; //stored the field type, because we can't cast
 };
 
 class UICore
@@ -97,9 +98,9 @@ public:
 		s_BTPWD = make_shared<String>();
 		s_authenName = make_shared<String>();
 		s_authenPWD = make_shared<String>();
-		s_plc_addresses = make_shared<String>();
-		s_plc_port_ranges = make_shared<String>();
-		s_plc_ip_ranges = make_shared<String>();
+
+		i_plc_netmode = 0;
+		i_plc_broadcast_port = 5000;
 		//
 	}
 	~UICore()
@@ -127,7 +128,9 @@ public:
 	//Used by the serial parser to change certain system time related settings. No input arguments returns current system time.
 	void parseTime( const vector<String> & ); 
 	//Used by the serial parser to program specific values into non-volatile storage (default wifi connection, so on).
-	void parseCfg( const vector<String> & ); 
+	void parseCfg( const vector<String> & );
+	//Creates a vector of IP addresses based on delimiter(s) from a given String
+	vector<IPAddress> parseIPAddress( const String &, const vector<char> &  ); 
 	//Fills the settings map used for interpreting settings storage/reading to/from SPIFFS (flash file system).
 	void generateSettingsMap(); 
 	//Allows the memory used by the map to be freed after parsing/storing, etc (optimization).
@@ -165,6 +168,8 @@ public:
 	bool handleAuthorization();
 	//generates the page HTML for viewing initialized PLC ladder logic objects in the web UI.
 	void handleStatus();
+	//Updates the status page with the current logic object states.
+	void handleUpdateStatus();
 	//The actual style sheet file, for sending in chunks directly from flash to the user
 	void sendStyleSheet(); 
 	//Sends ystem alerts and other info over the web interface.
@@ -185,8 +190,6 @@ public:
 	//Creates any necessary fields/tables for PLC ladder object status. 
 	void createStatusFields();
 
-	//Generates the JSON array for handling object status updates, etc.
-	String generateStatusJSON();
 	//Generates the JSON array for sending device alerts to a client that is viewing the web UI.
 	String generateAlertsJSON();
 
@@ -250,12 +253,6 @@ public:
 	String &getBTPWD(){ return *s_BTPWD.get(); }
 	//
 
-	//Accessors for stored pointers (PLC remote settings)
-	String &getPLCIPRange(){ return *s_plc_ip_ranges; }
-	String &getPLCPortRange(){ return *s_plc_port_ranges; }
-	String &getPLCAutoConnectIPs(){ return *s_plc_addresses; }
-	//
-
 	shared_ptr<Time> getSystemTimeObj(){ return p_currentTime; }
 	WebServer &getWebServer(){ return *p_server.get(); }
 	WiFiUDP &getTimeUDP(){ return *p_UDP.get(); }
@@ -304,15 +301,9 @@ private:
 					   s_DNSHostname; //Hostname for DNS server.
 	//
 
-	//External devices settings variables
-	uint8_t i_plc_netmode,//"plc_netmode"
-			i_plc_ip_range;
+	//External PLC devices settings
+	uint8_t i_plc_netmode;
 	uint16_t i_plc_broadcast_port;
-	bool b_plc_autoconnect;
-	vector<IPAddress> plc_saved_addresses;
-	shared_ptr<String> s_plc_addresses,
-					   s_plc_port_ranges,
-					   s_plc_ip_ranges;
 	//
 
 	//File system related variables

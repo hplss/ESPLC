@@ -6,7 +6,7 @@
 void TimerOBJ::updateObject()
 {	
 	bool lineState = getLineState();
-	if ( (lineState && getType() == TYPE_TON) || (!lineState && getType() == TYPE_TOF) )  //Is the pathway to this timer active?
+	if ( (lineState && getType() == OBJ_TYPE::TYPE_TON) || (!lineState && getType() == OBJ_TYPE::TYPE_TOF) )  //Is the pathway to this timer active?
 	{
 		uint32_t currentTime = millis();
 		if ( enableBit != lineState && !ttBit ) //not already counting
@@ -27,13 +27,13 @@ void TimerOBJ::updateObject()
 	{
 		ttBit = false; //timer no longer counting
 		timeStart = 0;
-		if ( getType() != TYPE_TRET) //Don't reset done bit for retentive timer. Must be done manually with reset coil 
+		if ( getType() != OBJ_TYPE::TYPE_TRET) //Don't reset done bit for retentive timer. Must be done manually with reset coil 
 			doneBit = false;
 	}
 	
 	enableBit = lineState; //enable bit always matches line state. Set last.
 	setState(lineState); //between enabled/disabled
-	Ladder_OBJ::updateObject(); //parent class
+	Ladder_OBJ_Logical::updateObject(); //parent class
 }
 
 shared_ptr<Ladder_VAR> TimerOBJ::addObjectVAR( const String &id )
@@ -42,27 +42,38 @@ shared_ptr<Ladder_VAR> TimerOBJ::addObjectVAR( const String &id )
     {
         shared_ptr<Ladder_VAR> var = 0;
         if ( id == bitTagEN )
-            var = make_shared<Ladder_VAR>(&enableBit);
+            var = make_shared<Ladder_VAR>(&enableBit, id);
         else if ( id == bitTagDN )
-            var = make_shared<Ladder_VAR>(&doneBit);
+            var = make_shared<Ladder_VAR>(&doneBit, id);
         else if ( id == bitTagPRE )
-            var = make_shared<Ladder_VAR>(&lDelay);
+            var = make_shared<Ladder_VAR>(&lDelay, id);
         else if ( id == bitTagTT )
-            var = make_shared<Ladder_VAR>(&ttBit);
+            var = make_shared<Ladder_VAR>(&ttBit, id);
         else if ( id == bitTagACC)
-            var = make_shared<Ladder_VAR>(&lAccum);
+            var = make_shared<Ladder_VAR>(&lAccum, id);
 
         if ( var )
         {
-            bitMap.emplace(id,var); // store away for later
+			getObjectVARs().emplace_back(var); //store it off.
             #ifdef DEBUG 
             Serial.println(PSTR("Created new Timer Object Tag: ") + id ); 
             #endif
-            return var;
+            return var; 
         }
     }
     #ifdef DEBUG 
     Serial.println(PSTR("Failed: Object Tag: ") + id ); 
     #endif
     return 0; //failed to add
+}
+
+shared_ptr<Ladder_VAR> TimerOBJ::getObjectVAR( const String &id )
+{
+	for ( uint8_t x = 0; x < getObjectVARs().size(); x++ )
+	{
+		if ( getObjectVARs()[x]->getID() == id )
+			return getObjectVARs()[x];
+	}
+
+	return Ladder_OBJ_Logical::getObjectVAR(id); //default case.
 }

@@ -24,7 +24,10 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &bitTagTT PROGMEM = PSTR("TT"), //Timer Timing
 			 &bitTagACC PROGMEM = PSTR("ACC"), //Accumulated value
 			 &bitTagPRE PROGMEM = PSTR("PRE"), //Preset Value
-			 &bitTagDEST PROGMEM = PSTR("DEST"),
+			 &bitTagSRCA PROGMEM = PSTR("A"), //Source A variable input
+			 &bitTagSRCB PROGMEM = PSTR("B"), //Source B variabel input
+			 &bitTagDEST PROGMEM = PSTR("DEST"), //Destination
+			 &bitTagVAL PROGMEM = PSTR("VAL"), //Value bit - generic
 
              &logicTagNO PROGMEM = PSTR("NO"), //Normally open contact
 			 &logicTagNC PROGMEM = PSTR("NC"), //Normally closed contact
@@ -44,8 +47,14 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &typeTagMSIN PROGMEM = PSTR("SIN"), //TYPE: MATH - Sine function
 			 &typeTagMCOS PROGMEM = PSTR("COS"), //TYPE: MATH - Cosine function
 			 &typeTagMTAN PROGMEM = PSTR("TAN"), //TYPE: MATH - Tangent function
+			 &typeTagMMUL PROGMEM = PSTR("MUL"), //TYPE: MATH - Multiply function
+			 &typeTagMDIV PROGMEM = PSTR("DIV"), //TYPE: MATH - Division function
+			 &typeTagMADD PROGMEM = PSTR("ADD"), //TYPE: MATH - Addition function
+			 &typeTagMSUB PROGMEM = PSTR("SUB"), //TYPE: MATH - Subtraction function
+			 &typeTagMMOV PROGMEM = PSTR("MOV"), //TYPE: MATH - Subtraction function
 			 &typeTagAnalog PROGMEM = PSTR("ANALOG"), //input (and possibly output) identifier - for analog signals
 			 &typeTagDigital PROGMEM = PSTR("DIGITAL"), //input (and possibly output) identifier - for digital signals
+			 &typeTagPWM PROGMEM = PSTR("PWM"), //Pulse width modulation 
 
              &timerTag1 PROGMEM = PSTR("TIMER"), //Timer object
 			 &timerTag2 PROGMEM = PSTR("TMR"), //Timer object alias
@@ -57,6 +66,7 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &variableTag2 PROGMEM = PSTR("VAR"), //Virtual object alias
 			 &outputTag1 PROGMEM = PSTR("OUTPUT"), //Output object
 			 &outputTag2 PROGMEM = PSTR("OUT"), //Output object alias
+			 &remoteTag PROGMEM = PSTR("REMOTE"), //remote object
 			 &movTag PROGMEM = PSTR("MOV"); //MOV blocks are responsible for transferring (copying) data between two variable objects.
 //END PLC TAGS
 
@@ -82,6 +92,7 @@ const String &transmission_HTML PROGMEM = PSTR("text/html"),
 
 //PLC Error Messages
 const String &err_failed_creation PROGMEM = PSTR("Failed to create object."),
+			 &err_failed_accessor PROGMEM = PSTR("Failed to create accessor."),
 			 &err_unknown_args PROGMEM = PSTR("Unknown argument."),
 			 &err_insufficient_args PROGMEM = PSTR("Insufficient arguments."),
 			 &err_unknown_type PROGMEM = PSTR("Unknown object type."),
@@ -90,8 +101,19 @@ const String &err_failed_creation PROGMEM = PSTR("Failed to create object."),
 			 &err_unknown_obj PROGMEM = PSTR("Invalid Object"),
 			 &err_invalid_bit PROGMEM = PSTR("Invalid Bit"),
 			 &err_name_too_long PROGMEM = PSTR("Object Name Too Long"),
-			 &err_parser_failed PROGMEM = PSTR("Parser operation failed.");
+			 &err_parser_failed PROGMEM = PSTR("Parser operation failed."),
+			 &err_var_type_invalid PROGMEM = PSTR("Invalid variable type."),
+			 &err_var_out_of_range PROGMEM = PSTR("Value assigned exceeds variable range.");
 //
+//Variable string definitions
+const String &VAR_INT32 PROGMEM = PSTR("INT32"),
+					&VAR_UINT32 PROGMEM = PSTR("UINT32"),
+					&VAR_INT64 PROGMEM = PSTR("INT64"),
+					&VAR_UINT64 PROGMEM = PSTR("UINT64"),
+					&VAR_DOUBLE PROGMEM = PSTR("DOUBLE"),
+					&VAR_BOOL PROGMEM = PSTR("BOOL"),
+					&VAR_BOOLEAN PROGMEM = PSTR("BOOLEAN");
+
 
 vector<String> splitString( const String &str, const vector<char> &c, const vector<char> &start_limiters, const vector<char> &end_limiters, bool removeChar )
 {
@@ -283,7 +305,7 @@ bool strContains( const String &str, const vector<char> &c )
 	}
 	return false;
 }
-bool strContains( const String &str, const char c ){ return strContains(str,vector<char>{c}); }
+bool strContains( const String &str, const char c ){ return strContains(str, vector<char>{c}); }
 
 bool strBeginsWith( const String &str, const vector<char> &c )
 {
@@ -294,7 +316,7 @@ bool strBeginsWith( const String &str, const vector<char> &c )
 	}
 	return false;
 }
-bool strBeginsWith( const String &str, const char c ){ return strContains(str,vector<char>{c}); }
+bool strBeginsWith( const String &str, const char c ){ return strContains(str, vector<char>{c}); }
 
 bool strEndsWith( const String &str, const vector<char> &c )
 {
@@ -305,4 +327,29 @@ bool strEndsWith( const String &str, const vector<char> &c )
 	}
 	return false;
 }
-bool strEndsWith( const String &str, const char c ){ return strContains(str,vector<char>{c}); }
+bool strEndsWith( const String &str, const char c ){ return strContains(str, vector<char>{c}); }
+
+String removeFromStr( const String &str, const vector<char> &c )
+{
+	String output;
+	bool skipChar = false;
+
+	for ( uint16_t x = 0; x < str.length(); x++ )
+	{
+		for ( uint8_t y = 0; y < c.size(); y++ )
+		{
+			if ( c[y] == str[x] )
+			{
+				skipChar = true;
+				break; //no need to look further this cycle.
+			}
+		}
+
+		if ( !skipChar )
+			output += str[x]; //append the char
+	}
+
+	return output;
+}
+
+String removeFromStr( const String &str, const char c ){ return removeFromStr( str, vector<char>{c} ); }

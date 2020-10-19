@@ -9,59 +9,61 @@ void MathBlockOBJ::setLineState(bool &state, bool bNot)
     {
         switch ( getType() )
         {
-            case TYPE_MATH_SIN:
+            case OBJ_TYPE::TYPE_MATH_SIN:
             {
                 computeSIN();
             }
             break;
-            case TYPE_MATH_COS:
+            case OBJ_TYPE::TYPE_MATH_COS:
             {
                 computeCOS();
             }
             break;
-            case TYPE_MATH_TAN:
+            case OBJ_TYPE::TYPE_MATH_TAN:
             {
                 computeTAN();
             }
             break;
-            case TYPE_MATH_EQ:
+            case OBJ_TYPE::TYPE_MATH_EQ:
             {
                 state = computeEQ();
                 destination->setValue(state);
             }
             break;
-            case TYPE_MATH_LES:
+            case OBJ_TYPE::TYPE_MATH_LES:
             {
                 state = computeLES();
                 destination->setValue(state);
             }
             break;
-            case TYPE_MATH_LEQ:
+            case OBJ_TYPE::TYPE_MATH_LEQ:
             {
                 state = computeLEQ();
                 destination->setValue(state);
             }
             break;
-            case TYPE_MATH_GRT:
+            case OBJ_TYPE::TYPE_MATH_GRT:
             {
                 state = computeGRT();
                 destination->setValue(state);
             }
             break;
-            case TYPE_MATH_GRQ:
+            case OBJ_TYPE::TYPE_MATH_GRQ:
             {
                 state = computeGRQ();
                 destination->setValue(state);
             }
             break;
-            case TYPE_MATH_MOV:
+            case OBJ_TYPE::TYPE_MATH_MOV:
             {
                 computeMOV();
             }
             break;
+            default:
+            break;
         }
     }
-    Ladder_OBJ::setLineState(state, bNot); 
+    Ladder_OBJ_Logical::setLineState(state, bNot); 
 }
 
 void MathBlockOBJ::computeMUL()
@@ -108,19 +110,47 @@ bool MathBlockOBJ::computeEQ()
 }
 bool MathBlockOBJ::computeGRT()
 {
-    return false;
+    if ( usesUnsignedInt() )
+        destination->setValue( sourceA->getValue<uint64_t>() > sourceB->getValue<uint64_t>() ? true : false );
+    else if ( usesFloat() )
+        destination->setValue( sourceA->getValue<float>() > sourceB->getValue<float>() ? true : false );
+    else //assume signed int
+        destination->setValue( sourceA->getValue<int64_t>() > sourceB->getValue<int64_t>() ? true : false );
+
+    return destination->getValue<bool>();
 }
 bool MathBlockOBJ::computeGRQ()
 {
-    return false;
+    if ( usesUnsignedInt() )
+        destination->setValue( sourceA->getValue<uint64_t>() >= sourceB->getValue<uint64_t>() ? true : false );
+    else if ( usesFloat() )
+        destination->setValue( sourceA->getValue<float>() >= sourceB->getValue<float>() ? true : false );
+    else //assume signed int
+        destination->setValue( sourceA->getValue<int64_t>() >= sourceB->getValue<int64_t>() ? true : false );
+
+    return destination->getValue<bool>();
 }
 bool MathBlockOBJ::computeLES()
 {
-    return false;
+    if ( usesUnsignedInt() )
+        destination->setValue( sourceA->getValue<uint64_t>() < sourceB->getValue<uint64_t>() ? true : false );
+    else if ( usesFloat() )
+        destination->setValue( sourceA->getValue<float>() < sourceB->getValue<float>() ? true : false );
+    else //assume signed int
+        destination->setValue( sourceA->getValue<int64_t>() < sourceB->getValue<int64_t>() ? true : false );
+
+    return destination->getValue<bool>();
 }
 bool MathBlockOBJ::computeLEQ()
 {
-    return false;
+    if ( usesUnsignedInt() )
+        destination->setValue( sourceA->getValue<uint64_t>() <= sourceB->getValue<uint64_t>() ? true : false );
+    else if ( usesFloat() )
+        destination->setValue( sourceA->getValue<float>() <= sourceB->getValue<float>() ? true : false );
+    else //assume signed int
+        destination->setValue( sourceA->getValue<int64_t>() <= sourceB->getValue<int64_t>() ? true : false );
+
+    return destination->getValue<bool>();
 }
 
 void MathBlockOBJ::computeINC()
