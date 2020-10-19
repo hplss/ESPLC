@@ -66,6 +66,7 @@ shared_ptr<Ladder_VAR> TimerOBJ::addObjectVAR( const String &id )
     #endif
     return 0; //failed to add
 }
+
 shared_ptr<Ladder_VAR> TimerOBJ::getObjectVAR( const String &id )
 {
 	for ( uint8_t x = 0; x < getObjectVARs().size(); x++ )

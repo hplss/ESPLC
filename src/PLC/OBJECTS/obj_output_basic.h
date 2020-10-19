@@ -43,6 +43,16 @@ class OutputOBJ: public Ladder_OBJ_Logical
 	virtual void updateObject();
 	uint8_t getOutputPin(){ return iPin; }
 	virtual void setLineState(bool &state, bool bNot){ Ladder_OBJ_Logical::setLineState(state, bNot); }
+	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String &id )
+	{
+		for ( uint8_t x = 0; x < getObjectVARs().size(); x++ )
+		{
+			if ( getObjectVARs()[x]->getID() == id )
+				return getObjectVARs()[x];
+		}
+
+		return Ladder_OBJ_Logical::getObjectVAR(id);
+	}
 	
 	private:
 	uint8_t iPin,

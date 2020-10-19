@@ -40,31 +40,25 @@ void PLC_Remote_Server::processRequests()
         {
             client.setNoDelay(true); 
             client.setTimeout(200);
-            client.println(handleRequest(client.readStringUntil(CHAR_NEWLINE))); //Figure out what the client wants and then write the reply
+            client.println(handleRequest(removeFromStr(client.readStringUntil(CHAR_NEWLINE), {CHAR_NEWLINE, CHAR_CARRIAGE}))); //Figure out what the client wants and then write the reply
         }
         
         client.stop(); //end this connection after sending the reply
     }
 }
 
-String PLC_Remote_Server::handleRequest( const String &request )
+String PLC_Remote_Server::handleRequest( const String &request ) 
 {
-    String tempStr = removeFromStr(request, {CHAR_NEWLINE, CHAR_CARRIAGE} );
-
-    if ( strBeginsWith(tempStr, CMD_REQUEST_UPDATE) ) //Requesting update info for an object that is already initialized on the remote client.
+    if ( strBeginsWith(request, CMD_REQUEST_UPDATE) ) //Requesting update info for an object that is already initialized on the remote client.
     {
-        tempStr = removeFromStr( tempStr, CMD_REQUEST_UPDATE );
+        return handleUpdate(removeFromStr( request, CMD_REQUEST_UPDATE ));
     }
-    else if ( strBeginsWith(tempStr, CMD_REQUEST_INIT) ) //requesting enough information to initialize a new object on the client
+    else if ( strBeginsWith(request, CMD_REQUEST_INIT) ) //requesting enough information to initialize a new object on the client
     {
-        tempStr = removeFromStr( tempStr, CMD_REQUEST_INIT );
-    }
-    else
-    {
-        tempStr = CMD_REQUEST_INVALID; //the request does not match any of the valid request types.
+        return handleInit(removeFromStr( request, CMD_REQUEST_INIT ));
     }
 
-    return tempStr;
+    return String(CMD_REQUEST_INVALID) + CHAR_QUERY_END; //if strings are over a certain size.. split up? (Packet Size Management)
 }
 
 bool PLC_Remote_Server::clientExists( const WiFiClient &client )
@@ -78,37 +72,74 @@ bool PLC_Remote_Server::clientExists( const WiFiClient &client )
     return false;
 }
 
-/*
-*
-* Below here are functions that are declared in PLC_Main that pertain to remote communications (via wifi)
-*
-*/
-
-bool PLC_Main::createRemoteServer( uint16_t port )
+String PLC_Remote_Server::handleInit( const String &str )
 {
-	if ( getRemoteServer() && getRemoteServer()->getPort() == port )
-		return false; //already initialized on that port. Do nothing 
+    String initList(CMD_SEND_INIT);
+    vector<String> initObjects = splitString(str, CHAR_UPDATE_RECORD); //May have multiple init requests in a single line.. maybe not.
 
-	getRemoteServer() = unique_ptr<PLC_Remote_Server>( new PLC_Remote_Server(port) );
-	return true;
-}
-
-vector<IPAddress> PLC_Main::scanForRemoteNodes( uint16_t port, uint8_t low, uint8_t high, uint16_t timeout )
-{
-    vector<IPAddress> ipAddrs;
-    if ( low >= high )
-        return ipAddrs; //nothing to do
-
-    for ( uint8_t x = low; x < high; x++ )
+    for ( uint16_t x = 0; x < initObjects.size(); x++ )
     {
-        IPAddress addr(192,168,0,x); //could use some tweaking
-        shared_ptr<WiFiClient> newClient = make_shared<WiFiClient>();
-        if ( newClient->connect( addr, port, timeout ) ) //were we able to connect to the inputted IP address on the given port?
+        vector <String> args = splitString( initObjects[x], CHAR_VAR_OPERATOR ); //see if we are requesting a var to init
+
+        if ( args.size() > 1) // Looks like we have a var type object.
         {
-            Core.sendMessage(PSTR("Found node at: ") + addr.toString() );
-            ipAddrs.push_back( newClient->remoteIP() );
+            shared_ptr<Ladder_OBJ_Logical> pObj = PLCObj.findLadderObjByID(args[0]);
+
+            if (pObj)
+            {
+                shared_ptr<Ladder_VAR> pVar = pObj->getObjectVAR( args[1] );
+                //Format: <ID><TYPE><VALUE> // other arguments may be added later such as STATE, LOGIC, etc.
+                if ( pVar )
+                    initList += initObjects[x] + CHAR_UPDATE_RECORD + static_cast<uint16_t>(pVar->getType()) + CHAR_UPDATE_RECORD + pVar->getValueStr();
+            }
         }
+        else if ( args.size() ) //just a regular object
+        {
+            initList += CMD_REQUEST_INVALID; //for now, we only allow for the init of var objects
+        }
+
+        initList += ( (x == initObjects.size()) ? : CHAR_UPDATE_GROUP); //end the group list
     }
 
-    return ipAddrs;
+    return initList + CHAR_QUERY_END; //append the ending char and send off the string
+}
+
+String PLC_Remote_Server::handleUpdate( const String &str )
+{
+    //Update requests from the client will only contain the names (ID's) of the objects that need to be updated. 
+    //Maybe at some point the Object ID's will be mapped to some numeric ID to reduce network traffic and computation overhead (increases RAM usage a bit)
+    vector<String> updateObjects = splitString(str, CHAR_UPDATE_RECORD);
+
+    String updateList(CMD_SEND_UPDATE); 
+
+    //Update Objects may be (and probably are) variables that are stored inside of other objects. Accessed like TIMER1.DN, etc.
+    for ( uint16_t x = 0; x < updateObjects.size(); x++ )
+    {
+        vector<String> args = splitString( updateObjects[x], CHAR_VAR_OPERATOR );
+
+        if (args.size() > 1) //Got a variable type.
+        { //<ID>,<VALUE> //For now  -- presumably the client device knows the object's type following the init
+            shared_ptr<Ladder_OBJ_Logical> pObj = PLCObj.findLadderObjByID(args[0]);
+
+            if (pObj)
+            {
+                shared_ptr<Ladder_VAR> pVar = pObj->getObjectVAR(args[1]);
+                if (pVar)
+                {
+                    updateList += updateObjects[x] + CHAR_UPDATE_RECORD + pVar->getValueStr(); //split with a 'record' char
+                }
+            }
+            else //invalid object
+            {
+                updateList += updateObjects[x] + CHAR_UPDATE_RECORD + CMD_REQUEST_INVALID; //Object does not exist. Let the client know
+            }
+        } 
+        else if ( args.size() ) //Just a regular object
+        { 
+            updateList += CMD_REQUEST_INVALID; //for now
+        }
+        updateList += ( (x == updateObjects.size()) ? : CHAR_UPDATE_GROUP); //end the group list
+    }
+
+    return updateList + CHAR_QUERY_END; //end of update report.
 }

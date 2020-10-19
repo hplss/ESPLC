@@ -39,6 +39,8 @@ class Ladder_VAR : public Ladder_OBJ_Logical
 	uint_fast32_t getUIntValue(){ if (b_usesPtr && values.ui.val_ptr) return *values.ui.val_ptr; else return values.ui.val; }
 	uint16_t getUShortValue(){ if (b_usesPtr && values.us.val_ptr) return *values.us.val_ptr; else return values.us.val;  }
 
+	String getValueStr();
+	
 	template <class T>
 	T getValue();
 

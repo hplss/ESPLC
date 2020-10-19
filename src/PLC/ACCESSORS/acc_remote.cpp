@@ -56,7 +56,7 @@ String PLC_Remote_Client::requestFromHost(const String &cmd)
             if ( nodeClient->available() ) //Did we receive anything for realz?
             {
                 recvdData += removeFromStr( nodeClient->readStringUntil(CHAR_NEWLINE), {CHAR_NEWLINE, CHAR_CARRIAGE} ); //just remove these now
-                recvdData += " Reply Time: " + String(millis() - storedTime); //some stat
+                Core.sendMessage(PSTR("Reply Time: ") + String(millis() - storedTime) ); //some stat
             }
 
             if (!recvdData.length())

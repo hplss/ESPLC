@@ -918,3 +918,32 @@ void PLC_Main::sendError(ERR_DATA err, const String &info )
 
 	resetAll(); //Since we have hit an error, just purge all objects from the PLC script. Since it can't be used anyway.
 }
+
+bool PLC_Main::createRemoteServer( uint16_t port )
+{
+	if ( getRemoteServer() && getRemoteServer()->getPort() == port )
+		return false; //already initialized on that port. Do nothing 
+
+	getRemoteServer() = unique_ptr<PLC_Remote_Server>( new PLC_Remote_Server(port) );
+	return true;
+}
+
+vector<IPAddress> PLC_Main::scanForRemoteNodes( uint16_t port, uint8_t low, uint8_t high, uint16_t timeout )
+{
+    vector<IPAddress> ipAddrs;
+    if ( low >= high )
+        return ipAddrs; //nothing to do
+
+    for ( uint8_t x = low; x < high; x++ )
+    {
+        IPAddress addr(192,168,0,x); //could use some tweaking
+        shared_ptr<WiFiClient> newClient = make_shared<WiFiClient>();
+        if ( newClient->connect( addr, port, timeout ) ) //were we able to connect to the inputted IP address on the given port?
+        {
+            Core.sendMessage(PSTR("Found node at: ") + addr.toString() );
+            ipAddrs.push_back( newClient->remoteIP() );
+        }
+    }
+
+    return ipAddrs;
+}

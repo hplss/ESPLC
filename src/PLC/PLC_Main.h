@@ -60,8 +60,12 @@ class PLC_Remote_Server
 	//When a new client attempts to conenect to this device, this function functions as a "hand-shake" to let the client know that the connection was successful.
 	void processRequests();
 	bool clientExists( const WiFiClient &);
-	String handleRequest( const String & );
-
+	//Called first to determine what the client wants.
+	String handleRequest( const String & ); 
+	//This handles the compiling of a string that contains all information necessary to initialize a new object for later updating on the remote client's end.
+	String handleInit( const String & );
+	//This handles the compiling of a string that contains all information necessary to update objects that are already initialized on the remote client.
+	String handleUpdate( const String & );
 
 	private:
 	shared_ptr<WiFiServer> localServer; //The actual WiFiServer object
