@@ -5,10 +5,10 @@
 #include "obj_var.h"
 
 //The oneshot object is am object that pulses high for one scan cycle, then holds low until reset or powered high again
-class OneshotOBJ : public Ladder_OBJ
+class OneshotOBJ : public Ladder_OBJ_Logical
 {
     public:
-    OneshotOBJ(const String &id, uint_fast32_t accum = 0, uint8_t type = TYPE_ONS) : Ladder_OBJ(id, type)
+    OneshotOBJ(const String &id, uint_fast32_t accum = 0 ) : Ladder_OBJ_Logical(id, OBJ_TYPE::TYPE_ONS)
     {
         lAccum = accum;
     }

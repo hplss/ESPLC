@@ -6,14 +6,14 @@
 //////////////////////////////////////////////////////////////////////////
 void OneshotOBJ::updateObject()
 {
-    Ladder_OBJ::updateObject();
+    Ladder_OBJ_Logical::updateObject();
 }
 
 void OneshotOBJ::setLineState( bool &state, bool bNot)
 {
     if(state)//must have a HIGH state coming into the object
     {
-        if( getType() == TYPE_ONS )
+        if( getType() == OBJ_TYPE::TYPE_ONS )
         {
             if(lAccum>0)//has the object already pulsed during this iteration of the linestate?
             {
@@ -33,6 +33,6 @@ void OneshotOBJ::setLineState( bool &state, bool bNot)
         lAccum = 0;//clear accumulator so that the object will pulse on the next HIGH linestate
     }
 
-    Ladder_OBJ::setLineState( state, bNot );
+    Ladder_OBJ_Logical::setLineState( state, bNot );
 }
 
