@@ -3,16 +3,17 @@
 
 #include "../PLC_IO.h"
 #include "obj_var.h"
+#include <driver/adc.h> //analog support
 
 //Inputs objects check the state of a physical pin and perform logic opertions based on the state of that pin. This may entail setting the rung state to high or low depending on the logic script.
-class InputOBJ : public Ladder_OBJ
+class InputOBJ : public Ladder_OBJ_Logical
 {
 	public:
-	InputOBJ( const String &id, uint8_t pin, uint8_t type = TYPE_INPUT, uint8_t logic = LOGIC_NO ) : Ladder_OBJ(id, type)
+	InputOBJ( const String &id, uint8_t pin, OBJ_TYPE type = OBJ_TYPE::TYPE_INPUT, uint8_t logic = LOGIC_NO ) : Ladder_OBJ_Logical(id, type)
 	{ 
 		iPin = pin; 
 
-		inputValue =  make_shared<Ladder_VAR>(&iValue);
+		getObjectVARs().emplace_back(make_shared<Ladder_VAR>(&iValue, bitTagVAL)); 
 
 		uint64_t gpioBitMask = 1ULL<<pin;
 		gpio_mode_t gpioMode = GPIO_MODE_INPUT;
@@ -32,9 +33,10 @@ class InputOBJ : public Ladder_OBJ
 		Serial.println(PSTR("Input Destructor")); 
 		#endif
 	}
-	uint_fast32_t getInput()
+
+	uint16_t getInput()
 	{ 
-		if ( getType() == TYPE_INPUT_ANALOG )
+		if ( getType() == OBJ_TYPE::TYPE_INPUT_ANALOG )
 			return analogRead(iPin);
 		
 		return digitalRead(iPin);
@@ -42,15 +44,11 @@ class InputOBJ : public Ladder_OBJ
 	uint8_t getInputPin(){ return iPin; }
 	virtual void updateObject();
 	virtual void setLineState(bool &, bool);
-	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String &id )
-	{
-		return inputValue; //There's only one Ladder_VAR for this type of object.
-	}
+	virtual shared_ptr<Ladder_VAR> addObjectVAR( const String & );
 	
 	private:
 	uint8_t iPin;
-	uint_fast32_t iValue; 
-	shared_ptr<Ladder_VAR> inputValue;
+	uint16_t iValue; //input value that was read and stored off
 };
 
 #endif

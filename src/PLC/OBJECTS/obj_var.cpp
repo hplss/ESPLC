@@ -11,44 +11,39 @@ void Ladder_VAR::setLineState(bool &state, bool bNot)
                 break;
             case OBJ_TYPE::TYPE_VAR_FLOAT:
                 {
-                    if ( bNot ) //inverted logic
-                        state = getFloatValue() > 1 ? false : true;
-                    else
-                        state = getFloatValue() > 1 ? true : false;
+                    bool check = (getDoubleValue() > 0);
+                    state = ( bNot ? !(check) : (check) ); //turnaries yay
+                }
+                break;
+            case OBJ_TYPE::TYPE_VAR_USHORT:
+                {
+                    bool check = getUShortValue();
+                    state = ( bNot ? !(check) : (check) ); //unsigned cannot be less than 0
                 }
                 break;
             case OBJ_TYPE::TYPE_VAR_INT:
                 {
-                    if ( bNot )
-                        state = getIntValue() > 1 ? false : true;
-                    else
-                        state = getIntValue() > 1 ? true : false;
+                    bool check = (getIntValue() > 0);
+                    state = ( bNot ? !(check) : (check) );
                 }   
+                break;
+            case OBJ_TYPE::TYPE_VAR_UINT: 
+                {
+                    bool check = getUIntValue();
+                    state = ( bNot ? !(check) : (check) );
+                }
                 break;
             case OBJ_TYPE::TYPE_VAR_LONG:
                 {
-                    if ( bNot )
-                        state = getLongValue() > 1 ? false : true;
-                    else
-                        state = getLongValue() > 1 ? true : false;
+                    bool check = (getLongValue() > 0);
+                    state = (bNot ? !(check) : (check));
                 }
                 break;
             case OBJ_TYPE::TYPE_VAR_ULONG:
                 {
-                    if ( bNot )
-                        state = getULongValue() > 1 ? false : true;
-                    else
-                        state = getULongValue() > 1 ? true : false;
+                    bool check = (getULongValue() > 0);
+                    state = (bNot ? !(check) : (check));
                 }
-                break;
-            case OBJ_TYPE::TYPE_VAR_UINT: 
-                {
-                    if ( bNot )
-                        state = getUIntValue() > 1 ? false : true;
-                    else
-                        state = getUIntValue() > 1 ? true : false;
-                }
-                
                 break;
             default:
                 state = false;
@@ -56,7 +51,7 @@ void Ladder_VAR::setLineState(bool &state, bool bNot)
         }
     }
 
-    Ladder_OBJ::setLineState(state, bNot); 
+    Ladder_OBJ_Logical::setLineState(state, bNot); 
 }
 
 template <class T>
@@ -68,44 +63,67 @@ T Ladder_VAR::getValue()
         {
             if ( b_usesPtr )
                 return static_cast<T>(*values.b.val_ptr);
+            else
+                return static_cast<T>(values.b.val);
         }
         break;
         case OBJ_TYPE::TYPE_VAR_FLOAT:
         {
             if ( b_usesPtr )
-                return static_cast<T>(*values.f.val_ptr);
+                return static_cast<T>(*values.d.val_ptr);
+            else
+                return static_cast<T>(values.d.val);
+        }
+        break;
+        case OBJ_TYPE::TYPE_VAR_USHORT:
+        {
+            if ( b_usesPtr )
+                return static_cast<T>(*values.us.val_ptr);
+            else
+                return static_cast<T>(values.us.val);
         }
         break;
         case OBJ_TYPE::TYPE_VAR_INT:
         {
             if ( b_usesPtr )
                 return static_cast<T>(*values.i.val_ptr);
-        }
-        break;
-        case OBJ_TYPE::TYPE_VAR_LONG:
-        {
-            if ( b_usesPtr )
-                return static_cast<T>(*values.l.val_ptr);
-        }
-        break;
-        case OBJ_TYPE::TYPE_VAR_ULONG:
-        {
-            if ( b_usesPtr )
-                return static_cast<T>(*values.ul.val_ptr);
+            else
+                return static_cast<T>(values.i.val);
         }
         break;
         case OBJ_TYPE::TYPE_VAR_UINT: 
         {
             if ( b_usesPtr )
                 return static_cast<T>(*values.ui.val_ptr);
+            else
+                return static_cast<T>(values.ui.val);
         }
         break;
+        case OBJ_TYPE::TYPE_VAR_LONG:
+        {
+            if ( b_usesPtr )
+                return static_cast<T>(*values.l.val_ptr);
+            else
+                return static_cast<T>(values.l.val);
+        }
+        break;
+        case OBJ_TYPE::TYPE_VAR_ULONG:
+        {
+            if ( b_usesPtr )
+                return static_cast<T>(*values.ul.val_ptr);
+            else
+                return static_cast<T>(values.ul.val);
+        }
+        break;
+        default:
+        break;
     }
+
     return static_cast<T>(0);
 }
 
 template <typename T>
-void Ladder_VAR::setValue( const T val )
+void Ladder_VAR::setValue( const T val ) //Doesn't support String type
 {
     switch(getType())
     {
@@ -113,37 +131,100 @@ void Ladder_VAR::setValue( const T val )
         {
             if ( b_usesPtr )
                 *values.b.val_ptr = static_cast<bool>(val);
+            else
+                values.b.val = static_cast<bool>(val);
         }
         break;
         case OBJ_TYPE::TYPE_VAR_FLOAT:
         {
             if ( b_usesPtr )
-                *values.f.val_ptr = static_cast<float>(val);
+                *values.d.val_ptr = static_cast<double>(val);
+            else
+                values.d.val = static_cast<double>(val);
+        }
+        break;
+        case OBJ_TYPE::TYPE_VAR_USHORT:
+        {
+            if ( b_usesPtr )
+                *values.us.val_ptr = static_cast<uint16_t>(val);
+            else
+                values.us.val = static_cast<uint16_t>(val);
         }
         break;
         case OBJ_TYPE::TYPE_VAR_INT:
         {
             if ( b_usesPtr )
                 *values.i.val_ptr = static_cast<int_fast32_t>(val);
-        }
-        break;
-        case OBJ_TYPE::TYPE_VAR_LONG:
-        {
-            if ( b_usesPtr )
-                *values.l.val_ptr = static_cast<int64_t>(val);
-        }
-        break;
-        case OBJ_TYPE::TYPE_VAR_ULONG:
-        {
-            if ( b_usesPtr )
-                *values.ul.val_ptr = static_cast<uint64_t>(val);
+            else
+                values.i.val = static_cast<int_fast32_t>(val);
         }
         break;
         case OBJ_TYPE::TYPE_VAR_UINT:
         {
             if ( b_usesPtr )
                 *values.ui.val_ptr = static_cast<uint_fast32_t>(val);
+            else
+                values.ui.val = static_cast<uint_fast32_t>(val);
         }
         break;
+        case OBJ_TYPE::TYPE_VAR_LONG:
+        {
+            if ( b_usesPtr )
+                *values.l.val_ptr = static_cast<int64_t>(val);
+            else
+                values.l.val = static_cast<int64_t>(val);
+        }
+        break;
+        case OBJ_TYPE::TYPE_VAR_ULONG:
+        {
+            if ( b_usesPtr )
+                *values.ul.val_ptr = static_cast<uint64_t>(val);
+            else
+                values.ul.val = static_cast<uint64_t>(val);
+        }
+        break;
+        default:
+        break;
     }
+}
+
+void Ladder_VAR::setValue( const String &str )
+{
+    if ( getType() == OBJ_TYPE::TYPE_VAR_FLOAT )
+        setValue( str.toDouble() );
+    else
+        setValue( static_cast<int64_t>(strtoll(str.c_str(), NULL, 10)) );
+}
+
+String Ladder_VAR::getValueStr()
+{
+    String value;
+    switch(getType()) //get the correct value from the variable object
+    {
+        case OBJ_TYPE::TYPE_VAR_USHORT:
+            value = getValue<uint16_t>();
+        break;
+        case OBJ_TYPE::TYPE_VAR_UINT:
+            value = getValue<uint_fast32_t>();
+        break;
+        case OBJ_TYPE::TYPE_VAR_INT:
+            value = getValue<int_fast32_t>();
+        break;
+        case OBJ_TYPE::TYPE_VAR_ULONG:
+            value = intToStr(getValue<uint64_t>());
+        break;
+        case OBJ_TYPE::TYPE_VAR_LONG:
+            value = intToStr(getValue<int64_t>());
+        break;
+        case OBJ_TYPE::TYPE_VAR_FLOAT:
+            value = getValue<double>();
+        break;
+        case OBJ_TYPE::TYPE_VAR_BOOL:
+            value = getValue<bool>();
+        break;
+        default: //default case
+        break;
+    }
+
+    return value;
 }

@@ -18,7 +18,7 @@ void UICore::createStatusFields()
     uint8_t index = 2;
     for (uint16_t x = 0; x < PLCObj.getLadderObjects().size(); x++ )
     {
-      shared_ptr<Ladder_OBJ> ptr = PLCObj.getLadderObjects()[x];
+      shared_ptr<Ladder_OBJ_Logical> ptr = PLCObj.getLadderObjects()[x];
       shared_ptr<DataTable> newTable( new DataTable( ptr->getID() ) );
       newTable->AddElement( make_shared<LADDER_OBJ_Datafield>(ptr, index++) );
       p_UIDataTables.push_back( newTable );
@@ -63,7 +63,8 @@ void UICore::handleStatus()
 	  resestFieldContainers(); //empty the data table to free memory
 }
 
-void UICore::handleUpdateStatus(){
+void UICore::handleUpdateStatus()
+{
   String JSON = "{\"Status\":[\n";
   for (uint16_t i = 0; i < PLCObj.getLadderObjects().size(); i++)
   {
@@ -78,49 +79,20 @@ void UICore::handleUpdateStatus(){
   JSON += "]}";
   getWebServer().send(200, "text/plain", JSON);
 }
-String UICore::generateStatusJSON()
-{
-    String JSON = "";
-    return JSON;
-}
 
 String UICore::generateStatusScript()
 {
-  String HTML = "\n<script>";
-  HTML += "setInterval(getObjectStatus, 2000)\n"
-          "function getObjectStatus(){\n"
-          "$.get(\"/update\", function(data, status){\n"
-          "var objData = JSON.parse(data)\n"
-          "for(var i = 0; i < objData.Status.length; i++){\n"
-          "document.getElementById(String(objData.Status[i].ID)).innerHTML = String(objData.Status[i].Status);}\n"
-          "})\n"
-          "}\n";
+  const String script PROGMEM = PSTR("\n<script>"
+                "setInterval(getObjectStatus, 2000)\n" 
+                "function getObjectStatus(){\n"
+                "$.get(\"/update\", function(data, status){\n"
+                "var objData = JSON.parse(data)\n"
+                "for(var i = 0; i < objData.Status.length; i++){\n"
+                "document.getElementById(String(objData.Status[i].ID)).innerHTML = String(objData.Status[i].Status);}\n"
+                "})\n"
+                "}\n"
+                "</script>\n");
 
-  HTML += "</script>\n";
-  return HTML;
+
+  return script;
 }
-/*
-<script>
-var xmlhttp = new XMLHttpRequest();
-var url = "myTutorials.txt";
-
-xmlhttp.onreadystatechange = function() {
-  if (this.readyState == 4 && this.status == 200) {
-    myFunction(JSON.parse(this.responseText));
-  }
-};
-xmlhttp.open("GET", url, true);
-xmlhttp.send();
-
-function myFunction(arr) {
-  var out = "";
-  var i;
-  for(i = 0; i < arr.length; i++) {
-    out = arr[i].display;
-    var element = document.getElementById("test" + i);
-    if (element)
-    {
-    	element.innerHTML = out;
-    }
-  }
-}*/

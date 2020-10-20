@@ -18,30 +18,32 @@ void Device_Setting::setSettingValue( const String &str )
 {
     switch(getType())
     {
-        case TYPE_VAR_BOOL:
+        case OBJ_TYPE::TYPE_VAR_BOOL:
         {
             getBOOL() = str.toInt() > 0 ? true : false;
         }
         break;
-        case TYPE_VAR_STRING:
+        case OBJ_TYPE::TYPE_VAR_STRING:
         {
             getSTRING() = str;
         }
         break;
-        case TYPE_VAR_UBYTE:
+        case OBJ_TYPE::TYPE_VAR_UBYTE:
         {
             getUINT8() = static_cast<uint8_t>(parseInt(str)); //we can only assume it won't overflow
         }
         break;
-        case TYPE_VAR_UINT:
+        case OBJ_TYPE::TYPE_VAR_UINT:
         {
             getUINT() = parseInt(str); //we can only assume it won't overflow
         }
         break;
-        case TYPE_VAR_USHORT:
+        case OBJ_TYPE::TYPE_VAR_USHORT:
         {
             getUINT16() = static_cast<uint16_t>(parseInt(str)); //we can only assume it won't overflow
         }
+        break;
+        default:
         break;
     }
 }
@@ -50,30 +52,32 @@ String Device_Setting::getSettingValue()
 {
     switch(getType())
     {
-        case TYPE_VAR_BOOL:
+        case OBJ_TYPE::TYPE_VAR_BOOL:
         {
             return String(getBOOL());
         }
         break;
-        case TYPE_VAR_STRING:
+        case OBJ_TYPE::TYPE_VAR_STRING:
         {
             return getSTRING();
         }
         break;
-        case TYPE_VAR_UBYTE:
+        case OBJ_TYPE::TYPE_VAR_UBYTE:
         {
             return String(getUINT8());
         }
         break;
-        case TYPE_VAR_UINT:
+        case OBJ_TYPE::TYPE_VAR_UINT:
         {
             return String(getUINT());
         }
         break;
-        case TYPE_VAR_USHORT:
+        case OBJ_TYPE::TYPE_VAR_USHORT:
         {
             return String(getUINT16());
         }
+        break;
+        default:
         break;
     }
 
@@ -107,12 +111,8 @@ void UICore::generateSettingsMap()
 
     //PLC networking settings
     settingsMap.emplace(PSTR("plc_netmode"), make_shared<Device_Setting>( &i_plc_netmode )); //Switch for disabled (0), IO expander mode (1), or cluster mode (2)
-    settingsMap.emplace(PSTR("plc_broadcast_port"), make_shared<Device_Setting>( &i_plc_broadcast_port )); //status broadcast port (for all networked devices)
-    settingsMap.emplace(PSTR("plc_ip_range"), make_shared<Device_Setting>( &getPLCIPRange() )); //IP range limiters for node autoconnection (typically 0-255 -- 192.168.0.XXX) Format: <LOW,HIGH>
-    settingsMap.emplace(PSTR("plc_port_range"), make_shared<Device_Setting>( &getPLCPortRange() )); //Port range limiters for node status communication Format: <LOW,HIGH>
-    settingsMap.emplace(PSTR("plc_autoconnect"), make_shared<Device_Setting>( &b_plc_autoconnect )); //Attempt to auto connect to previously saved devices on startup?
-    settingsMap.emplace(PSTR("plc_saved_devices"), make_shared<Device_Setting>( &getPLCAutoConnectIPs() )); //IP's of stored devices that were previously detected and connected to. Works better with static IPs.
-    
+    settingsMap.emplace(PSTR("plc_broadcast_port"), make_shared<Device_Setting>( &i_plc_broadcast_port )); //status broadcast port 
+
     //Time Settings
 	settingsMap.emplace(PSTR("time_en"), make_shared<Device_Setting>( &b_enableNIST) ); //Enable automatic time fetching when connected to internet
 	settingsMap.emplace(PSTR("time_server"), make_shared<Device_Setting>( &getNISTServer() ) ); //URL for time fetching
