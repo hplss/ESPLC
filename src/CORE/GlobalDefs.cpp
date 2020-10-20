@@ -15,6 +15,7 @@ const String &styleDir PROGMEM = PSTR("/style"),
 			 &statusDir PROGMEM = PSTR("/status"),
 			 &alertsDir PROGMEM = PSTR("/alerts"),
 			 &updateDir PROGMEM = PSTR("/update"),
+			 &firmwareDir PROGMEM = PSTR("/firmware"),
              &scriptDir PROGMEM = PSTR("/script");
 //
 
@@ -155,7 +156,7 @@ vector<String> splitString( const String &str, const vector<char> &c, const vect
 			}
 		}
 
-		if(x >= str.length() - 1 && !end) //must also append anything at the end of the string (not including terminating char)
+		if(x >= (str.length() - 1) && !end) //must also append anything at the end of the string (not including terminating char)
 		{
 			end = true; 
 			temp += str[x]; //append
@@ -254,7 +255,7 @@ multimap<int8_t, String> textWithin(const String &str, char begin, char end, int
 int64_t parseInt( const String &str )
 {
 	String tempstr;
-	for ( uint_fast32_t x = 0; x < str.length(); x++ )
+	for ( uint8_t x = 0; x < str.length(); x++ )
 	{
 		char tempChar = str.charAt(x);
 		
@@ -336,6 +337,7 @@ String removeFromStr( const String &str, const vector<char> &c )
 
 	for ( uint16_t x = 0; x < str.length(); x++ )
 	{
+		skipChar = false;
 		for ( uint8_t y = 0; y < c.size(); y++ )
 		{
 			if ( c[y] == str[x] )

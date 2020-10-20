@@ -249,7 +249,7 @@ shared_ptr<Ladder_OBJ_Wrapper> PLC_Parser::createNewWrapper( shared_ptr<Ladder_O
     if ( obj ) //pointer must be valid
     {
         shared_ptr<Ladder_OBJ_Wrapper> newOBJWrapper = 0; //init
-        if ( bitOperator ) //accessing a specific bit?
+        if ( bitOperator && !getParsedAccessorStr().length() ) //accessing a specific bit? -- bit of a hack for now. accessors utilize entire names including bit operators for assigning new objects.
         {
             newOBJWrapper = getObjectVARWrapper(obj);
         }
@@ -278,7 +278,11 @@ shared_ptr<Ladder_OBJ_Wrapper> PLC_Parser::handleObject()
         }
         else
         {
-            Core.sendMessage("Found the accessor");
+            String varObject = getParsedObjectStr() + CHAR_VAR_OPERATOR + getParsedBitStr(); //only variable type objects for now
+
+            obj = createNewWrapper(accessor->findLadderObjByID(varObject));
+            if ( !obj )
+                Core.sendMessage(PSTR("Failed to find or init the accessor object: ") + varObject );
         }
     }   
     else

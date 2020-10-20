@@ -40,12 +40,13 @@ class Ladder_VAR : public Ladder_OBJ_Logical
 	uint16_t getUShortValue(){ if (b_usesPtr && values.us.val_ptr) return *values.us.val_ptr; else return values.us.val;  }
 
 	String getValueStr();
-	
+
 	template <class T>
 	T getValue();
 
 	template <typename T>
 	void setValue( const T );
+	void setValue( const String & );
 
 	virtual void setLineState(bool &, bool);
 

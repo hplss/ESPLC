@@ -20,7 +20,7 @@ void UICore::createIndexFields() //Probably shouldnt be called more than once.
 	indexTable->AddElement( make_shared<Hyperlink_Datafield>( index++, PSTR("PLC Object Status"), statusDir ) );
 	indexTable->AddElement( make_shared<Hyperlink_Datafield>( index++, PSTR("Device Configuration"), adminDir ) );
 	indexTable->AddElement( make_shared<Hyperlink_Datafield>( index++, PSTR("UI Style Sheet"), styleDir ) );
-	indexTable->AddElement( make_shared<Hyperlink_Datafield>( index++, PSTR("Firmware Update"), updateDir ) );
+	indexTable->AddElement( make_shared<Hyperlink_Datafield>( index++, PSTR("Firmware Update"), firmwareDir ) );
 
 	p_UIDataTables.push_back(indexTable);
 }

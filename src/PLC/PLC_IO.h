@@ -23,6 +23,8 @@ using namespace std;
 //predefine to prevent some linker problems
 class Ladder_VAR;
 //
+
+
 //This is the base class for all PLC ladder logic objects. Individual object types derive from this class.
 class Ladder_OBJ
 {
@@ -92,7 +94,7 @@ class Ladder_OBJ_Accessor : public Ladder_OBJ
 	void handleUpdates( const vector<String> &);
 	void handleUpdates( const String & );
 
-	//This function handles the initialization of an object that does not already exist in the accessor.
+	//This function handles the initialization of an object(s) that does not already exist in the accessor, essentially parsing the reply from a server that is sent after an init request.
 	shared_ptr<Ladder_OBJ_Logical> handleInit( const String &);
 
 	bool addObject(shared_ptr<Ladder_OBJ_Logical> obj) { getObjects().push_back(obj); return true;}

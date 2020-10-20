@@ -32,13 +32,13 @@ void UICore::setupServer()
 	//These set up our page triggers, linking them to specific functions.
 	getWebServer().on(styleDir, std::bind(&UICore::handleStyleSheet, this) );
 	getWebServer().on(PSTR("/"), std::bind(&UICore::handleIndex, this) );
-	getWebServer().on(PSTR("/update"), std::bind(&UICore::handleUpdateStatus, this) );
+	getWebServer().on(updateDir, std::bind(&UICore::handleUpdateStatus, this) );
 	getWebServer().on(adminDir, std::bind(&UICore::handleAdmin, this) );
 	getWebServer().on(scriptDir, std::bind(&UICore::handleScript, this) );
 	getWebServer().on(statusDir, std::bind(&UICore::handleStatus, this) );
 	getWebServer().on(alertsDir, std::bind(&UICore::handleAlerts, this) );
-    getWebServer().on(updateDir, HTTP_GET, std::bind(&UICore::handleUpdater, this) );
-    getWebServer().on(updateDir, HTTP_POST, [](){}, applyRemoteFirmwareUpdate ); //continuously call the firmware update function on HTTP POST method
+    getWebServer().on(firmwareDir, HTTP_GET, std::bind(&UICore::handleUpdater, this) );
+    getWebServer().on(firmwareDir, HTTP_POST, [](){}, applyRemoteFirmwareUpdate ); //continuously call the firmware update function on HTTP POST method
 	//
 };
 

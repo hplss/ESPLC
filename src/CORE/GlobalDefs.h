@@ -40,6 +40,7 @@ extern const String &styleDir PROGMEM,
 					&statusDir PROGMEM,
 					&alertsDir PROGMEM,
 					&updateDir PROGMEM,
+					&firmwareDir PROGMEM,
 			 		&scriptDir PROGMEM;
 //
 
@@ -52,7 +53,8 @@ const char CMD_REQUEST_UPDATE = 17, //Data prefix for requesting (by a client) a
 		   CMD_SEND_REFRESH = 20, //Data prefix (from a host) indicating that all objects on the client should be refreshed and re-initialized. Possibly after an abrupt disconnect or device reset, or ogic script cahnge.
 		   CHAR_UPDATE_GROUP = 29, //This character is used to denote the separation of a set of data records (pertaining to individual ladder objects) for serial or web updates.
 		   CHAR_UPDATE_RECORD = 30, //This character is used to denote the separation of a data record as it pertains to receiving updates from serial or a web interface.
-		   CHAR_QUERY_END = 15; //This character is appended to the end of the update string, and denotes the end of all update info. This must be included before updates are applied.
+		   CHAR_QUERY_END = 15, //This character is appended to the end of the update string, and denotes the end of all update info. This must be included before updates are applied.
+		   CHAR_TRANSMIT_END = 14; //This char is appended to the end of a string that has been transmitted between hosts. Used to mark the end of a read cycle.
 //
 
 const char CHAR_EQUALS = '=',

@@ -328,7 +328,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOutputOBJ( const String &id, cons
 	if ( numArgs > 5 ) //frequency
 	{
 		double tempDbl = args[5].toDouble();
-		if ( tempDbl > 0 && tempDbl < (80000000/exp2(resolution) ) ) //80Mhz may or may not be the right value here. Look into later.
+		if ( tempDbl > 0 && tempDbl < static_cast<double>(80000000/exp2(resolution) ) ) //80Mhz may or may not be the right value here. Look into later.
 			frequency = tempDbl;
 		else
 			sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[5] );
@@ -565,7 +565,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 			else if (args[2] == VAR_UINT64)
 			{
 				uint64_t value = static_cast<uint64_t>(atoll(val.c_str())); //variable > uint64 needed?
-				newObj = make_shared<Ladder_VAR>( static_cast<uint64_t>(strtoul(val.c_str(), NULL, 10)), id );
+				newObj = make_shared<Ladder_VAR>( static_cast<uint64_t>(strtoull(val.c_str(), NULL, 10)), id );
 				if(value < 0 || value > UINT64_MAX )
 				{
 					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);

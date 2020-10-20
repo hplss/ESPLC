@@ -45,16 +45,6 @@ class InputOBJ : public Ladder_OBJ_Logical
 	virtual void updateObject();
 	virtual void setLineState(bool &, bool);
 	virtual shared_ptr<Ladder_VAR> addObjectVAR( const String & );
-	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String &id )
-	{
-		for ( uint8_t x = 0; x < getObjectVARs().size(); x++ )
-		{
-			if ( getObjectVARs()[x]->getID() == id )
-				return getObjectVARs()[x];
-		}
-
-		return Ladder_OBJ_Logical::getObjectVAR(id);
-	}
 	
 	private:
 	uint8_t iPin;

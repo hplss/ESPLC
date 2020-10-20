@@ -115,13 +115,15 @@ T Ladder_VAR::getValue()
                 return static_cast<T>(values.ul.val);
         }
         break;
+        default:
+        break;
     }
 
     return static_cast<T>(0);
 }
 
 template <typename T>
-void Ladder_VAR::setValue( const T val )
+void Ladder_VAR::setValue( const T val ) //Doesn't support String type
 {
     switch(getType())
     {
@@ -181,7 +183,17 @@ void Ladder_VAR::setValue( const T val )
                 values.ul.val = static_cast<uint64_t>(val);
         }
         break;
+        default:
+        break;
     }
+}
+
+void Ladder_VAR::setValue( const String &str )
+{
+    if ( getType() == OBJ_TYPE::TYPE_VAR_FLOAT )
+        setValue( str.toDouble() );
+    else
+        setValue( static_cast<int64_t>(strtoll(str.c_str(), NULL, 10)) );
 }
 
 String Ladder_VAR::getValueStr()

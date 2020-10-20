@@ -39,8 +39,8 @@ void PLC_Remote_Server::processRequests()
         if ( client.available() ) //have we actually received something from?
         {
             client.setNoDelay(true); 
-            client.setTimeout(200);
-            client.println(handleRequest(removeFromStr(client.readStringUntil(CHAR_NEWLINE), {CHAR_NEWLINE, CHAR_CARRIAGE}))); //Figure out what the client wants and then write the reply
+            client.setTimeout(0);
+            client.print(handleRequest(client.readStringUntil(CHAR_TRANSMIT_END)) + CHAR_TRANSMIT_END ); //Figure out what the client wants and then write the reply
         }
         
         client.stop(); //end this connection after sending the reply
@@ -49,13 +49,13 @@ void PLC_Remote_Server::processRequests()
 
 String PLC_Remote_Server::handleRequest( const String &request ) 
 {
-    if ( strBeginsWith(request, CMD_REQUEST_UPDATE) ) //Requesting update info for an object that is already initialized on the remote client.
+    if ( strBeginsWith(request, CMD_REQUEST_UPDATE) && strEndsWith(request, CHAR_QUERY_END) ) //Requesting update info for an object that is already initialized on the remote client.
     {
-        return handleUpdate(removeFromStr( request, CMD_REQUEST_UPDATE ));
+        return handleUpdate(removeFromStr( request, {CMD_REQUEST_UPDATE, CHAR_QUERY_END} ));
     }
-    else if ( strBeginsWith(request, CMD_REQUEST_INIT) ) //requesting enough information to initialize a new object on the client
+    else if ( strBeginsWith(request, CMD_REQUEST_INIT) && strEndsWith(request, CHAR_QUERY_END) ) //requesting enough information to initialize a new object on the client
     {
-        return handleInit(removeFromStr( request, CMD_REQUEST_INIT ));
+        return handleInit(removeFromStr( request, {CMD_REQUEST_INIT, CHAR_QUERY_END} ));
     }
 
     return String(CMD_REQUEST_INVALID) + CHAR_QUERY_END; //if strings are over a certain size.. split up? (Packet Size Management)
@@ -75,10 +75,16 @@ bool PLC_Remote_Server::clientExists( const WiFiClient &client )
 String PLC_Remote_Server::handleInit( const String &str )
 {
     String initList(CMD_SEND_INIT);
-    vector<String> initObjects = splitString(str, CHAR_UPDATE_RECORD); //May have multiple init requests in a single line.. maybe not.
-
+    vector<String> initObjects;
+    
+    if ( strContains(str, CHAR_UPDATE_RECORD ) )
+        initObjects = splitString(str, CHAR_UPDATE_RECORD); //May have multiple init requests in a single line.. maybe not.
+    else
+        initObjects.emplace_back(String(str));
+    
     for ( uint16_t x = 0; x < initObjects.size(); x++ )
     {
+        Core.sendMessage(PSTR("Received Init request: ") + str);
         vector <String> args = splitString( initObjects[x], CHAR_VAR_OPERATOR ); //see if we are requesting a var to init
 
         if ( args.size() > 1) // Looks like we have a var type object.
@@ -97,8 +103,9 @@ String PLC_Remote_Server::handleInit( const String &str )
         {
             initList += CMD_REQUEST_INVALID; //for now, we only allow for the init of var objects
         }
-
-        initList += ( (x == initObjects.size()) ? : CHAR_UPDATE_GROUP); //end the group list
+        
+        if ( x < ( initObjects.size() - 1 ) )
+            initList += CHAR_UPDATE_GROUP;
     }
 
     return initList + CHAR_QUERY_END; //append the ending char and send off the string
@@ -138,7 +145,9 @@ String PLC_Remote_Server::handleUpdate( const String &str )
         { 
             updateList += CMD_REQUEST_INVALID; //for now
         }
-        updateList += ( (x == updateObjects.size()) ? : CHAR_UPDATE_GROUP); //end the group list
+
+        if ( x < ( updateObjects.size() - 1 ) )
+            updateList += CHAR_UPDATE_GROUP;
     }
 
     return updateList + CHAR_QUERY_END; //end of update report.

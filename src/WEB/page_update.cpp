@@ -37,7 +37,7 @@ void UICore::handleUpdater()
     for ( uint8_t x = 0; x < p_StaticDataTables.size(); x++ ) //Generate static objects that are not included in the FORM
         HTML += p_StaticDataTables[x]->GenerateTableHTML();
 
-    HTML += html_form_Begin + updateDir + html_form_Middle_Upload;
+    HTML += html_form_Begin + firmwareDir + html_form_Middle_Upload;
 	for ( uint8_t x = 0; x < p_UIDataTables.size(); x++ )
 		HTML += p_UIDataTables[x]->GenerateTableHTML(); //Add each datafield to the HTML body
 
