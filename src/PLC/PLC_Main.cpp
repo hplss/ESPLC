@@ -15,6 +15,7 @@
 #include "OBJECTS/obj_output_basic.h"
 #include "OBJECTS/obj_timer.h"
 #include "OBJECTS/obj_counter.h"
+#include "OBJECTS/obj_oneshot.h"
 #include "ACCESSORS/acc_remote.h"
 //
 
@@ -623,6 +624,11 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 			return newObj; //assume a long (greater than 32 bits) This is a safe data type to use as it is a signed 64 bit int
 	}
 
+	return 0;
+}
+
+shared_ptr<Ladder_OBJ> PLC_Main::createOneshotOBJ( const String &id, const vector<String> & args)
+{
 	return 0;
 }
 

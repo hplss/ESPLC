@@ -125,6 +125,11 @@ class PLC_Main
 	//Creates a new timer object and associates it with a name. Script args: [1] = delay(ms), [2]= accum default(ms), [3] = subtype(TON/TOF)
 	shared_ptr<Ladder_OBJ_Logical> createTimerOBJ( const String &, const vector<String> &);
 	//Creates a new basic math object, which is capable of performing a series of simple calculations based on inputted arguments.
+
+	//shared_ptr<Ladder_OBJ> createMathOBJ( const String &, const vector<String> &);
+	//Creates a oneshot object, which pulses HIGH for one cycle, then LOW until reset. Declared inline.
+	shared_ptr<Ladder_OBJ> createOneshotOBJ( const String &, const vector<String> &);
+  //Creates a new basic math object, which is capable of performing a series of simple calculations based on inputted arguments.
 	shared_ptr<Ladder_OBJ_Logical> createMathOBJ( const String &, const vector<String> &);
 	//Creates a new virtual type object, which represents a stored value in memory, to be accessed by other objects such as counters or timers or comparison blocks, etc.
 	shared_ptr<Ladder_OBJ_Logical> createVariableOBJ( const String &, const vector<String> &);
