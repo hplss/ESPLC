@@ -537,11 +537,17 @@ shared_ptr<Ladder_OBJ> PLC_Main::createMathOBJ( const String &id, const vector<S
 		}
 		else if(function == typeTagMSIN)
 		{
-			//Sin
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, TYPE_MATH_SIN, var1ptr));
+			newObj->computeSIN();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
 		}
 		else if(function == typeTagMCOS)
 		{
-			//Cos
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, TYPE_MATH_COS, var1ptr));
+			newObj->computeCOS();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
 		}
 		else if(function == typeTagMMUL)
 		{
