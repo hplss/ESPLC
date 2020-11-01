@@ -14,6 +14,7 @@ const String &HTML_HEADER_INITIAL PROGMEM = PSTR(
 "<html>"
 "<head>"
 "<meta name = \"viewport\" content = \"width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0\">"
+"<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js\"></script>"
 "<style>"),
 
 	&HTML_HEADER_LAST PROGMEM = PSTR( 
@@ -31,12 +32,13 @@ void UICore::setupServer()
 	//These set up our page triggers, linking them to specific functions.
 	getWebServer().on(styleDir, std::bind(&UICore::handleStyleSheet, this) );
 	getWebServer().on(PSTR("/"), std::bind(&UICore::handleIndex, this) );
+	getWebServer().on(updateDir, std::bind(&UICore::handleUpdateStatus, this) );
 	getWebServer().on(adminDir, std::bind(&UICore::handleAdmin, this) );
 	getWebServer().on(scriptDir, std::bind(&UICore::handleScript, this) );
 	getWebServer().on(statusDir, std::bind(&UICore::handleStatus, this) );
 	getWebServer().on(alertsDir, std::bind(&UICore::handleAlerts, this) );
-    getWebServer().on(updateDir, HTTP_GET, std::bind(&UICore::handleUpdater, this) );
-    getWebServer().on(updateDir, HTTP_POST, [](){}, applyRemoteFirmwareUpdate ); //continuously call the firmware update function on HTTP POST method
+    getWebServer().on(firmwareDir, HTTP_GET, std::bind(&UICore::handleUpdater, this) );
+    getWebServer().on(firmwareDir, HTTP_POST, [](){}, applyRemoteFirmwareUpdate ); //continuously call the firmware update function on HTTP POST method
 	//
 };
 

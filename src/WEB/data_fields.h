@@ -20,9 +20,9 @@
 #define ALERTS_FIELD_COLS 50
 #define ALERTS_FIELD_ROWS 3
 
-enum FIELD_TYPE : uint8_t
+enum class FIELD_TYPE : uint8_t
 {
-	NONE = 0, 
+	NONE, 
 	RADIO, //This field type creates a radio button for the web UI, and is typically reserved for boolean operations.
 	TEXT, //This field type represents a single line text field. Typically reserved for entering small strings of data.
 	NUMBER, //This field type is for inputting numbers only. 
@@ -32,7 +32,7 @@ enum FIELD_TYPE : uint8_t
 	SELECT, //This special field is used for creating a field that allows for a drop-down selection menu.
 	TEXTAREA, //This field type creates a large text area (multiple lines) in which a user can enter long messages.
 	HYPERLINK, //This special field type is used for creating hyperlinks that redirect to other pages.
-	FILE_UPLOAD
+	FILE_UPLOAD 
 };
 
 class UICore; //predefinition for linker purposes
@@ -40,10 +40,10 @@ class UICore; //predefinition for linker purposes
 class DataField
 {
 	public:
-	DataField( uint8_t address, uint8_t type, const String &fieldLabel = "", const String &defaultValue = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) :
+	DataField( uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const String &defaultValue = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) :
 	DataField( make_shared<String>(defaultValue), address, type, fieldLabel, params, cols, rows, newLine, functional ){}
 
-	DataField( shared_ptr<String>defaultValue, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false )
+	DataField( shared_ptr<String>defaultValue, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false )
 	{
 		i_Address = address;
 		i_Type = type;
@@ -58,7 +58,7 @@ class DataField
 	virtual ~DataField(){} //Destructor
 
 	//Returns the field type (used for the generation of the HTML code)
-	uint8_t GetType() { return i_Type; } 
+	FIELD_TYPE GetType() { return i_Type; } 
 	//This overloaded function is used for setting the data (stored value) within the field.
 	virtual bool SetFieldValue( shared_ptr<String> ); 
 	//This overloaded function is used for setting the data (stored value) within the field.
@@ -87,7 +87,7 @@ class DataField
 	bool UsesFunction(){ return b_Function; }
 
 	private:
-	uint8_t i_Type; //This represents the type of data field we're displaying (Text-box, radio button, etc)
+	FIELD_TYPE i_Type; //This represents the type of data field we're displaying (Text-box, radio button, etc)
 	uint8_t i_Address; //Represents the address number used for updating values in the field.	
 	shared_ptr<String> s_fieldValue; //This is the data being displayed within the form (default text in a text-box for example)
 	String s_fieldLabel; //Text that describes the field
@@ -157,24 +157,24 @@ class Hyperlink_Datafield : public DataField
 class VAR_Datafield : public DataField
 {
 	public: 
-	VAR_Datafield( bool *var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, String(*var), params, cols, rows, newLine, functional )
-	{ variablePtr.bVar = var; iVarType = TYPE_VAR_BOOL; }
-	VAR_Datafield( uint16_t *var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, String(*var), params, cols, rows, newLine, functional )
-	{ variablePtr.uiShortVar = var; iVarType = TYPE_VAR_USHORT; }
-	VAR_Datafield( float *var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, String(*var), params, cols, rows, newLine, functional )
-	{ variablePtr.fVar = var; iVarType = TYPE_VAR_FLOAT; }
-	VAR_Datafield( int_fast32_t *var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, String(*var), params, cols, rows, newLine, functional )
-	{ variablePtr.iVar = var; iVarType = TYPE_VAR_INT; }
-	VAR_Datafield( uint_fast32_t *var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, String(*var), params, cols, rows, newLine, functional )
-	{ variablePtr.uiVar = var; iVarType = TYPE_VAR_UINT; }
-	VAR_Datafield( uint8_t *var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, String(*var), params, cols, rows, newLine, functional )
-	{ variablePtr.uByteVar = var; iVarType = TYPE_VAR_UBYTE; }
-	VAR_Datafield( uint64_t *var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, intToStr(*var), params, cols, rows, newLine, functional )
-	{ variablePtr.ulVar = var; iVarType = TYPE_VAR_ULONG; }
-	VAR_Datafield( int64_t *var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, intToStr(*var), params, cols, rows, newLine, functional )
-	{ variablePtr.lVar = var; iVarType = TYPE_VAR_LONG; }
-	VAR_Datafield( shared_ptr<String> var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( var, address, type, fieldLabel, params, cols, rows, newLine, functional )
-	{ iVarType = TYPE_VAR_STRING; }
+	VAR_Datafield( bool *var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, String(*var), params, cols, rows, newLine, functional )
+	{ variablePtr.bVar = var; iVarType = OBJ_TYPE::TYPE_VAR_BOOL; }
+	VAR_Datafield( uint16_t *var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, String(*var), params, cols, rows, newLine, functional )
+	{ variablePtr.uiShortVar = var; iVarType = OBJ_TYPE::TYPE_VAR_USHORT; }
+	VAR_Datafield( float *var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, String(*var), params, cols, rows, newLine, functional )
+	{ variablePtr.fVar = var; iVarType = OBJ_TYPE::TYPE_VAR_FLOAT; }
+	VAR_Datafield( int_fast32_t *var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, String(*var), params, cols, rows, newLine, functional )
+	{ variablePtr.iVar = var; iVarType = OBJ_TYPE::TYPE_VAR_INT; }
+	VAR_Datafield( uint_fast32_t *var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, String(*var), params, cols, rows, newLine, functional )
+	{ variablePtr.uiVar = var; iVarType = OBJ_TYPE::TYPE_VAR_UINT; }
+	VAR_Datafield( uint8_t *var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, String(*var), params, cols, rows, newLine, functional )
+	{ variablePtr.uByteVar = var; iVarType = OBJ_TYPE::TYPE_VAR_UBYTE; }
+	VAR_Datafield( uint64_t *var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, intToStr(*var), params, cols, rows, newLine, functional )
+	{ variablePtr.ulVar = var; iVarType = OBJ_TYPE::TYPE_VAR_ULONG; }
+	VAR_Datafield( int64_t *var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( address, type, fieldLabel, intToStr(*var), params, cols, rows, newLine, functional )
+	{ variablePtr.lVar = var; iVarType = OBJ_TYPE::TYPE_VAR_LONG; }
+	VAR_Datafield( shared_ptr<String> var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false ) : DataField( var, address, type, fieldLabel, params, cols, rows, newLine, functional )
+	{ iVarType = OBJ_TYPE::TYPE_VAR_STRING; }
 	~VAR_Datafield(){};
 
 	virtual bool SetFieldValue( const String & = "" );
@@ -193,23 +193,25 @@ class VAR_Datafield : public DataField
 		uint64_t *ulVar;
 	} variablePtr;
 
-	uint8_t iVarType;
+	OBJ_TYPE iVarType;
 };
 
+//Args:<Function>,<External Variable>,<Address>,<Type>,<Label>,<Special Params>,<Cols>,<Rows>,<Force Function Exec>,<NewLine>
 class VAR_S_Datafield : public VAR_Datafield
 {
 	public:
 	template <typename T>
-	VAR_S_Datafield(const function<void(void)> &onChanged, T *var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true ) : VAR_Datafield( var, address, type, fieldLabel, params, cols, rows, newLine, true )
-	{ func = onChanged; }
+	VAR_S_Datafield(const function<void(void)> &onChanged, T *var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool force = false, bool newLine = true ) : VAR_Datafield( var, address, type, fieldLabel, params, cols, rows, newLine, true )
+	{ func = onChanged;  forceExec = force; }
 	template <typename T>
-	VAR_S_Datafield(const function<void(void)> &onChanged, shared_ptr<T> var, uint8_t address, uint8_t type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true ) : VAR_Datafield( var, address, type, fieldLabel, params, cols, rows, newLine, true )
-	{ func = onChanged; }
+	VAR_S_Datafield(const function<void(void)> &onChanged, shared_ptr<T> var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool force = false, bool newLine = true ) : VAR_Datafield( var, address, type, fieldLabel, params, cols, rows, newLine, true )
+	{ func = onChanged; forceExec = force; }
 	~VAR_S_Datafield(){}
-	bool SetFieldValue( const String &str ){ if(VAR_Datafield::SetFieldValue(str)){ func(); return true; } return false; }
+	bool SetFieldValue( const String &str ){ if(VAR_Datafield::SetFieldValue(str) || forceExec ){ func(); return true; } return false; }
 
 	private:
 	function<void(void)> func;//function reference to be executed on change
+	bool forceExec;
 };
 
 //This field is used specifically for selecting and setting the device WiFi SSID for direct connection vie the web UI.
@@ -272,7 +274,7 @@ class FILE_Datafield : public DataField
 class LADDER_OBJ_Datafield : public DataField
 {
 	public:
-	LADDER_OBJ_Datafield( shared_ptr<Ladder_OBJ> obj, uint8_t address, const String &fieldLabel = "", bool newLine = true ) : 
+	LADDER_OBJ_Datafield( shared_ptr<Ladder_OBJ_Logical> obj, uint8_t address, const String &fieldLabel = "", bool newLine = true ) : 
 	DataField(address, FIELD_TYPE::NONE, fieldLabel, "", {}, newLine )
 	{
 		pObj = obj;
@@ -283,7 +285,7 @@ class LADDER_OBJ_Datafield : public DataField
 
 	String GenerateHTML();
 	private:
-	shared_ptr<Ladder_OBJ> pObj;
+	shared_ptr<Ladder_OBJ_Logical> pObj;
 };
 
 #endif /* DATA_FIELDS_H_ */

@@ -10,20 +10,23 @@
 
 //other object includes
 #include "OBJECTS/MATH/obj_math_basic.h"
-#include "OBJECTS/obj_remote.h"
 #include "OBJECTS/obj_var.h"
 #include "OBJECTS/obj_input_basic.h"
 #include "OBJECTS/obj_output_basic.h"
 #include "OBJECTS/obj_timer.h"
 #include "OBJECTS/obj_counter.h"
+#include "OBJECTS/obj_oneshot.h"
+#include "ACCESSORS/acc_remote.h"
 //
 
 void PLC_Main::resetAll()
 {
 	ladderRungs.clear(); //Empty created ladder rungs vector
 	ladderObjects.clear(); //Empty the created ladder logic objects vector
+	accessorObjects.clear(); // Empty the accessor objects vector
 	ladderVars.clear(); //Empty the created ladder vars vector
 	generatePinMap(); //reset and fill the pinmap
+	generatePWMMap(); //generate the list of available PWM channels for outputs
 }
 
 char toUpper( char x )
@@ -44,20 +47,20 @@ void PLC_Main::generatePinMap()
 {
 	pinMap.clear(); //empty first, just in case.
 	//Fill in the pin map with the appropriate pin relationships.
-	pinMap.emplace(0, PIN_TYPE::PIN_O );
+	pinMap.emplace(0, PIN_TYPE::PIN_O ); //WiFi dependent
 	pinMap.emplace(1, PIN_TYPE::PIN_INVALID ); //TX
-	pinMap.emplace(2, PIN_TYPE::PIN_AIO );
+	pinMap.emplace(2, PIN_TYPE::PIN_AIO ); //WiFi dependent
 	pinMap.emplace(3, PIN_TYPE::PIN_INVALID ); //RX
-	pinMap.emplace(4, PIN_TYPE::PIN_AIO );
+	pinMap.emplace(4, PIN_TYPE::PIN_AIO ); //WiFi dependent
 	pinMap.emplace(5, PIN_TYPE::PIN_IO );
 
 	for ( uint8_t x = 6; x < 11; x++ )
 		pinMap.emplace(x, PIN_TYPE::PIN_INVALID );
 
-	pinMap.emplace(12, PIN_TYPE::PIN_AIO );
-	pinMap.emplace(13, PIN_TYPE::PIN_AIO );
-	pinMap.emplace(14, PIN_TYPE::PIN_AIO );
-	pinMap.emplace(15, PIN_TYPE::PIN_AIO );
+	pinMap.emplace(12, PIN_TYPE::PIN_AIO ); //WiFi dependent
+	pinMap.emplace(13, PIN_TYPE::PIN_AIO ); //WiFi dependent
+	pinMap.emplace(14, PIN_TYPE::PIN_AIO ); //WiFi dependent
+	pinMap.emplace(15, PIN_TYPE::PIN_AIO ); //WiFi dependent
 
 	for ( uint8_t x = 16; x < 23; x++ )
 	{
@@ -67,15 +70,37 @@ void PLC_Main::generatePinMap()
 		pinMap.emplace(x, PIN_TYPE::PIN_IO );
 	}
 
-	pinMap.emplace(25, PIN_TYPE::PIN_AIO );
-	pinMap.emplace(26, PIN_TYPE::PIN_AIO );
-	pinMap.emplace(27, PIN_TYPE::PIN_AIO );
+	pinMap.emplace(25, PIN_TYPE::PIN_AIO ); //WiFi dependent 
+	pinMap.emplace(26, PIN_TYPE::PIN_AIO ); //WiFi dependent 
+	pinMap.emplace(27, PIN_TYPE::PIN_AIO ); //WiFi dependent
 	pinMap.emplace(32, PIN_TYPE::PIN_AIO );
 	pinMap.emplace(33, PIN_TYPE::PIN_AIO );
 	pinMap.emplace(34, PIN_TYPE::PIN_AI );
 	pinMap.emplace(35, PIN_TYPE::PIN_AI );
 	pinMap.emplace(36, PIN_TYPE::PIN_AI );
 	pinMap.emplace(39, PIN_TYPE::PIN_AI );
+}
+
+void PLC_Main::generatePWMMap()
+{
+	pwmMap.clear(); //just in case
+	for ( uint8_t x = 0; x < 15; x++ )
+	{
+		pwmMap.emplace(x, PWM_STATUS::PWM_AVAILABLE);
+	}
+}
+int8_t PLC_Main::reservePWMChannel()
+{
+	for ( uint8_t x = 0; x < 15; x++ )
+	{
+		if ( pwmMap[x] == PWM_STATUS::PWM_AVAILABLE )
+		{
+			pwmMap[x] = PWM_STATUS::PWM_TAKEN; //reserve the channel
+			return x;
+		}
+	}
+
+	return -1; //default path indicates an error (cannot reserve)
 }
 
 String PLC_Main::getObjName( const String &parsedString )
@@ -95,14 +120,23 @@ String PLC_Main::getObjName( const String &parsedString )
 
 void PLC_Main::processLogic()
 {
-	if ( !getNumRungs() ) //are there no available rungs?
-		return; //Do nothing if that's the case.
+	//Update accessor objects first in the scan, as the state in some of the Ladder_OBJ_Logical objects they contain may be of use.
+	for ( uint8_t x = 0; x < getNumAccessors(); x++ )
+	{
+		getAccessorObjects()[x]->updateObject();
+	}
+	//
 
 	for (uint16_t x = 0; x < getNumRungs(); x++) //iterate through all available rungs
 	{
-		getLadderRung(x)->processRung(x); //perform logic 'scan' on the selected rung
+		getLadderRungs()[x]->processRung(x); //perform logic 'scan' on the selected rung
 	}
 
+	if ( getRemoteServer() ) //handle the web server (if applicable)
+	{
+		getRemoteServer()->processRequests(); //handle any remote requests/etc.
+	}
+		
 	//After the logic scans, the object's state is known. Perform the update on the objects (for some objects, this is the "action" function.)
 	for ( uint16_t y = 0; y < ladderObjects.size(); y++ )
 		ladderObjects[y]->updateObject(); 
@@ -120,16 +154,28 @@ bool PLC_Main::addLadderRung(shared_ptr<Ladder_Rung> rung)
 	return true;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::findLadderObjByID( const String &id ) //Search through all created objects thus far. This assumes that the object was created successfully.
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::findLadderObjByID( const String &id ) //Search through all created objects thus far. This assumes that the object was created successfully.
 {
 	for ( uint16_t x = 0; x < ladderObjects.size(); x++ )
 	{
-		shared_ptr<Ladder_OBJ> pObj = ladderObjects[x];
+		shared_ptr<Ladder_OBJ_Logical> pObj = ladderObjects[x];
 		if ( pObj && pObj->getID() == id )
 			return pObj;
 	}
 	
 	return 0; //default
+}
+
+shared_ptr<Ladder_OBJ_Accessor> PLC_Main::findAccessorByID( const String &id )
+{
+	for ( uint8_t x = 0; x < accessorObjects.size(); x++ )
+	{
+		shared_ptr<Ladder_OBJ_Accessor> pObj = accessorObjects[x];
+		if ( pObj && pObj->getID() == id )
+			return pObj;
+	}
+
+	return 0;
 }
 
 shared_ptr<Ladder_VAR> PLC_Main::findLadderVarByID( const String &id ) //Search through all created objects thus far. This assumes that the object was created successfully.
@@ -165,7 +211,7 @@ bool PLC_Main::parseScript(const char *script)
 			shared_ptr<PLC_Parser> parser = make_shared<PLC_Parser>(scriptLine, getNumRungs() );
 			if ( !parser->parseLine() )
 			{
-				sendError( ERR_PARSER_FAILED, PSTR("At Line: ") + String(iLine));
+				sendError( ERR_DATA::ERR_PARSER_FAILED, PSTR("At Line: ") + String(iLine));
 				return false; //error ocurred somewhere?
 			}
 
@@ -174,10 +220,11 @@ bool PLC_Main::parseScript(const char *script)
 	}
 
 	pinMap.clear(); //free some memory
+	pwmMap.clear();
 	return true; //success
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createNewObject(const String &name, const vector<String> &ObjArgs )
+shared_ptr<Ladder_OBJ> PLC_Main::createNewLadderObject(const String &name, const vector<String> &ObjArgs )
 {
 	if ( name.length() > MAX_PLC_OBJ_NAME ) //name is too long. Gotta keep memory in mind
 	{
@@ -208,13 +255,13 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewObject(const String &name, const vecto
 			{
 				return createCounterOBJ(name, ObjArgs);
 			}
-			else if ( type == counterTag1 || type == counterTag2 ) 
-			{
-				return createCounterOBJ(name, ObjArgs);
-			}
 			else if ( type == mathTag ) 
 			{
 				return createMathOBJ(name, ObjArgs);
+			}
+			else if ( type == remoteTag )
+			{
+				return createRemoteClient(name, ObjArgs);
 			}
 			else //if we don't find a valid object type
 				sendError(ERR_DATA::ERR_UNKNOWN_TYPE, type);
@@ -226,19 +273,24 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewObject(const String &name, const vecto
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createInputOBJ( const String &id, const vector<String> &args )
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::createInputOBJ( const String &id, const vector<String> &args )
 {
-	uint8_t pin = 0, logic = LOGIC_NO, type = TYPE_INPUT, numArgs = args.size();
+	uint8_t pin = 0, logic = LOGIC_NO, numArgs = args.size();
+
+	OBJ_TYPE type = OBJ_TYPE::TYPE_INPUT;
 
 	if ( numArgs > 3 )
-		logic = parseLogic(args[3]);
+		logic = parseLogic(args[3]); //normally open or normally closed.
 
 	if ( numArgs > 2 )
 	{
 		if ( args[2] == "A" || args[2] == typeTagAnalog ) //Explicitly declare an analog input, otherwise assume it's a digital in only
-			type = TYPE_INPUT_ANALOG;
+			type = OBJ_TYPE::TYPE_INPUT_ANALOG;
 		else if (args[2] == "D" || args[2] == typeTagDigital )
-			type = TYPE_INPUT;
+			type = OBJ_TYPE::TYPE_INPUT;
+		else
+			sendError( ERR_DATA::ERR_UNKNOWN_ARGS, args[2] ); 
+		
 	}
 	
 	if ( numArgs > 1 ) //needed
@@ -259,18 +311,72 @@ shared_ptr<Ladder_OBJ> PLC_Main::createInputOBJ( const String &id, const vector<
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createOutputOBJ( const String &id, const vector<String> &args )
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOutputOBJ( const String &id, const vector<String> &args )
 {
 	uint8_t pin = 0, logic = LOGIC_NO, numArgs = args.size();
+	OBJ_TYPE type = OBJ_TYPE::TYPE_OUTPUT; //default
+	uint16_t duty_cycle = 0;
+	uint8_t resolution = 10;
+	int8_t pwm_channel = 0; //signed because possible -1 (error) value
+
+	double frequency = 5000;
+
+	if ( numArgs > 6 ) //PWM resolution (bits)
+	{
+		int32_t tempInt = args[6].toInt();
+		if ( tempInt > 0 && tempInt <= 16 ) //max 16 bit
+			resolution = tempInt;
+		else
+			sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[6] );
+	}
+
+	if ( numArgs > 5 ) //frequency
+	{
+		double tempDbl = args[5].toDouble();
+		if ( tempDbl > 0 && tempDbl < static_cast<double>(80000000/exp2(resolution) ) ) //80Mhz may or may not be the right value here. Look into later.
+			frequency = tempDbl;
+		else
+			sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[5] );
+	}
+
+	if ( numArgs > 4 ) //duty cycle
+	{
+		int32_t tempInt = args[4].toInt();
+		if ( tempInt > 0 && tempInt < exp2(resolution) ) 
+			duty_cycle = tempInt;
+		else
+			sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[4] );
+	}
+
+	if ( numArgs > 3 )
+		logic = parseLogic(args[3]);
+
 	if ( numArgs > 2 ) //caveat here is that outputs would NEVER normally be normally closed (ON)
-		logic = parseLogic(args[2]);
+	{
+		if ( args[2] == typeTagPWM || args[2] == "P" ) //PWM output
+			type = OBJ_TYPE::TYPE_OUTPUT_PWM;
+		else if ( args[2] == typeTagDigital || args[2] == "D" )
+			type = OBJ_TYPE::TYPE_OUTPUT;
+		else
+			sendError(ERR_DATA::ERR_UNKNOWN_ARGS, args[2]);
+	}
 		
 	if ( numArgs > 1 )
 	{
 		pin = args[1].toInt();
-		if ( isValidPin(pin, TYPE_OUTPUT) )
+		if ( isValidPin(pin, OBJ_TYPE::TYPE_OUTPUT) ) //all outputs can also use PWM
 		{
-			shared_ptr<OutputOBJ> newObj(new OutputOBJ(id, pin, logic));
+			if ( type == OBJ_TYPE::TYPE_OUTPUT_PWM )
+			{
+				pwm_channel = reservePWMChannel(); //get the next available pwm channel and return it.
+				if ( pwm_channel < 0 )
+				{
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, String(pwm_channel) );
+					return 0; //must be able to reserve a PWM channel for PWM outputs
+				}
+			}
+
+			shared_ptr<OutputOBJ> newObj(new OutputOBJ(id, pin, type, logic, pwm_channel, duty_cycle, frequency, resolution));
 			ladderObjects.emplace_back(newObj);
 			setClaimedPin( pin ); //claim the pin for this object.
 			#ifdef DEBUG
@@ -283,16 +389,18 @@ shared_ptr<Ladder_OBJ> PLC_Main::createOutputOBJ( const String &id, const vector
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createTimerOBJ( const String &id, const vector<String> &args )
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::createTimerOBJ( const String &id, const vector<String> &args )
 {
 	uint8_t numArgs = args.size();
-	uint32_t delay = 0, accum = 0, subType = TYPE_TON;
+	uint32_t delay = 0, accum = 0;
+	OBJ_TYPE subType = OBJ_TYPE::TYPE_TON;
+
 	if ( numArgs > 3 )
 	{	  
 		if ( args[3] == typeTagTOF )
-			subType = TYPE_TOF;
+			subType = OBJ_TYPE::TYPE_TOF;
 		else if ( args[3] == typeTagTON )
-			subType = TYPE_TON;
+			subType = OBJ_TYPE::TYPE_TON;
 		else
 			sendError(ERR_DATA::ERR_UNKNOWN_ARGS, args[0] + args[3]); 
 	}
@@ -315,17 +423,19 @@ shared_ptr<Ladder_OBJ> PLC_Main::createTimerOBJ( const String &id, const vector<
 
 	return 0;
 }
-shared_ptr<Ladder_OBJ> PLC_Main::createCounterOBJ( const String &id, const vector<String> &args )
+
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::createCounterOBJ( const String &id, const vector<String> &args )
 {
 	uint16_t count = 0, accum = 0; 
-	uint8_t subType = TYPE_CTU, numArgs = args.size();
+	uint8_t numArgs = args.size();
+	OBJ_TYPE subType = OBJ_TYPE::TYPE_CTU;
+
 	if ( numArgs > 3 )
 	{
-		subType = TYPE_CTU; //default
 		if ( args[3] == typeTagCTU )
-			subType = TYPE_CTU;
+			subType = OBJ_TYPE::TYPE_CTU;
 		else if ( args[3] == typeTagCTD )
-			subType = TYPE_CTD;
+			subType = OBJ_TYPE::TYPE_CTD;
 		else
 			sendError(ERR_DATA::ERR_UNKNOWN_ARGS, args[0] + args[3]);
 	}
@@ -346,7 +456,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createCounterOBJ( const String &id, const vecto
 }
 
 //TODO - Implement some way where a user can easily dictate which variable type to use for memory purposes, otherwise default to auto-detection (maybe always estimate high? 64-bit?).
-shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vector<String> &args )
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, const vector<String> &args )
 {
 	shared_ptr<Ladder_VAR> newObj = 0;
 	if(args[1] == "TRUE")
@@ -460,7 +570,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 			else if (args[2] == VAR_UINT64)
 			{
 				uint64_t value = static_cast<uint64_t>(atoll(val.c_str())); //variable > uint64 needed?
-				newObj = make_shared<Ladder_VAR>( static_cast<uint64_t>(strtoul(val.c_str(), NULL, 10)), id );
+				newObj = make_shared<Ladder_VAR>( static_cast<uint64_t>(strtoull(val.c_str(), NULL, 10)), id );
 				if(value < 0 || value > UINT64_MAX )
 				{
 					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
@@ -521,7 +631,12 @@ shared_ptr<Ladder_OBJ> PLC_Main::createVariableOBJ( const String &id, const vect
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createMathOBJ( const String &id, const vector<String> & args)
+shared_ptr<Ladder_OBJ> PLC_Main::createOneshotOBJ( const String &id, const vector<String> & args)
+{
+	return 0;
+}
+
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const vector<String> & args)
 {
 	if(args.size() >= 2)
 	{
@@ -534,7 +649,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createMathOBJ( const String &id, const vector<S
 		}
 		if(function == typeTagMTAN)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, TYPE_MATH_TAN, var1ptr));
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_TAN, var1ptr));
 			newObj->computeTAN();
 			ladderObjects.emplace_back(newObj);
 			#ifdef DEBUG
@@ -544,14 +659,14 @@ shared_ptr<Ladder_OBJ> PLC_Main::createMathOBJ( const String &id, const vector<S
 		}
 		else if(function == typeTagMSIN)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, TYPE_MATH_SIN, var1ptr));
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_SIN, var1ptr));
 			newObj->computeSIN();
 			ladderObjects.emplace_back(newObj);
 			return newObj;
 		}
 		else if(function == typeTagMCOS)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, TYPE_MATH_COS, var1ptr));
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_COS, var1ptr));
 			newObj->computeCOS();
 			ladderObjects.emplace_back(newObj);
 			return newObj;
@@ -616,9 +731,75 @@ shared_ptr<Ladder_OBJ> PLC_Main::createMathOBJ( const String &id, const vector<S
 	return 0;
 }
 
-bool PLC_Main::isValidPin( uint8_t pin, uint8_t type)
+shared_ptr<Ladder_OBJ_Accessor> PLC_Main::createRemoteClient( const String &id, const vector<String> &args )
 {
-	std::map<uint8_t, uint8_t>::iterator pinitr = pinMap.find(pin);
+	//Args: IP, Port, Timeout Time
+	uint32_t timeout = 2000, updfreq = 1000; //default values in ms
+    uint8_t numArgs = args.size();
+    if ( numArgs > 5 )
+    {
+        for ( uint8_t x = 5; x < numArgs; x++ )
+        {
+            sendError(ERR_DATA::ERR_UNKNOWN_ARGS, args[0] + args[x]);
+        }
+    }
+    if ( numArgs > 4 )
+    {
+        long tempInt = args[4].toInt();
+        if ( tempInt > 0 ) //maybe a minimum here? 
+		    updfreq = tempInt; //update freq in ms
+    }
+	if ( numArgs > 3)
+	{
+        long tempInt = args[3].toInt();
+        if ( tempInt > 0 )
+		    timeout = tempInt; //timeout time in ms
+	}
+	if ( numArgs > 2) //must have IP and port
+	{
+		IPAddress serverIP;
+
+        uint16_t port = 5000; //default port
+
+        long tempPort = args[2].toInt();
+        if ( tempPort > 0 && tempPort <= UINT16_MAX )
+            port = tempPort;
+		
+		if ( WiFi.hostByName(args[1].c_str(), serverIP ) )
+		{
+			for ( uint8_t x = 0; x < getNumAccessors(); x++ )
+            {
+                if ( getAccessorObjects()[x]->getType() == OBJ_TYPE::TYPE_REMOTE )
+                {
+                    PLC_Remote_Client *currentClient = static_cast<PLC_Remote_Client *>(getAccessorObjects()[x].get());
+                    if ( currentClient && currentClient->getHostAddress() == serverIP )
+                    {
+                        sendError( ERR_DATA::ERR_CREATION_FAILED, String(CHAR_SPACE) + PSTR("Duplicate IP"));
+                        return 0; //already exists based on IP -- some error here?
+                    }
+                } 
+            }
+
+            if ( port == 80 ) //invalid port?
+            {
+                sendError( ERR_DATA::ERR_CREATION_FAILED, String(CHAR_SPACE) + PSTR("Invalid Port"));
+                return 0; //some error here?
+            }
+
+            shared_ptr<PLC_Remote_Client> accessorClient = make_shared<PLC_Remote_Client>(id, serverIP, port, timeout, updfreq );
+            getAccessorObjects().push_back( accessorClient );
+            return accessorClient;
+		}
+		else
+			Core.sendMessage(PSTR("Unknown host: ") + args[1]);
+	}
+
+	return 0;
+}
+
+bool PLC_Main::isValidPin( uint8_t pin, OBJ_TYPE type)
+{
+	std::map<uint8_t, PIN_TYPE>::iterator pinitr = pinMap.find(pin);
 	if (pinitr != pinMap.end())
 	{
 		if ( pinitr->second == PIN_TYPE::PIN_TAKEN )
@@ -632,12 +813,12 @@ bool PLC_Main::isValidPin( uint8_t pin, uint8_t type)
 			return false;
 		}
 
-		if ( ( type == TYPE_INPUT_ANALOG && ( pinitr->second == PIN_AI || pinitr->second == PIN_AIO ) ) 
-			|| ( type == TYPE_INPUT &&  ( pinitr->second == PIN_AI || pinitr->second == PIN_AIO || pinitr->second == PIN_IO || pinitr->second == PIN_I ) ) )
+		if ( ( type == OBJ_TYPE::TYPE_INPUT_ANALOG && ( pinitr->second == PIN_TYPE::PIN_AI || pinitr->second == PIN_TYPE::PIN_AIO ) ) 
+			|| ( type == OBJ_TYPE::TYPE_INPUT && ( pinitr->second == PIN_TYPE::PIN_AI || pinitr->second == PIN_TYPE::PIN_AIO || pinitr->second == PIN_TYPE::PIN_IO || pinitr->second == PIN_TYPE::PIN_I ) ) )
 			{
 				return true;
 			}
-		else if ( type == TYPE_OUTPUT && ( pinitr->second == PIN_AIO || pinitr->second == PIN_IO || pinitr->second == PIN_O ) )
+		else if ( type == OBJ_TYPE::TYPE_OUTPUT && ( pinitr->second == PIN_TYPE::PIN_AIO || pinitr->second == PIN_TYPE::PIN_IO || pinitr->second == PIN_TYPE::PIN_O ) )
 		{
 			return true;
 		}
@@ -668,16 +849,16 @@ uint8_t PLC_Main::parseLogic( const String &arg )
 
 bool PLC_Main::setClaimedPin(uint8_t pin)
 {
-	std::map<uint8_t, uint8_t>::iterator pinitr = pinMap.find(pin);
+	std::map<uint8_t, PIN_TYPE>::iterator pinitr = pinMap.find(pin);
 	if (pinitr != pinMap.end())
 	{
-		pinitr->second = PIN_TAKEN;
+		pinitr->second = PIN_TYPE::PIN_TAKEN;
 		return true;
 	}
 	return false; //shouldn't happen
 }
 
-void PLC_Main::sendError( uint8_t err, const String &info )
+void PLC_Main::sendError(ERR_DATA err, const String &info )
 {
 	String error;
 	switch (err)
@@ -710,6 +891,11 @@ void PLC_Main::sendError( uint8_t err, const String &info )
 		case ERR_DATA::ERR_INVALID_OBJ:
 		{
 			error = err_failed_creation + CHAR_SPACE + err_unknown_obj;
+		}
+		break;
+		case ERR_DATA::ERR_INVALID_ACCESSOR:
+		{
+
 		}
 		break;
 		case ERR_DATA::ERR_PIN_INVALID:
@@ -750,4 +936,33 @@ void PLC_Main::sendError( uint8_t err, const String &info )
 		Core.sendMessage(error, PRIORITY_HIGH);
 
 	resetAll(); //Since we have hit an error, just purge all objects from the PLC script. Since it can't be used anyway.
+}
+
+bool PLC_Main::createRemoteServer( uint16_t port )
+{
+	if ( getRemoteServer() && getRemoteServer()->getPort() == port )
+		return false; //already initialized on that port. Do nothing 
+
+	getRemoteServer() = unique_ptr<PLC_Remote_Server>( new PLC_Remote_Server(port) );
+	return true;
+}
+
+vector<IPAddress> PLC_Main::scanForRemoteNodes( uint16_t port, uint8_t low, uint8_t high, uint16_t timeout )
+{
+    vector<IPAddress> ipAddrs;
+    if ( low >= high )
+        return ipAddrs; //nothing to do
+
+    for ( uint8_t x = low; x < high; x++ )
+    {
+        IPAddress addr(192,168,0,x); //could use some tweaking
+        shared_ptr<WiFiClient> newClient = make_shared<WiFiClient>();
+        if ( newClient->connect( addr, port, timeout ) ) //were we able to connect to the inputted IP address on the given port?
+        {
+            Core.sendMessage(PSTR("Found node at: ") + addr.toString() );
+            ipAddrs.push_back( newClient->remoteIP() );
+        }
+    }
+
+    return ipAddrs;
 }

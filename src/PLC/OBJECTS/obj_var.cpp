@@ -11,44 +11,39 @@ void Ladder_VAR::setLineState(bool &state, bool bNot)
                 break;
             case OBJ_TYPE::TYPE_VAR_FLOAT:
                 {
-                    if ( bNot ) //inverted logic
-                        state = getDoubleValue() > 1 ? false : true;
-                    else
-                        state = getDoubleValue() > 1 ? true : false;
+                    bool check = (getDoubleValue() > 0);
+                    state = ( bNot ? !(check) : (check) ); //turnaries yay
+                }
+                break;
+            case OBJ_TYPE::TYPE_VAR_USHORT:
+                {
+                    bool check = getUShortValue();
+                    state = ( bNot ? !(check) : (check) ); //unsigned cannot be less than 0
                 }
                 break;
             case OBJ_TYPE::TYPE_VAR_INT:
                 {
-                    if ( bNot )
-                        state = getIntValue() > 1 ? false : true;
-                    else
-                        state = getIntValue() > 1 ? true : false;
+                    bool check = (getIntValue() > 0);
+                    state = ( bNot ? !(check) : (check) );
                 }   
+                break;
+            case OBJ_TYPE::TYPE_VAR_UINT: 
+                {
+                    bool check = getUIntValue();
+                    state = ( bNot ? !(check) : (check) );
+                }
                 break;
             case OBJ_TYPE::TYPE_VAR_LONG:
                 {
-                    if ( bNot )
-                        state = getLongValue() > 1 ? false : true;
-                    else
-                        state = getLongValue() > 1 ? true : false;
+                    bool check = (getLongValue() > 0);
+                    state = (bNot ? !(check) : (check));
                 }
                 break;
             case OBJ_TYPE::TYPE_VAR_ULONG:
                 {
-                    if ( bNot )
-                        state = getULongValue() > 1 ? false : true;
-                    else
-                        state = getULongValue() > 1 ? true : false;
+                    bool check = (getULongValue() > 0);
+                    state = (bNot ? !(check) : (check));
                 }
-                break;
-            case OBJ_TYPE::TYPE_VAR_UINT: 
-                {
-                    if ( bNot )
-                        state = getUIntValue() > 1 ? false : true;
-                    else
-                        state = getUIntValue() > 1 ? true : false;
-                }
-                
                 break;
             default:
                 state = false;
@@ -56,5 +51,5 @@ void Ladder_VAR::setLineState(bool &state, bool bNot)
         }
     }
 
-    Ladder_OBJ::setLineState(state, bNot); 
+    Ladder_OBJ_Logical::setLineState(state, bNot); 
 }

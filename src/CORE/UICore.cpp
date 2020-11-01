@@ -10,9 +10,7 @@
 #include <map>
 #include <memory>
 #include <ESPmDNS.h>
-
-//WiFiClient client; //used for transferring data over TCP/UDP (not necessarily http)
-
+#include "../PLC/PLC_Main.h" //for directly accessing the PLC object stuff.
 
 void UICore::setup()
 {
@@ -97,6 +95,18 @@ void UICore::applySettings( bool loadFromFile )
 	}
 	else
 		MDNS.end(); //Close just to make sure (free resources).
+
+	if ( i_plc_netmode && (b_enableAP || WiFi.isConnected()) ) 
+	{
+		if ( i_plc_broadcast_port != 80 ) //other occupied ports comparison? Webserver uses port 80
+		{
+			PLCObj.createRemoteServer( i_plc_broadcast_port ); 
+		}
+	}
+	else
+	{
+		PLCObj.getRemoteServer().reset();
+	}
 }
 
 bool UICore::setupAccessPoint( const String &ssid, const String &password )
@@ -111,15 +121,15 @@ bool UICore::setupAccessPoint( const String &ssid, const String &password )
 	{
 		IPAddress Ip(192, 168, 1, 1); 
 		IPAddress NMask(255, 255, 255, 0); 
-		
+		const String PROGMEM &msg = PSTR("Opening access point with SSID: ");
 		WiFi.softAPConfig(Ip, Ip, NMask);
 		if ( (password.length() > 1) ? WiFi.softAP(ssid.c_str(), password.c_str()) : WiFi.softAP(ssid.c_str()) )  //Set up the access point with our password and SSID name.
 		{
 			WiFi.softAPsetHostname(String(getWiFiHostname() + String(DATA_SPLIT) + getUniqueID()).c_str()); //set the host name
 			if ( password.length() )
-				sendMessage( PSTR("Opening access point with SSID: ") + ssid + PSTR(" using password: ") + password );
+				sendMessage( msg + ssid + PSTR(" using password: ") + password );
 			else
-				sendMessage( PSTR("Opening access point with SSID: ") + ssid );
+				sendMessage( msg + ssid );
 				
 			IPAddress myIP = WiFi.softAPIP();
 			sendMessage( PSTR("IP address: ") + myIP.toString() );

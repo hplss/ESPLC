@@ -63,10 +63,6 @@ void UICore::createAdminFields() //Should never be called more than once
 	//Remote control settings for external ESPLC devices
 	remotePLCTable->AddElement( make_shared<Select_Datafield>( &i_plc_netmode, index++, PSTR("PLC Net Modes"), vector<String>{ PSTR("Disabled"), PSTR("IO Expander"), PSTR("Cluster") } ) );
 	remotePLCTable->AddElement( make_shared<VAR_Datafield>( &i_plc_broadcast_port, index++, FIELD_TYPE::NUMBER, PSTR("Update Broadcast Port (Local)"), vector<String>{}, 5 ) );
-	remotePLCTable->AddElement( make_shared<VAR_Datafield>( s_plc_ip_ranges, index++, FIELD_TYPE::TEXT, PSTR("IP Range Limiter: LOW:HIGH (0-255)"), vector<String>{}, 5 ) );
-	remotePLCTable->AddElement( make_shared<VAR_Datafield>( s_plc_port_ranges, index++, FIELD_TYPE::TEXT, PSTR("Port Range Limiter: LOW:HIGH (0-65536)"), vector<String>{}, 5 ) );
-	remotePLCTable->AddElement( make_shared<VAR_Datafield>( &b_plc_autoconnect, index++, FIELD_TYPE::CHECKBOX, PSTR("Auto-connect to External Devices") ) );
-	remotePLCTable->AddElement( make_shared<VAR_Datafield>( s_plc_addresses, index++, FIELD_TYPE::TEXTAREA, PSTR("External Device IPs (for Auto-connection)"), vector<String>{"form"}, 30, 2 ) );
 
 	//Time table stuff
 	timeTable->AddElement( make_shared<VAR_Datafield>( &b_enableNIST, index++, FIELD_TYPE::CHECKBOX, PSTR("Enable NIST Time Updating (Requires internet connection)") ) );
@@ -78,7 +74,7 @@ void UICore::createAdminFields() //Should never be called more than once
 	//
 	
 	//Save Table Stuff
-	saveTable->AddElement( make_shared<VAR_S_Datafield>( &UICore::applyDeviceSettings, &b_SaveConfig, index++, FIELD_TYPE::CHECKBOX, PSTR("Save As Defaults"), vector<String>{} ) );
+	saveTable->AddElement( make_shared<VAR_S_Datafield>( &UICore::applyDeviceSettings, &b_SaveConfig, index++, FIELD_TYPE::CHECKBOX, PSTR("Save As Defaults"), vector<String>{}, 12, 1, true ) );
 	saveTable->AddElement( make_shared<DataField>(index++, FIELD_TYPE::SUBMIT, PSTR("Apply Settings") ) );
 	//
 	

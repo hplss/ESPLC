@@ -19,20 +19,20 @@ shared_ptr<Ladder_VAR> CounterOBJ::addObjectVAR( const String &id )
     {
         shared_ptr<Ladder_VAR> var = 0;
         if ( id == bitTagEN )
-            var = make_shared<Ladder_VAR>(&enableBit);
+            var = make_shared<Ladder_VAR>(&enableBit, id);
         else if ( id == bitTagDN )
-            var = make_shared<Ladder_VAR>(&doneBit);
+            var = make_shared<Ladder_VAR>(&doneBit, id);
         else if ( id == bitTagPRE )
-            var = make_shared<Ladder_VAR>(&iCount);
+            var = make_shared<Ladder_VAR>(&iCount, id);
         else if ( id == bitTagACC)
-            var = make_shared<Ladder_VAR>(&iAccum);
+            var = make_shared<Ladder_VAR>(&iAccum, id);
 
         if ( var )
         {
             #ifdef DEBUG 
             Serial.println(PSTR("Created new Counter Object Tag: ") + id ); 
             #endif
-            bitMap.emplace(id,var);
+            getObjectVARs().emplace_back(var);
             return var;
         }
     }
