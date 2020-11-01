@@ -208,10 +208,14 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewObject(const String &name, const vecto
 			{
 				return createCounterOBJ(name, ObjArgs);
 			}
-			/*else if ( type == counterTag2 ) 
+			else if ( type == counterTag1 || type == counterTag2 ) 
 			{
-				return make_shared<ladderOBJdata>(name, createMathOBJ(ObjArgs));
-			}*/
+				return createCounterOBJ(name, ObjArgs);
+			}
+			else if ( type == mathTag ) 
+			{
+				return createMathOBJ(name, ObjArgs);
+			}
 			else //if we don't find a valid object type
 				sendError(ERR_DATA::ERR_UNKNOWN_TYPE, type);
 		}
@@ -533,6 +537,9 @@ shared_ptr<Ladder_OBJ> PLC_Main::createMathOBJ( const String &id, const vector<S
 			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, TYPE_MATH_TAN, var1ptr));
 			newObj->computeTAN();
 			ladderObjects.emplace_back(newObj);
+			#ifdef DEBUG
+			//Serial.println(newObj->getResult<double>());
+			#endif
 			return newObj;
 		}
 		else if(function == typeTagMSIN)

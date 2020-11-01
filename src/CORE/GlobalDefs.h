@@ -247,7 +247,8 @@ extern const String &bitTagDN PROGMEM,
 			 		&variableTag1 PROGMEM,
 			 		&variableTag2 PROGMEM,
 			 		&outputTag1 PROGMEM,
-			 		&outputTag2 PROGMEM;
+			 		&outputTag2 PROGMEM,
+					&mathTag PROGMEM;
 
 
 //Generic Function Declarations 

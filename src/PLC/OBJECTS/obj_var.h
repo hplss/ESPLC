@@ -36,10 +36,93 @@ class Ladder_VAR : public Ladder_OBJ
 	uint_fast32_t getUIntValue(){ if (b_usesPtr && values.ui.val_ptr) return *values.ui.val_ptr; else return values.ui.val; }
 
 	template <class T>
-	T getValue();
+	T getValue()
+	{
+			switch(getType())
+			{
+					case OBJ_TYPE::TYPE_VAR_BOOL:
+					{
+							if ( b_usesPtr )
+									return static_cast<T>(*values.b.val_ptr);
+					}
+					break;
+					case OBJ_TYPE::TYPE_VAR_FLOAT:
+					{
+							if ( b_usesPtr )
+									return static_cast<T>(*values.d.val_ptr);
+					}
+					break;
+					case OBJ_TYPE::TYPE_VAR_INT:
+					{
+							if ( b_usesPtr )
+									return static_cast<T>(*values.i.val_ptr);
+					}
+					break;
+					case OBJ_TYPE::TYPE_VAR_LONG:
+					{
+							if ( b_usesPtr )
+									return static_cast<T>(*values.l.val_ptr);
+					}
+					break;
+					case OBJ_TYPE::TYPE_VAR_ULONG:
+					{
+							if ( b_usesPtr )
+									return static_cast<T>(*values.ul.val_ptr);
+					}
+					break;
+					case OBJ_TYPE::TYPE_VAR_UINT: 
+					{
+							if ( b_usesPtr )
+									return static_cast<T>(*values.ui.val_ptr);
+					}
+					break;
+			}
+			return static_cast<T>(0);
+	}
 
 	template <typename T>
-	void setValue( const T );
+	void setValue( const T val )
+	{
+			switch(getType())
+			{
+					case OBJ_TYPE::TYPE_VAR_BOOL:
+					{
+							if ( b_usesPtr )
+									*values.b.val_ptr = static_cast<bool>(val);
+					}
+					break;
+					case OBJ_TYPE::TYPE_VAR_FLOAT:
+					{
+							if ( b_usesPtr )
+									*values.d.val_ptr = static_cast<double>(val);
+					}
+					break;
+					case OBJ_TYPE::TYPE_VAR_INT:
+					{
+							if ( b_usesPtr )
+									*values.i.val_ptr = static_cast<int_fast32_t>(val);
+					}
+					break;
+					case OBJ_TYPE::TYPE_VAR_LONG:
+					{
+							if ( b_usesPtr )
+									*values.l.val_ptr = static_cast<int64_t>(val);
+					}
+					break;
+					case OBJ_TYPE::TYPE_VAR_ULONG:
+					{
+							if ( b_usesPtr )
+									*values.ul.val_ptr = static_cast<uint64_t>(val);
+					}
+					break;
+					case OBJ_TYPE::TYPE_VAR_UINT:
+					{
+							if ( b_usesPtr )
+									*values.ui.val_ptr = static_cast<uint_fast32_t>(val);
+					}
+					break;
+			}
+	}
 
 	virtual void setLineState(bool &, bool);
 

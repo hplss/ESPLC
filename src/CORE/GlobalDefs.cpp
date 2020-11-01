@@ -62,6 +62,7 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &variableTag2 PROGMEM = PSTR("VAR"), //Virtual object alias
 			 &outputTag1 PROGMEM = PSTR("OUTPUT"), //Output object
 			 &outputTag2 PROGMEM = PSTR("OUT"), //Output object alias
+			 &mathTag PROGMEM = PSTR("MATH"), //Math object alias
 			 &movTag PROGMEM = PSTR("MOV"); //MOV blocks are responsible for transferring (copying) data between two variable objects.
 //END PLC TAGS
 

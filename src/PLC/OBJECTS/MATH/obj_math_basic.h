@@ -5,7 +5,7 @@
 #include <memory>
 #include "PLC/PLC_IO.h"
 #include "CORE/GlobalDefs.h"
-#include "../obj_var.h"
+#include "PLC/OBJECTS/obj_var.h"
 #include <math.h>
 
 //Basic math operations block. Math function are Addition, multiplication, division, clear (set to zero), square root, absolute value, cosine, sine, tangent, greater than, Less than, equal to
@@ -23,7 +23,7 @@ class MathBlockOBJ : public Ladder_OBJ
         if (!dest) //no destination object given so create one for later reference by other objects. This is also the equivalent to an output stored in memory.
         {
             if ( usesFloat() || type == TYPE_MATH_COS || type == TYPE_MATH_SIN || type == TYPE_MATH_TAN ) //floating point operation
-                destination = make_shared<Ladder_VAR>( &destValues.fValue );
+                destination = make_shared<Ladder_VAR>( &destValues.dValue );
             else if ( usesUnsignedInt() ) //both have unsigned integers, so default to unsigned long for storage
             {
                 destination = make_shared<Ladder_VAR>( &destValues.ulValue );
@@ -37,21 +37,13 @@ class MathBlockOBJ : public Ladder_OBJ
 	~MathBlockOBJ() //deconstructor
     {}
 	virtual void setLineState(bool &, bool);
+    
     //Outputs the tangent of Source A to DEST
-    void computeTAN()
-    {
-        destination->setValue(tan(sourceA->getValue<float>()));
-    }
+    void computeTAN();
     //Outputs the sine of Source A to DEST
-    void computeSIN()
-    {
-        destination->setValue(sin(sourceA->getValue<float>()));
-    }
+    void computeSIN();
     //Outputs the cosine of Source A to DEST
-    void computeCOS()
-    {
-        destination->setValue(cos(sourceA->getValue<float>()));
-    }
+    void computeCOS();
     //Multiplication function - multiplies Source A by Source B, then outputs to DEST
     void computeMUL();
     //Division function - divides Source A by Source B, then outputs to DEST
@@ -77,7 +69,7 @@ class MathBlockOBJ : public Ladder_OBJ
     //Move function - copies the stored value from Source A into DEST
     void computeMOV();
 
-	virtual void updateObject();
+	virtual void updateObject(){}
     virtual shared_ptr<Ladder_VAR> getObjectVAR( const String &id )
 	{
 		if (id == bitTagDEST) //DEST is the only available bit operator tag for this object type.
@@ -103,6 +95,10 @@ class MathBlockOBJ : public Ladder_OBJ
         return (sourceA->getType() == TYPE_VAR_UINT || sourceA->getType() == TYPE_VAR_ULONG);
     }
 	
+    /*
+    template <class T>
+	T getResult();
+    */
 	private:
 	shared_ptr<Ladder_VAR> sourceA,
 						   sourceB,
@@ -110,7 +106,7 @@ class MathBlockOBJ : public Ladder_OBJ
     union
 	{
 		bool bValue;
-		float fValue;
+		double dValue;
 		int_fast32_t iValue; //signed int
 		uint_fast32_t uiValue; //unsigned int
 		int64_t lValue;
