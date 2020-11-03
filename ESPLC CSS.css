@@ -7,7 +7,11 @@ body{
 
 
 h2{
-    font-family: 'Exo', sans-serif margin:auto; text-align:center; font-size:32pt; padding-bottom:10px;
+	font-family: 'Exo', sans-serif;
+	margin: auto; 
+	text-align: center; 
+	font-size:32pt; 
+	padding-bottom:10px;
 }
 
 a{
