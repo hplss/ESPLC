@@ -46,7 +46,7 @@ void UICore::handleStatus()
 	  String HTML = generateHeader();
 	  HTML += generateTitle(PSTR("Status Page"));
     //HTML += generateAlertsScript( 1 ); //hackhack for now -- index may vary, unless explicitly assigned to '1'
-    HTML += generateStatusScript(); //Currently not used
+    HTML += generateStatusScript(); //Currently used
 	
     for ( uint8_t x = 0; x < p_StaticDataTables.size(); x++ ) //Generate static objects that are not included in the FORM
         HTML += p_StaticDataTables[x]->GenerateTableHTML();
@@ -68,12 +68,15 @@ void UICore::handleUpdateStatus()
   String JSON = "{\"Status\":[\n";
   for (uint16_t i = 0; i < PLCObj.getLadderObjects().size(); i++)
   {
-    JSON += "{\"ID\":\"" +  String(PLCObj.getLadderObjects()[i]->getID()) + "\", \"Status\":\"" + String(PLCObj.getLadderObjects()[i]->getLineState()) + "\"}";
-    if (i != (PLCObj.getLadderObjects().size()-1))
-    JSON += ",\n";
-    else
+    for (uint8_t j = 0; j < PLCObj.getLadderObjects()[i]->getObjectVARs().size(); j++)
     {
-      JSON += "\n";
+      JSON += "{\"ID\":\"" + PLCObj.getLadderObjects()[i]->getID() + PLCObj.getLadderObjects()[i]->getObjectVARs()[j]->getID() + "\", \"Status\":\"" + PLCObj.getLadderObjects()[i]->getObjectVARs()[j]->getValueStr() + "\"}";
+      if (i != (PLCObj.getLadderObjects().size()-1))
+      JSON += ",\n";
+      else
+      {
+        JSON += "\n";
+      }
     }
   }
   JSON += "]}";
@@ -83,16 +86,14 @@ void UICore::handleUpdateStatus()
 String UICore::generateStatusScript()
 {
   const String script PROGMEM = PSTR("\n<script>"
-                "setInterval(getObjectStatus, 2000)\n" 
+                "setInterval(getObjectStatus, 1500)\n"
                 "function getObjectStatus(){\n"
+                "$.get(\"/alerts\", function parse(arr){\nvar elem = document.getElementById(\"1\")\n if (elem.innerHTML != arr){\n elem.innerHTML = arr\n elem.scrollTop = elem.scrollHeight}\n"
                 "$.get(\"/update\", function(data, status){\n"
                 "var objData = JSON.parse(data)\n"
                 "for(var i = 0; i < objData.Status.length; i++){\n"
-                "document.getElementById(String(objData.Status[i].ID)).innerHTML = String(objData.Status[i].Status);}\n"
-                "})\n"
-                "}\n"
+                "document.getElementById(String(objData.Status[i].ID)).innerHTML = String(objData.Status[i].Status);}})\n"
+                "})}\n"
                 "</script>\n");
-
-
   return script;
 }

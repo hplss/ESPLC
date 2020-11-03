@@ -469,9 +469,120 @@ int_fast32_t VAR_Datafield::intFromValue()
 
 String LADDER_OBJ_Datafield::GenerateHTML() 
 {
- 	String html = PSTR("<table>\n<thead>\n<tr>\n<th Colspan=\"2\">") + String(pObj->getID()) + PSTR("</th>\n</tr>\n<thead>\n</thead>\n<tbody>\n<tr>\n");
-	 html += "<td id=\"" + String(pObj->getID()) + "\">" + String(pObj->getLineState()) + "</td>\n";
-	 html += "<td id=\"" + String(pObj->getID()) + "Type\">" + String(static_cast<uint8_t>(pObj->getType())) + "</td>";
-	 html += PSTR("</tr>\n</tbody>\n</table>\n");
+ 	String html = PSTR("<table>\n<thead>\n<tr>\n<th Colspan=\"2\">") + String(pObj->getID()) + PSTR("</th>\n</tr>\n<thead>\n</thead>\n<tbody>\n");
+	html += "<tr>\n<th Colspan=\"2\">" + getObjectType(pObj->getType()) + "</th>\n</tr>\n";
+	for (uint8_t i = 0; i < pObj->getObjectVARs().size(); i++)
+	{
+		html += "<tr>\n";
+	 	html += "<td id=\"" + pObj->getID() + pObj->getObjectVARs()[i]->getID() + "_Type\">" + pObj->getObjectVARs()[i]->getID() + "</td>";
+		html += "<td id=\"" + pObj->getID() + pObj->getObjectVARs()[i]->getID() + "\">" + pObj->getObjectVARs()[i]->getValueStr() + "</td>\n"; 
+		html += "</tr>\n";
+	}
+	 html += PSTR("</tbody>\n</table>\n");
 	return html;
+}
+
+String getObjectType(OBJ_TYPE val)
+{
+	String obj_type = "";
+	uint8_t o_type = uint8_t(val);
+	switch (o_type)
+	{
+	case 0:
+		obj_type = inputTag1;
+		break;
+	case 1:
+		obj_type = inputTag1 + " " + typeTagAnalog;
+		break;
+	case 2:
+		obj_type = outputTag1;
+		break;
+	case 3:
+		obj_type = outputTag1 + " " + typeTagPWM;
+		break;
+	case 4:
+		obj_type = variableTag1;
+		break;
+	case 5:
+		obj_type = "CLK";
+		break;
+	case 6:
+		obj_type = typeTagTON;
+		break;
+	case 7:
+		obj_type = typeTagTOF;
+		break;
+	case 8:
+		obj_type = "RETT";
+		break;
+	case 9:
+		obj_type = "BIT";
+		break;
+	case 10:
+		obj_type = typeTagCTU;
+		break;
+	case 11:
+		obj_type = typeTagCTD;
+		break;
+	case 12:
+		obj_type = "ONS";
+		break;
+	case 13:
+		obj_type = typeTagMEQ;
+		break;
+	case 14:
+		obj_type = typeTagMGRE;
+		break;
+	case 15:
+		obj_type = typeTagMLES;
+		break;
+	case 16:
+		obj_type = typeTagMGREE;
+		break;
+	case 17:
+		obj_type = typeTagMLESE;
+		break;
+	case 18:
+		obj_type = typeTagMSIN;
+		break;
+	case 19:
+		obj_type = typeTagMCOS;
+		break;
+	case 20:
+		obj_type = typeTagMTAN;
+		break;
+	case 21:
+		obj_type = "ASIN";
+		break;
+	case 22:
+		obj_type = "ACOS";
+		break;
+	case 23:
+		obj_type = "ATAN";
+		break;
+	case 24:
+		obj_type = "MLIM";
+		break;
+	case 25:
+		obj_type = typeTagMINC;
+		break;
+	case 26:
+		obj_type = typeTagMDEC;
+		break;
+	case 27:
+		obj_type = "CPT";
+		break;
+	case 28:
+		obj_type = "MOV";
+		break;
+	case 29:
+		obj_type = remoteTag;
+		break;
+		
+	default:
+		obj_type = "N/A";
+		break;
+	}
+
+	return obj_type;
 }

@@ -70,7 +70,7 @@ String UICore::generateFooter()
 
 String UICore::generateAlertsScript( uint8_t fieldID )
 { 
-	return PSTR("<script>var intFunc = function(){\n var xml = new XMLHttpRequest();\n xml.onreadystatechange = function(){\n if (this.readyState == 4 && this.status == 200){parse(this.responseText);};};\n xml.open(\"GET\", \"alerts\");\n xml.send(); };\n function parse(arr){ var doc = document.getElementById(\"1\"); doc.innerHTML = arr; };\nsetInterval(intFunc,500);</script>");
+	return PSTR("<script>var intFunc = function(){\n var xml = new XMLHttpRequest();\n xml.onreadystatechange = function(){\n if (this.readyState == 4 && this.status == 200){parse(this.responseText);};};\n xml.open(\"GET\", \"alerts\");\n xml.send(); };\n function parse(arr){ var doc = document.getElementById(\"1\"); if(doc.innerHTML != arr){\ndoc.innerHTML = arr\ndoc.scrollTop = doc.scrollHeight}; };\nsetInterval(intFunc,500);</script>");
 }
 
 String UICore::generateAlertsJSON()

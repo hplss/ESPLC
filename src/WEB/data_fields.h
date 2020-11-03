@@ -16,7 +16,7 @@
 #include <memory>
 #include <initializer_list>
 #include "PLC/PLC_IO.h"
-
+#include "PLC/OBJECTS/obj_var.h"
 #define ALERTS_FIELD_COLS 50
 #define ALERTS_FIELD_ROWS 3
 
@@ -287,5 +287,6 @@ class LADDER_OBJ_Datafield : public DataField
 	private:
 	shared_ptr<Ladder_OBJ_Logical> pObj;
 };
-
+//Returns a string of the object type
+String getObjectType(OBJ_TYPE val);
 #endif /* DATA_FIELDS_H_ */
