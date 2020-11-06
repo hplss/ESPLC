@@ -52,7 +52,7 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &typeTagMDIV PROGMEM = PSTR("DIV"), //TYPE: MATH - Division function
 			 &typeTagMADD PROGMEM = PSTR("ADD"), //TYPE: MATH - Addition function
 			 &typeTagMSUB PROGMEM = PSTR("SUB"), //TYPE: MATH - Subtraction function
-			 &typeTagMMOV PROGMEM = PSTR("MOV"), //TYPE: MATH - Subtraction function
+			 &typeTagMMOV PROGMEM = PSTR("MOV"), //MOV blocks are responsible for transferring (copying) data between two variable objects.
 			 &typeTagAnalog PROGMEM = PSTR("ANALOG"), //input (and possibly output) identifier - for analog signals
 			 &typeTagDigital PROGMEM = PSTR("DIGITAL"), //input (and possibly output) identifier - for digital signals
 			 &typeTagPWM PROGMEM = PSTR("PWM"), //Pulse width modulation 
@@ -67,8 +67,7 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &variableTag2 PROGMEM = PSTR("VAR"), //Virtual object alias
 			 &outputTag1 PROGMEM = PSTR("OUTPUT"), //Output object
 			 &outputTag2 PROGMEM = PSTR("OUT"), //Output object alias
-			 &remoteTag PROGMEM = PSTR("REMOTE"), //remote object
-			 &movTag PROGMEM = PSTR("MOV"); //MOV blocks are responsible for transferring (copying) data between two variable objects.
+			 &remoteTag PROGMEM = PSTR("REMOTE"); //remote object
 //END PLC TAGS
 
 //Storage related constants

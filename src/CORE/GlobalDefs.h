@@ -146,12 +146,11 @@ enum class OBJ_TYPE : uint8_t
 	TYPE_OUTPUT_PWM, 	//physical output - PWM output type
 	TYPE_VIRTUAL,		//internal coil (variable)
 	TYPE_CLOCK,			//clock object type 
-	TYPE_TON,			//timed on
-	TYPE_TOF,			//timed off
-	TYPE_TRET,			//retentive timer
-	TYPE_BIT,			//represents the value of a bit stored by another object
-	TYPE_CTU,			//count up timer
-	TYPE_CTD,			//count down timer
+	TYPE_TIMER_ON,			//timed on
+	TYPE_TIMER_OFF,			//timed off
+	TYPE_TIMER_RET,			//retentive timer
+	TYPE_COUNTER_UP,			//count up timer
+	TYPE_COUNTER_DOWN,			//count down timer
 	TYPE_ONS,			//one shot objects. Pulses high briefly, then goes low. Will not pulse until low-> high transition occurs. 
 	TYPE_MATH_EQ,		//equals
 	TYPE_MATH_GRT,		//greater than

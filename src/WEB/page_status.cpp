@@ -43,7 +43,7 @@ void UICore::handleStatus()
     if ( getWebServer().args() ) //Do we have some args to input? Apply settings if so (before generating the rest of the HTML)
 	    UpdateWebFields( p_UIDataTables );
 	
-	  String HTML = generateHeader();
+	  String HTML = generateHeader(true);
 	  HTML += generateTitle(PSTR("Status Page"));
     //HTML += generateAlertsScript( 1 ); //hackhack for now -- index may vary, unless explicitly assigned to '1'
     HTML += generateStatusScript(); //Currently used
@@ -65,22 +65,29 @@ void UICore::handleStatus()
 
 void UICore::handleUpdateStatus()
 {
-  String JSON = "{\"Status\":[\n";
-  for (uint16_t i = 0; i < PLCObj.getLadderObjects().size(); i++)
+  String JSON = PSTR("{\"Status\":[\n");
+  uint16_t numObjects = PLCObj.getLadderObjects().size();
+
+  for (uint16_t i = 0; i < numObjects; i++)
   {
-    for (uint8_t j = 0; j < PLCObj.getLadderObjects()[i]->getObjectVARs().size(); j++)
+    shared_ptr<Ladder_OBJ_Logical> objPtr = PLCObj.getLadderObjects()[i];
+
+    for (uint8_t j = 0; j < objPtr->getObjectVARs().size(); j++)
     {
-      JSON += "{\"ID\":\"" + PLCObj.getLadderObjects()[i]->getID() + PLCObj.getLadderObjects()[i]->getObjectVARs()[j]->getID() + "\", \"Status\":\"" + PLCObj.getLadderObjects()[i]->getObjectVARs()[j]->getValueStr() + "\"}";
-      if (i != (PLCObj.getLadderObjects().size()-1))
-      JSON += ",\n";
+      shared_ptr<Ladder_VAR> varPtr = objPtr->getObjectVARs()[j];
+
+      JSON += PSTR("{\"ID\":\"") + objPtr->getID() + varPtr->getID() + PSTR("\", \"Status\":\"") + varPtr->getValueStr() + "\"}";
+      
+      if (i != (numObjects - 1))
+        JSON += ",\n";
       else
       {
-        JSON += "\n";
+        JSON += CHAR_NEWLINE;
       }
     }
   }
   JSON += "]}";
-  getWebServer().send(200, "text/plain", JSON);
+  getWebServer().send(200, PSTR("text/plain"), JSON);
 }
 
 String UICore::generateStatusScript()

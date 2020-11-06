@@ -12,6 +12,7 @@ class InputOBJ : public Ladder_OBJ_Logical
 	InputOBJ( const String &id, uint8_t pin, OBJ_TYPE type = OBJ_TYPE::TYPE_INPUT, uint8_t logic = LOGIC_NO ) : Ladder_OBJ_Logical(id, type)
 	{ 
 		iPin = pin; 
+		iValue = 0; //default
 
 		getObjectVARs().emplace_back(make_shared<Ladder_VAR>(&iValue, bitTagVAL)); 
 

@@ -198,7 +198,7 @@ public:
 	//Generates the title HTML for each web UI page.
 	String generateTitle(const String &data = ""); 
 	//Generates the header HTML for each web UI page, and factors in style sheet data.
-	String generateHeader(); 
+	String generateHeader( bool = false ); 
 	//Generates the common HTML footer for all web UI pages.
 	String generateFooter(); 
 	//Generates the common HTML for viewing device errors and other outputs.

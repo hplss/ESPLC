@@ -6,7 +6,7 @@
 void TimerOBJ::updateObject()
 {	
 	bool lineState = getLineState();
-	if ( (lineState && getType() == OBJ_TYPE::TYPE_TON) || (!lineState && getType() == OBJ_TYPE::TYPE_TOF) )  //Is the pathway to this timer active?
+	if ( (lineState && getType() == OBJ_TYPE::TYPE_TIMER_ON) || (!lineState && getType() == OBJ_TYPE::TYPE_TIMER_OFF) )  //Is the pathway to this timer active?
 	{
 		uint32_t currentTime = millis();
 		if ( enableBit != lineState && !ttBit ) //not already counting
@@ -27,7 +27,7 @@ void TimerOBJ::updateObject()
 	{
 		ttBit = false; //timer no longer counting
 		timeStart = 0;
-		if ( getType() != OBJ_TYPE::TYPE_TRET) //Don't reset done bit for retentive timer. Must be done manually with reset coil 
+		if ( getType() != OBJ_TYPE::TYPE_TIMER_RET) //Don't reset done bit for retentive timer. Must be done manually with reset coil 
 			doneBit = false;
 	}
 	

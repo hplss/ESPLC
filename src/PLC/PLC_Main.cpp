@@ -106,7 +106,7 @@ int8_t PLC_Main::reservePWMChannel()
 String PLC_Main::getObjName( const String &parsedString )
 {
 	String objName;
-	for ( uint8_t x =0; x < parsedString.length(); x++ )
+	for ( uint8_t x = 0; x < parsedString.length(); x++ )
 	{
 		if ( parsedString[x] == CHAR_VAR_OPERATOR ) //operator is always at end of name
 			break; //end the loop
@@ -329,7 +329,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOutputOBJ( const String &id, cons
 	if ( numArgs > 5 ) //frequency
 	{
 		double tempDbl = args[5].toDouble();
-		if ( tempDbl > 0 && tempDbl < static_cast<double>(80000000/exp2(resolution) ) ) //80Mhz may or may not be the right value here. Look into later.
+		if ( tempDbl > 0 && tempDbl < CPU_CLK_FREQ/exp2(resolution) ) //80Mhz may or may not be the right value here. Look into later.
 			frequency = tempDbl;
 		else
 			sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[5] );
@@ -389,14 +389,14 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createTimerOBJ( const String &id, const
 {
 	uint8_t numArgs = args.size();
 	uint32_t delay = 0, accum = 0;
-	OBJ_TYPE subType = OBJ_TYPE::TYPE_TON;
+	OBJ_TYPE subType = OBJ_TYPE::TYPE_TIMER_ON;
 
 	if ( numArgs > 3 )
 	{	  
 		if ( args[3] == typeTagTOF )
-			subType = OBJ_TYPE::TYPE_TOF;
+			subType = OBJ_TYPE::TYPE_TIMER_OFF;
 		else if ( args[3] == typeTagTON )
-			subType = OBJ_TYPE::TYPE_TON;
+			subType = OBJ_TYPE::TYPE_TIMER_ON;
 		else
 			sendError(ERR_DATA::ERR_UNKNOWN_ARGS, args[0] + args[3]); 
 	}
@@ -424,14 +424,14 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createCounterOBJ( const String &id, con
 {
 	uint16_t count = 0, accum = 0; 
 	uint8_t numArgs = args.size();
-	OBJ_TYPE subType = OBJ_TYPE::TYPE_CTU;
+	OBJ_TYPE subType = OBJ_TYPE::TYPE_COUNTER_UP;
 
 	if ( numArgs > 3 )
 	{
 		if ( args[3] == typeTagCTU )
-			subType = OBJ_TYPE::TYPE_CTU;
+			subType = OBJ_TYPE::TYPE_COUNTER_UP;
 		else if ( args[3] == typeTagCTD )
-			subType = OBJ_TYPE::TYPE_CTD;
+			subType = OBJ_TYPE::TYPE_COUNTER_DOWN;
 		else
 			sendError(ERR_DATA::ERR_UNKNOWN_ARGS, args[0] + args[3]);
 	}
@@ -455,149 +455,95 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createCounterOBJ( const String &id, con
 shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, const vector<String> &args )
 {
 	shared_ptr<Ladder_VAR> newObj = 0;
-	if(args[1] == "TRUE")
-	{
-		newObj = make_shared<Ladder_VAR>(true, id );
-		ladderObjects.emplace_back(newObj);
-		ladderVars.emplace_back(newObj);
-		#ifdef DEBUG
-		Serial.println(newObj->getBoolValue());
-		Serial.println("made it in true");
-		#endif
-		return newObj;
-	}
-	else if(args[1] == "FALSE")
-	{
-		newObj = make_shared<Ladder_VAR>(false, id );
-		ladderObjects.emplace_back(newObj);
-		ladderVars.emplace_back(newObj);
-		#ifdef DEBUG
-		Serial.println(newObj->getBoolValue());
-		shared_ptr<Ladder_OBJ> obj = findLadderObjByID(id); 
-		if (obj)
-		{ 
-			Serial.println("Hi");
-			Serial.println(obj->getID());
-		}
-		#endif
-		return newObj;
-	}
 
 	//could use an else here for but it really doesn't matter
 	if ( args.size() > 1 )
 	{
 		bool isDouble = false;
 		String val;
-		for (uint8_t x = 0; x < args[1].length(); x++ )
-		{
-			if (x > 18) //this is plenty of digits, more than will ever likely be needed
-				break;
-				
-			if ( (args[1][x] >= '0' && args[1][x] <= '9') || args[1][x] == '.' || ( args[1][x] == '-' && x == 0 ) )
-			{
-				if ( args[1][x] == '.' )
-				{
-					if ( isDouble )// multiple '.' chars should be ignored
-						continue;
-						
-					isDouble = true;
-				}
-				val += args[1][x];
-			}
-		}
 		
-		if ( !val.length() )
-			return 0;
+		if(args[1] == "TRUE")
+		{
+			newObj = make_shared<Ladder_VAR>(true, id);
+		}
+		else if(args[1] == "FALSE")
+		{
+			newObj = make_shared<Ladder_VAR>(false, id);
+		}
 
-		#ifdef DEBUG
-		Serial.println(PSTR("NEW VARIABLE"));
-		#endif
+		if ( !newObj ) //No explicit boolean object was created
+		{
+			for (uint8_t x = 0; x < args[1].length(); x++ )
+			{
+				if (x > 18) //this is plenty of digits, more than will ever likely be needed
+					break;
+					
+				if ( (args[1][x] >= '0' && args[1][x] <= '9') || args[1][x] == '.' || ( args[1][x] == '-' && x == 0 ) )
+				{
+					if ( args[1][x] == '.' )
+					{
+						if ( isDouble )// multiple '.' chars should be ignored
+							continue;
+							
+						isDouble = true;
+					}
+					val += args[1][x];
+				}
+			}
+			
+			if ( !val.length() )
+				return 0;
+		}
 
-		if (args.size() > 2)
+		if (args.size() > 2 && !newObj) // in this case, we are manually specifying the type of variable that we are initializing
 		{
 			if (args[2] == VAR_INT32)
 			{
 				int64_t value = static_cast<int64_t>(atoll(val.c_str()));
-				newObj = make_shared<Ladder_VAR>( static_cast<int32_t>(atoll(val.c_str())), id );
-				if(value < INT32_MIN || value > INT32_MAX )
+				if( value < INT32_MIN || value > INT32_MAX )
 				{
-					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2] + CHAR_SPACE + val );
 					return 0;
 				}
-				#ifdef DEBUG
-				Serial.println(newObj->getIntValue());
-				#endif
-				ladderObjects.emplace_back(newObj);
-				ladderVars.emplace_back(newObj);
-				return newObj;
+				newObj = make_shared<Ladder_VAR>( static_cast<int32_t>(value), id );
 			}
 			else if (args[2] == VAR_UINT32)
 			{
 				int64_t value = static_cast<int64_t>(atoll(val.c_str()));
-				newObj = make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(strtoul(val.c_str(), NULL, 10)), id );
-				if(value < 0 || value > UINT32_MAX )
+				if(value < 0 || value > UINT32_MAX)
 				{
-					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2] + CHAR_SPACE + val );
 					return 0;
 				}
-				#ifdef DEBUG
-				Serial.println(newObj->getUIntValue());
-				#endif
-				ladderObjects.emplace_back(newObj);
-				ladderVars.emplace_back(newObj);
-				return newObj;
+				newObj = make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(value), id );
 			}
 			else if (args[2] == VAR_INT64)
 			{
 				int64_t value = static_cast<int64_t>(atoll(val.c_str())); //variable > int64 needed?
-				newObj = make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(atoll(val.c_str())), id );
-				if(value < INT64_MIN || value > INT64_MAX )
+				if( value < INT64_MIN || value > INT64_MAX ) //Are these criteria possible? -- probably not. Look into later.
 				{
-					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2] + CHAR_SPACE + val );
 					return 0;
 				}
-				#ifdef DEBUG
-				Serial.println(intToStr(newObj->getLongValue()));
-				#endif
-				ladderObjects.emplace_back(newObj);
-				ladderVars.emplace_back(newObj);
-				return newObj;
+				newObj = make_shared<Ladder_VAR>(value, id);
 			}
 			else if (args[2] == VAR_UINT64)
 			{
-				uint64_t value = static_cast<uint64_t>(atoll(val.c_str())); //variable > uint64 needed?
-				newObj = make_shared<Ladder_VAR>( static_cast<uint64_t>(strtoull(val.c_str(), NULL, 10)), id );
-				if(value < 0 || value > UINT64_MAX )
+				uint64_t value = static_cast<uint64_t>(strtoull(val.c_str(), NULL, 10));
+				if( value > UINT64_MAX ) //Is this possible?
 				{
-					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2]);
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2] + CHAR_SPACE + val );
 					return 0;
 				}
-				#ifdef DEBUG
-				Serial.println(intToStr(newObj->getULongValue()));
-				#endif
-				ladderObjects.emplace_back(newObj);
-				ladderVars.emplace_back(newObj);
-				return newObj;
+				newObj = make_shared<Ladder_VAR>( value, id );
 			}
 			else if (args[2] == VAR_DOUBLE)
 			{
-				newObj = make_shared<Ladder_VAR>( static_cast<double>(atof(val.c_str())), id );
-				ladderObjects.emplace_back(newObj);
-				ladderVars.emplace_back(newObj);
-				#ifdef DEBUG
-				Serial.println(newObj->getDoubleValue());
-				#endif
-				return newObj;
+				newObj = make_shared<Ladder_VAR>(atof(val.c_str()), id );
 			}
 			else if (args[2] == VAR_BOOL || args[2] == VAR_BOOLEAN)
 			{
 				newObj = make_shared<Ladder_VAR>(static_cast<bool>(val.c_str()), id );
-				ladderObjects.emplace_back(newObj);
-				ladderVars.emplace_back(newObj);
-				#ifdef DEBUG
-				Serial.println(newObj->getBoolValue());
-				#endif
-				return newObj;
 			}
 			else 
 			{
@@ -605,26 +551,30 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 				return 0;
 			}
 		}
-			
-		if (isDouble)
+
+		if ( !newObj ) //So we haven't created an object yet (for one reason or another) -- So try to create one from the parsed value string
 		{
-			newObj = make_shared<Ladder_VAR>( static_cast<double>(atof(val.c_str())), id );
-			ladderObjects.emplace_back(newObj);
-			ladderVars.emplace_back(newObj);
-			#ifdef DEBUG
-			Serial.println(newObj->getDoubleValue());
-			Serial.println(static_cast<double>(atof(val.c_str())));
-			#endif
-			return newObj;
+			if (isDouble)
+			{
+				newObj = make_shared<Ladder_VAR>( atof(val.c_str()), id );
+			}
+			else
+			{
+				newObj = make_shared<Ladder_VAR>( atoll(val.c_str()), id ); //assume a long (greater than 32 bits) This is a safe data type to use as it is a signed 64 bit int
+			}
 		}
-		else
-			newObj = make_shared<Ladder_VAR>( atoll(val.c_str()), id );
-			ladderObjects.emplace_back(newObj);
-			ladderVars.emplace_back(newObj);
-			return newObj; //assume a long (greater than 32 bits) This is a safe data type to use as it is a signed 64 bit int
 	}
 
-	return 0;
+	if ( newObj ) //We've created a new object, so store it in the appropriate vectors.
+	{
+		ladderObjects.emplace_back(newObj);
+		ladderVars.emplace_back(newObj);
+		#ifdef DEBUG
+		Serial.println( PSTR("New variable has value: ") + newObj->getValueStr() ); 
+		#endif
+	}
+
+	return newObj;
 }
 
 shared_ptr<Ladder_OBJ> PLC_Main::createOneshotOBJ( const String &id, const vector<String> & args)
@@ -918,7 +868,7 @@ void PLC_Main::sendError(ERR_DATA err, const String &info )
 	}
 
 	if ( info.length() )
-		Core.sendMessage(error + CHAR_SPACE + String("\"") + info +  String("\""), PRIORITY_HIGH);
+		Core.sendMessage(error + CHAR_SPACE + "\"" + info + "\"", PRIORITY_HIGH);
 	else
 		Core.sendMessage(error, PRIORITY_HIGH);
 

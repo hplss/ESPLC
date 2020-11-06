@@ -8,7 +8,7 @@
 class CounterOBJ : public Ladder_OBJ_Logical
 {
 	public:
-	CounterOBJ(const String &id, uint_fast32_t count = 0, uint_fast32_t accum = 0, OBJ_TYPE type = OBJ_TYPE::TYPE_CTU) : Ladder_OBJ_Logical(id, type)
+	CounterOBJ(const String &id, uint_fast32_t count = 0, uint_fast32_t accum = 0, OBJ_TYPE type = OBJ_TYPE::TYPE_COUNTER_UP) : Ladder_OBJ_Logical(id, type)
 	{ 
 		iCount = count;
 		iAccum = accum;
