@@ -282,7 +282,8 @@ extern const String &bitTagDN PROGMEM,
 			 		&variableTag2 PROGMEM,
 			 		&outputTag1 PROGMEM,
 			 		&outputTag2 PROGMEM,
-					&remoteTag PROGMEM;
+					&remoteTag PROGMEM,
+					&oneshotTag PROGMEM;
 
 
 //Generic Function Declarations 

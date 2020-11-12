@@ -128,7 +128,7 @@ class PLC_Main
 
 	//shared_ptr<Ladder_OBJ> createMathOBJ( const String &, const vector<String> &);
 	//Creates a oneshot object, which pulses HIGH for one cycle, then LOW until reset. Declared inline.
-	shared_ptr<Ladder_OBJ> createOneshotOBJ( const String &, const vector<String> &);
+	shared_ptr<Ladder_OBJ_Logical> createOneshotOBJ();
     //Creates a new basic math object, which is capable of performing a series of simple calculations based on inputted arguments.
 	shared_ptr<Ladder_OBJ_Logical> createMathOBJ( const String &, const vector<String> &);
 	//Creates a new virtual type object, which represents a stored value in memory, to be accessed by other objects such as counters or timers or comparison blocks, etc.

@@ -232,7 +232,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewLadderObject(const String &name, const
 	}
 	else
 	{
-		if (ObjArgs.size() > 1) //must have at least one arg (first indictes the object type)
+		if (ObjArgs.size() >= 1) //must have at least one arg (first indictes the object type)
 		{
 			String type = ObjArgs[0];
 			if ( type == variableTag1 || type == variableTag2 ) //Is this a variable type object? (Used for local data storage in memory, to facilitate communication between objects)
@@ -258,6 +258,10 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewLadderObject(const String &name, const
 			else if ( type == remoteTag )
 			{
 				return createRemoteClient(name, ObjArgs);
+			}
+			else if ( type == oneshotTag )
+			{
+				return createOneshotOBJ();
 			}
 			else //if we don't find a valid object type
 				sendError(ERR_DATA::ERR_UNKNOWN_TYPE, type);
@@ -577,9 +581,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 	return newObj;
 }
 
-shared_ptr<Ladder_OBJ> PLC_Main::createOneshotOBJ( const String &id, const vector<String> & args)
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOneshotOBJ()
 {
-	return 0;
+	shared_ptr<OneshotOBJ> newObj(new OneshotOBJ());
+	return newObj;
 }
 
 shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const vector<String> & args)

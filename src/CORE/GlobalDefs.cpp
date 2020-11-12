@@ -67,7 +67,8 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &variableTag2 PROGMEM = PSTR("VAR"), //Virtual object alias
 			 &outputTag1 PROGMEM = PSTR("OUTPUT"), //Output object
 			 &outputTag2 PROGMEM = PSTR("OUT"), //Output object alias
-			 &remoteTag PROGMEM = PSTR("REMOTE"); //remote object
+			 &remoteTag PROGMEM = PSTR("REMOTE"), //remote object
+			 &oneshotTag PROGMEM = PSTR("ONS"); //oneshot object
 //END PLC TAGS
 
 //Storage related constants
