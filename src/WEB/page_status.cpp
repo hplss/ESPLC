@@ -87,13 +87,51 @@ String UICore::generateStatusScript()
 {
   const String script PROGMEM = PSTR("\n<script>"
                 "setInterval(getObjectStatus, 1500)\n"
-                "function getObjectStatus(){\n"
-                "$.get(\"/alerts\", function parse(arr){\nvar elem = document.getElementById(\"1\")\n if (elem.innerHTML != arr){\n elem.innerHTML = arr\n elem.scrollTop = elem.scrollHeight}\n"
-                "$.get(\"/update\", function(data, status){\n"
-                "var objData = JSON.parse(data)\n"
-                "for(var i = 0; i < objData.Status.length; i++){\n"
-                "document.getElementById(String(objData.Status[i].ID)).innerHTML = String(objData.Status[i].Status);}})\n"
-                "})}\n"
+                "function getObjectStatus()\n"
+                "{\n"
+                  //Alerts Start
+                  "var xml = new XMLHttpRequest();\n"
+                  "xml.open(\"GET\", \"alerts\");\n"
+                  "xml.onreadystatechange = function()\n"
+                  "{\n"
+                      "if (this.readyState == 4 && this.status == 200)\n"
+                      "{\n"
+                          "parse(this.responseText);\n"
+                          //Object Update Start
+                          "var xml2 = new XMLHttpRequest();\n"
+                          "xml2.onreadystatechange = function()\n"
+                          "{\n"
+                              "if (this.readyState == 4 && this.status == 200)\n"
+                              "{\n"
+                                  "obj_update(this.responseText);\n"
+                              "}\n"
+                          "}\n"
+                              "xml2.open(\"GET\", \"update\");\n"
+                              "xml2.send();\n"
+                          
+                      "}\n"
+                  "}\n"
+                      "xml.send();\n"
+                  "}\n"
+
+                  "function parse(arr)\n"
+                  "{\n"
+                    "var doc = document.getElementById(\"1\");\n"
+                    "if(doc.innerHTML != arr)\n"// only scrolls to the bottom if data is added
+                    "{\n"
+                      "doc.innerHTML = arr\n"
+                      "doc.scrollTop = doc.scrollHeight\n"
+                    "}\n"
+                "}\n"
+
+                "function obj_update(data)\n"
+                "{\n"
+                  "var objData = JSON.parse(data)\n"
+                  "for(var i = 0; i < objData.Status.length; i++)\n"
+                  "{\n"
+                    "document.getElementById(String(objData.Status[i].ID)).innerHTML = String(objData.Status[i].Status);\n"
+                  "}\n"
+                "}\n"
                 "</script>\n");
   return script;
 }
