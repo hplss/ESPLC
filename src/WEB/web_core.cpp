@@ -13,16 +13,8 @@ const String &HTML_HEADER_INITIAL PROGMEM = PSTR(
 "<!DOCTYPE HTML>"
 "<html>"
 "<head>"
-<<<<<<< HEAD
-"<meta name = \"viewport\" content = \"width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0\">"),
-
-	&HTML_HEADER_JS PROGMEM = PSTR("<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js\"></script>"),
-
-	&HTML_HEADER_STYLE_BEGIN = PSTR("<style>"),
-=======
 "<meta name = \"viewport\" content = \"width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0\">"
 "<style>"),
->>>>>>> origin/Dakotah's-Branch
 
 	&HTML_HEADER_LAST PROGMEM = PSTR( 
 "</style>"
@@ -65,12 +57,9 @@ String UICore::generateTitle( const String &data )
 	return PSTR("<title>Device: ") + getUniqueID() + " " + data + PSTR("</title>");
 }
 
-String UICore::generateHeader(bool JS)
+String UICore::generateHeader()
 {
-	if (JS)
-		return HTML_HEADER_INITIAL + HTML_HEADER_JS + HTML_HEADER_STYLE_BEGIN + getStyleSheet() + HTML_HEADER_LAST;
-	else
-		return HTML_HEADER_INITIAL + HTML_HEADER_STYLE_BEGIN + getStyleSheet() + HTML_HEADER_LAST;
+	return HTML_HEADER_INITIAL + getStyleSheet() + HTML_HEADER_LAST;
 }
 
 String UICore::generateFooter()

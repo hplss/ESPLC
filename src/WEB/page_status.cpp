@@ -43,7 +43,7 @@ void UICore::handleStatus()
     if ( getWebServer().args() ) //Do we have some args to input? Apply settings if so (before generating the rest of the HTML)
 	    UpdateWebFields( p_UIDataTables );
 	
-	  String HTML = generateHeader(true);
+	  String HTML = generateHeader();
 	  HTML += generateTitle(PSTR("Status Page"));
     //HTML += generateAlertsScript( 1 ); //hackhack for now -- index may vary, unless explicitly assigned to '1'
     HTML += generateStatusScript(); //Currently used
