@@ -235,6 +235,9 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewLadderObject(const String &name, const
 		if (ObjArgs.size() > 1) //must have at least one arg (first indictes the object type)
 		{
 			String type = ObjArgs[0];
+			#ifdef DEBUG
+			Serial.println("Type is " + type);
+			#endif
 			if ( type == variableTag1 || type == variableTag2 ) //Is this a variable type object? (Used for local data storage in memory, to facilitate communication between objects)
 			{
 				return createVariableOBJ(name, ObjArgs);
@@ -257,6 +260,9 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewLadderObject(const String &name, const
 			}
 			else if ( type == mathTag ) 
 			{
+				#ifdef DEBUG
+				Serial.println("Math object is here");
+				#endif
 				return createMathOBJ(name, ObjArgs);
 			}
 			else if ( type == remoteTag )
@@ -640,21 +646,22 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 {
 	if(args.size() >= 2)
 	{
-		String function = args[0];
+		String function = args[1];
 		//shared_ptr<Ladder_OBJ> newObj = 0;
-		shared_ptr<Ladder_VAR> var1ptr = findLadderVarByID(args[1]);
+		shared_ptr<Ladder_VAR> var1ptr = findLadderVarByID(args[2]);
+		shared_ptr<Ladder_VAR> var2ptr = 0;
+		#ifdef DEBUG
+		Serial.println("Function is" + function);
+		#endif
 		if(args.size() >= 3)
 		{
-			shared_ptr<Ladder_VAR> var2ptr = findLadderVarByID(args[2]);
+			var2ptr = findLadderVarByID(args[3]);
 		}
 		if(function == typeTagMTAN)
 		{
 			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_TAN, var1ptr));
 			newObj->computeTAN();
 			ladderObjects.emplace_back(newObj);
-			#ifdef DEBUG
-			//Serial.println(newObj->getResult<double>());
-			#endif
 			return newObj;
 		}
 		else if(function == typeTagMSIN)
@@ -673,35 +680,65 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 		}
 		else if(function == typeTagMMUL)
 		{
-			//Multiply
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_MUL, var1ptr, var2ptr));
+			newObj->computeMUL();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
 		}
 		else if(function == typeTagMDIV)
 		{
-			//Divide
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_DIV, var1ptr, var2ptr));
+			newObj->computeMUL();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
 		}
 		else if(function == typeTagMADD)
 		{
-			//Add
+			#ifdef DEBUG
+			Serial.println("In add creation");
+			#endif
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_ADD, var1ptr, var2ptr));
+			newObj->computeADD();
+			ladderObjects.emplace_back(newObj);
+			#ifdef DEBUG
+			Serial.println("In add creation");
+			#endif
+			return newObj;
 		}
 		else if(function == typeTagMSUB)
 		{
-			//Subtraction
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_SUB, var1ptr, var2ptr));
+			newObj->computeSUB();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
 		}
 		else if(function == typeTagMEQ)
 		{
-			//Equal to
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_EQ, var1ptr, var2ptr));
+			newObj->computeMUL();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
 		}
 		else if(function == typeTagMNEQ)
 		{
-			//Not Equal to
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_NEQ, var1ptr, var2ptr));
+			newObj->computeNEQ();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
 		}
 		else if(function == typeTagMGRE)
 		{
-			//Greater than
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_GRQ, var1ptr, var2ptr));
+			newObj->computeGRQ();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
 		}
 		else if(function == typeTagMLES)
 		{
-			//Less than
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_LES, var1ptr, var2ptr));
+			newObj->computeLES();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
 		}
 		else if(function == typeTagMGREE)
 		{
@@ -717,7 +754,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 		}
 		else if(function == typeTagMDEC)
 		{
-			//Decrement
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_LES, var1ptr, var2ptr));
+			newObj->computeLES();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
 		}
 		else if(function == typeTagMMOV)
 		{

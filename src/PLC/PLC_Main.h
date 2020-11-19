@@ -170,6 +170,8 @@ class PLC_Main
 	vector<shared_ptr<Ladder_Rung>> &getLadderRungs(){ return ladderRungs; }
 	//Returns a reference to the local storage container for initialized Ladder_OBJ_Logical objects.
 	vector<shared_ptr<Ladder_OBJ_Logical>> &getLadderObjects(){ return ladderObjects; }
+	//Returns a reference to the local storage container for initialized Ladder_VAR objects.
+	vector<shared_ptr<Ladder_VAR>> &getLadderVars(){ return ladderVars; }
 	//Returns the locally stored pointer to the PLC web status server.
 	unique_ptr<PLC_Remote_Server> &getRemoteServer(){ return remoteServer; }
 	//Returns a reference to the local storage container for initialized Ladder_OBJ_Accessor objects.

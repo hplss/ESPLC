@@ -61,6 +61,8 @@ class MathBlockOBJ : public Ladder_OBJ_Logical
     void computeSUB();
     //Equals function - Checks to see if A is equals to B.
     bool computeEQ();
+    //Not equals function - Checks to see if A is not equal to B.
+    bool computeNEQ();
     //Greater than or Equal to function - Checks to see if Source A is >= Source B. 
     bool computeGRQ();
     //Greater than function - checks to see if Source A is > Source B
@@ -101,10 +103,9 @@ class MathBlockOBJ : public Ladder_OBJ_Logical
         return (sourceA->getType() == OBJ_TYPE::TYPE_VAR_UINT || sourceA->getType() == OBJ_TYPE::TYPE_VAR_ULONG);
     }
 	
-    /*
-    template <class T>
-	T getResult();
-    */
+    string getMathResult();
+
+
 	private:
 	shared_ptr<Ladder_VAR> sourceA,
 						   sourceB,

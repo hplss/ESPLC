@@ -153,7 +153,12 @@ enum class OBJ_TYPE : uint8_t
 	TYPE_CTU,			//count up timer
 	TYPE_CTD,			//count down timer
 	TYPE_ONS,			//one shot objects. Pulses high briefly, then goes low. Will not pulse until low-> high transition occurs. 
+	TYPE_MATH_MUL, //Multiply
+	TYPE_MATH_DIV, //Divide
+	TYPE_MATH_ADD, //Addition
+	TYPE_MATH_SUB, //Subtraction
 	TYPE_MATH_EQ,		//equals
+	TYPE_MATH_NEQ,	//Not equal
 	TYPE_MATH_GRT,		//greater than
 	TYPE_MATH_LES,		//less than
 	TYPE_MATH_GRQ,		//greater or equal to
