@@ -226,8 +226,8 @@ bool PLC_Parser::buildObjectStr(const String &str)
         } 
     }
 
-    if ( !getParsedObjectStr().length() ) //must have some name for the object at least
-        return false;
+    //if ( !getParsedObjectStr().length() ) //must have some name for the object at least
+    //    return false;
 
     return true; //default condition (success)
 }
@@ -291,9 +291,15 @@ shared_ptr<Ladder_OBJ_Wrapper> PLC_Parser::handleObject()
 
         if ( !obj ) //Invalid object? Probably because it doesn't exist
         {
-            if ( PLCObj.createNewLadderObject(getParsedObjectStr(), parseObjectArgs()) )  //so try to create it
+            shared_ptr<Ladder_OBJ> newObj = PLCObj.createNewLadderObject(getParsedObjectStr(), parseObjectArgs());
+            if ( newObj )  //so try to create it
             {
-                obj = createNewWrapper(PLCObj.findLadderObjByID(getParsedObjectStr())); //create a wrapper from the newly generated object
+                if(newObj->getType()==OBJ_TYPE::TYPE_ONS)
+                {
+                    obj = createNewWrapper(static_pointer_cast<Ladder_OBJ_Logical>(newObj));
+                }
+                else
+                    obj = createNewWrapper(PLCObj.findLadderObjByID(getParsedObjectStr())); //create a wrapper from the newly generated object
             }
             else //guess not
             {

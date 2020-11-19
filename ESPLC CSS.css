@@ -1,25 +1,21 @@
-@import url('https://fonts.googleapis.com/css?family=Exo:400,700');
-
 html{height:97%;}
 
-body {
-	background:linear-gradient(-45deg, #778899,#20B2AA, #2F4F4F,#778899);
-	background-size:400% 400%;
+body{
+    background: rgb(87,89,92);
+    background: linear-gradient(90deg, rgba(87,89,92,1) 0%, rgba(158,168,179,1) 50%, rgba(87,89,92,1) 100%);
 }
 
+
 h2{
-	font-family: 'Exo', sans-serif; 
-	margin:auto;
-	text-align:center; 
-	font-size:32pt;
+	font-family: 'Exo', sans-serif;
+	margin: auto; 
+	text-align: center; 
+	font-size:32pt; 
 	padding-bottom:10px;
 }
 
 a{
-	font-family: 'Exo', sans-serif;
-	font-size: 18pt;
-	color:darkblue;
-	width:100%;
+    font-family: 'Exo', sans-serif; font-size: 18pt; color:darkblue;  width:100%;
 }
 
 a:hover {
@@ -27,21 +23,32 @@ a:hover {
 }
 
 ul{
-	padding:0%;
-	list-style-type:none;
-	text-align:center;
+    padding:0%; list-style-type:none; text-align:center;
 }
 
 li{
-	margin:auto;
-	text-align:center;
-	padding:1%
+    margin:auto; text-align:center; padding:1%
 }
 
 label{
-	padding-right:10px;
+    padding-right:10px;
 }
 
-p{
-	text-align:center;
+p{text-align:center;}
+
+
+table, td, tr, th{
+    border: 2px solid #000;
+    margin: auto;
+    border-collapse: collapse;
+    width: 50%;
+}
+
+thead, tfoot {
+
+    font-size: 18pt;
+}
+
+textarea{
+    width: 50%;
 }

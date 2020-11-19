@@ -9,7 +9,7 @@
 class TimerOBJ : public Ladder_OBJ_Logical
 {
 	public:
-	TimerOBJ(const String &id, uint_fast32_t delay, uint_fast32_t accum = 0, OBJ_TYPE type = OBJ_TYPE::TYPE_TON) : Ladder_OBJ_Logical(id, type)
+	TimerOBJ(const String &id, uint_fast32_t delay, uint_fast32_t accum = 0, OBJ_TYPE type = OBJ_TYPE::TYPE_TIMER_ON) : Ladder_OBJ_Logical(id, type)
 	{ 
 		//Defaults
 		ttBit = false;

@@ -13,9 +13,16 @@ const String &HTML_HEADER_INITIAL PROGMEM = PSTR(
 "<!DOCTYPE HTML>"
 "<html>"
 "<head>"
+<<<<<<< HEAD
+"<meta name = \"viewport\" content = \"width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0\">"),
+
+	&HTML_HEADER_JS PROGMEM = PSTR("<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js\"></script>"),
+
+	&HTML_HEADER_STYLE_BEGIN = PSTR("<style>"),
+=======
 "<meta name = \"viewport\" content = \"width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0\">"
-"<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js\"></script>"
 "<style>"),
+>>>>>>> origin/Dakotah's-Branch
 
 	&HTML_HEADER_LAST PROGMEM = PSTR( 
 "</style>"
@@ -58,9 +65,12 @@ String UICore::generateTitle( const String &data )
 	return PSTR("<title>Device: ") + getUniqueID() + " " + data + PSTR("</title>");
 }
 
-String UICore::generateHeader()
+String UICore::generateHeader(bool JS)
 {
-	return HTML_HEADER_INITIAL + getStyleSheet() + HTML_HEADER_LAST;
+	if (JS)
+		return HTML_HEADER_INITIAL + HTML_HEADER_JS + HTML_HEADER_STYLE_BEGIN + getStyleSheet() + HTML_HEADER_LAST;
+	else
+		return HTML_HEADER_INITIAL + HTML_HEADER_STYLE_BEGIN + getStyleSheet() + HTML_HEADER_LAST;
 }
 
 String UICore::generateFooter()
@@ -70,14 +80,14 @@ String UICore::generateFooter()
 
 String UICore::generateAlertsScript( uint8_t fieldID )
 { 
-	return PSTR("<script>var intFunc = function(){\n var xml = new XMLHttpRequest();\n xml.onreadystatechange = function(){\n if (this.readyState == 4 && this.status == 200){parse(this.responseText);};};\n xml.open(\"GET\", \"alerts\");\n xml.send(); };\n function parse(arr){ var doc = document.getElementById(\"1\"); doc.innerHTML = arr; };\nsetInterval(intFunc,500);</script>");
+	return PSTR("<script>var intFunc = function(){\n var xml = new XMLHttpRequest();\n xml.onreadystatechange = function(){\n if (this.readyState == 4 && this.status == 200){parse(this.responseText);};};\n xml.open(\"GET\", \"alerts\");\n xml.send(); };\n function parse(arr){ var doc = document.getElementById(\"1\"); if(doc.innerHTML != arr){\ndoc.innerHTML = arr\ndoc.scrollTop = doc.scrollHeight}; };\nsetInterval(intFunc,500);</script>");
 }
 
 String UICore::generateAlertsJSON()
 {
 	String JSON = "";
 	for( size_t x = 0; x < alerts.size(); x++ )
-		JSON += alerts[x] + PSTR("\n");
+		JSON += alerts[x] + CHAR_NEWLINE;
 
     return JSON;
 }

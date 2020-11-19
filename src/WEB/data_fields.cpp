@@ -469,9 +469,123 @@ int_fast32_t VAR_Datafield::intFromValue()
 
 String LADDER_OBJ_Datafield::GenerateHTML() 
 {
- 	String html = PSTR("<table>\n<thead>\n<tr>\n<th Colspan=\"2\">") + String(pObj->getID()) + PSTR("</th>\n</tr>\n<thead>\n</thead>\n<tbody>\n<tr>\n");
-	 html += "<td id=\"" + String(pObj->getID()) + "\">" + String(pObj->getLineState()) + "</td>\n";
-	 html += "<td id=\"" + String(pObj->getID()) + "Type\">" + String(static_cast<uint8_t>(pObj->getType())) + "</td>";
-	 html += PSTR("</tr>\n</tbody>\n</table>\n");
+ 	String html = PSTR("<table>\n<thead>\n<tr>\n<th Colspan=\"2\">") + String(pObj->getID()) + PSTR("</th>\n</tr>\n<thead>\n</thead>\n<tbody>\n");
+	html += PSTR("<tr>\n<th Colspan=\"2\">") + getObjectType(pObj->getType()) + PSTR("</th>\n</tr>\n");
+	for (uint8_t i = 0; i < pObj->getObjectVARs().size(); i++)
+	{
+		shared_ptr<Ladder_VAR> varPtr = pObj->getObjectVARs()[i]; //declare a pointer to the variable object
+
+		html += PSTR("<tr>\n");
+	 	html += PSTR("<td id=\"") + pObj->getID() + varPtr->getID() + "_Type\">" + varPtr->getID() + "</td>";
+		html += PSTR("<td id=\"") + pObj->getID() + varPtr->getID() + "\">" + varPtr->getValueStr() + "</td>\n"; 
+		html += PSTR("</tr>\n");
+	}
+	 html += PSTR("</tbody>\n</table>\n");
 	return html;
+}
+
+String getObjectType(OBJ_TYPE val)
+{
+	String obj_type = "";
+	switch (val)
+	{
+		case OBJ_TYPE::TYPE_INPUT:
+			obj_type = inputTag1;
+			break;
+		case OBJ_TYPE::TYPE_INPUT_ANALOG:
+			obj_type = inputTag1 + CHAR_SPACE + typeTagAnalog;
+			break;
+		case OBJ_TYPE::TYPE_OUTPUT:
+			obj_type = outputTag1;
+			break;
+		case OBJ_TYPE::TYPE_OUTPUT_PWM:
+			obj_type = outputTag1 + CHAR_SPACE + typeTagPWM;
+			break;
+		case OBJ_TYPE::TYPE_CLOCK:
+			obj_type = "CLK";
+			break;
+		case OBJ_TYPE::TYPE_TIMER_ON:
+			obj_type = typeTagTON;
+			break;
+		case OBJ_TYPE::TYPE_TIMER_OFF:
+			obj_type = typeTagTOF;
+			break;
+		case OBJ_TYPE::TYPE_TIMER_RET:
+			obj_type = "RETT";
+			break;
+		case OBJ_TYPE::TYPE_COUNTER_UP:
+			obj_type = typeTagCTU;
+			break;
+		case OBJ_TYPE::TYPE_COUNTER_DOWN:
+			obj_type = typeTagCTD;
+			break;
+		case OBJ_TYPE::TYPE_ONS:
+			obj_type = "ONS";
+			break;
+		case OBJ_TYPE::TYPE_MATH_EQ:
+			obj_type = typeTagMEQ;
+			break;
+		case OBJ_TYPE::TYPE_MATH_GRT:
+			obj_type = typeTagMGRE;
+			break;
+		case OBJ_TYPE::TYPE_MATH_LES:
+			obj_type = typeTagMLES;
+			break;
+		case OBJ_TYPE::TYPE_MATH_GRQ:
+			obj_type = typeTagMGREE;
+			break;
+		case OBJ_TYPE::TYPE_MATH_LEQ:
+			obj_type = typeTagMLESE;
+			break;
+		case OBJ_TYPE::TYPE_MATH_SIN:
+			obj_type = typeTagMSIN;
+			break;
+		case OBJ_TYPE::TYPE_MATH_COS:
+			obj_type = typeTagMCOS;
+			break;
+		case OBJ_TYPE::TYPE_MATH_TAN:
+			obj_type = typeTagMTAN;
+			break;
+		case OBJ_TYPE::TYPE_MATH_ASIN:
+			obj_type = "ASIN";
+			break;
+		case OBJ_TYPE::TYPE_MATH_ACOS:
+			obj_type = "ACOS";
+			break;
+		case OBJ_TYPE::TYPE_MATH_ATAN:
+			obj_type = "ATAN";
+			break;
+		case OBJ_TYPE::TYPE_MATH_LIMIT:
+			obj_type = "MLIM";
+			break;
+		case OBJ_TYPE::TYPE_MATH_INC:
+			obj_type = typeTagMINC;
+			break;
+		case OBJ_TYPE::TYPE_MATH_DEC:
+			obj_type = typeTagMDEC;
+			break;
+		case OBJ_TYPE::TYPE_MATH_CPT:
+			obj_type = "CPT";
+			break;
+		case OBJ_TYPE::TYPE_MATH_MOV:
+			obj_type = typeTagMMOV;
+			break;
+		case OBJ_TYPE::TYPE_VAR_BOOL:
+		case OBJ_TYPE::TYPE_VAR_STRING:
+		case OBJ_TYPE::TYPE_VAR_FLOAT:
+		case OBJ_TYPE::TYPE_VAR_INT:
+		case OBJ_TYPE::TYPE_VAR_LONG:
+		case OBJ_TYPE::TYPE_VAR_UBYTE:
+		case OBJ_TYPE::TYPE_VAR_USHORT:
+		case OBJ_TYPE::TYPE_VAR_UINT:
+		case OBJ_TYPE::TYPE_VAR_ULONG:
+			obj_type = variableTag1;
+			break;
+	
+		default:
+			obj_type = "N/A";
+			break;
+	}
+
+	return obj_type;
 }

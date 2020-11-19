@@ -8,9 +8,9 @@
 class OneshotOBJ : public Ladder_OBJ_Logical
 {
     public:
-    OneshotOBJ(const String &id, uint_fast32_t accum = 0 ) : Ladder_OBJ_Logical(id, OBJ_TYPE::TYPE_ONS)
+    OneshotOBJ() : Ladder_OBJ_Logical("", OBJ_TYPE::TYPE_ONS)
     {
-        lAccum = accum;
+        accum = false;
     }
     ~OneshotOBJ()
     {
@@ -20,10 +20,9 @@ class OneshotOBJ : public Ladder_OBJ_Logical
     }
     virtual void updateObject();
 	virtual void setLineState(bool &, bool );
-    uint_fast32_t getAccumVal(){ return lAccum; }
 
     private:
-    uint_fast32_t lAccum;
+    bool accum;
 };
 
 #endif

@@ -43,10 +43,10 @@ void UICore::handleStatus()
     if ( getWebServer().args() ) //Do we have some args to input? Apply settings if so (before generating the rest of the HTML)
 	    UpdateWebFields( p_UIDataTables );
 	
-	  String HTML = generateHeader();
+	  String HTML = generateHeader(true);
 	  HTML += generateTitle(PSTR("Status Page"));
     //HTML += generateAlertsScript( 1 ); //hackhack for now -- index may vary, unless explicitly assigned to '1'
-    HTML += generateStatusScript(); //Currently not used
+    HTML += generateStatusScript(); //Currently used
 	
     for ( uint8_t x = 0; x < p_StaticDataTables.size(); x++ ) //Generate static objects that are not included in the FORM
         HTML += p_StaticDataTables[x]->GenerateTableHTML();
@@ -65,34 +65,80 @@ void UICore::handleStatus()
 
 void UICore::handleUpdateStatus()
 {
-  String JSON = "{\"Status\":[\n";
-  for (uint16_t i = 0; i < PLCObj.getLadderObjects().size(); i++)
+  String JSON = PSTR("{\"Status\":[\n");
+  uint16_t numObjects = PLCObj.getLadderObjects().size();
+
+  for (uint16_t i = 0; i < numObjects; i++)
   {
-    JSON += "{\"ID\":\"" +  String(PLCObj.getLadderObjects()[i]->getID()) + "\", \"Status\":\"" + String(PLCObj.getLadderObjects()[i]->getLineState()) + "\"}";
-    if (i != (PLCObj.getLadderObjects().size()-1))
-    JSON += ",\n";
-    else
+    shared_ptr<Ladder_OBJ_Logical> objPtr = PLCObj.getLadderObjects()[i];
+
+    for (uint8_t j = 0; j < objPtr->getObjectVARs().size(); j++)
     {
-      JSON += "\n";
+      shared_ptr<Ladder_VAR> varPtr = objPtr->getObjectVARs()[j];
+
+      JSON += PSTR("{\"ID\":\"") + objPtr->getID() + varPtr->getID() + PSTR("\", \"Status\":\"") + varPtr->getValueStr() + "\"}";
+      
+      if (i != (numObjects - 1))
+        JSON += ",\n";
+      else
+      {
+        JSON += CHAR_NEWLINE;
+      }
     }
   }
   JSON += "]}";
-  getWebServer().send(200, "text/plain", JSON);
+  getWebServer().send(200, PSTR("text/plain"), JSON);
 }
 
 String UICore::generateStatusScript()
 {
   const String script PROGMEM = PSTR("\n<script>"
-                "setInterval(getObjectStatus, 2000)\n" 
-                "function getObjectStatus(){\n"
-                "$.get(\"/update\", function(data, status){\n"
-                "var objData = JSON.parse(data)\n"
-                "for(var i = 0; i < objData.Status.length; i++){\n"
-                "document.getElementById(String(objData.Status[i].ID)).innerHTML = String(objData.Status[i].Status);}\n"
-                "})\n"
+                "setInterval(getObjectStatus, 1500)\n"
+                "function getObjectStatus()\n"
+                "{\n"
+                  //Alerts Start
+                  "var xml = new XMLHttpRequest();\n"
+                  "xml.open(\"GET\", \"alerts\");\n"
+                  "xml.onreadystatechange = function()\n"
+                  "{\n"
+                      "if (this.readyState == 4 && this.status == 200)\n"
+                      "{\n"
+                          "parse(this.responseText);\n"
+                          //Object Update Start
+                          "var xml2 = new XMLHttpRequest();\n"
+                          "xml2.onreadystatechange = function()\n"
+                          "{\n"
+                              "if (this.readyState == 4 && this.status == 200)\n"
+                              "{\n"
+                                  "obj_update(this.responseText);\n"
+                              "}\n"
+                          "}\n"
+                              "xml2.open(\"GET\", \"update\");\n"
+                              "xml2.send();\n"
+                          
+                      "}\n"
+                  "}\n"
+                      "xml.send();\n"
+                  "}\n"
+
+                  "function parse(arr)\n"
+                  "{\n"
+                    "var doc = document.getElementById(\"1\");\n"
+                    "if(doc.innerHTML != arr)\n"// only scrolls to the bottom if data is added
+                    "{\n"
+                      "doc.innerHTML = arr\n"
+                      "doc.scrollTop = doc.scrollHeight\n"
+                    "}\n"
+                "}\n"
+
+                "function obj_update(data)\n"
+                "{\n"
+                  "var objData = JSON.parse(data)\n"
+                  "for(var i = 0; i < objData.Status.length; i++)\n"
+                  "{\n"
+                    "document.getElementById(String(objData.Status[i].ID)).innerHTML = String(objData.Status[i].Status);\n"
+                  "}\n"
                 "}\n"
                 "</script>\n");
-
-
   return script;
 }
