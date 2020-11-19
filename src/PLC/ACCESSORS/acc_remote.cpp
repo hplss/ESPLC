@@ -55,7 +55,8 @@ String PLC_Remote_Client::requestFromHost(const String &cmd)
             {
                 nodeClient.setTimeout(0); 
                 recvdData += nodeClient.readStringUntil(CHAR_TRANSMIT_END); //just remove these now
-                Core.sendMessage(PSTR("Reply Time: ") + String(millis() - storedTime) ); //some stat
+                Core.sendMessage( PSTR("TX Bytes: ") + String(cmd.length() + 1) + PSTR("RX Bytes: ") + String(recvdData.length()) + PSTR(" Latency: ") + String(millis() - storedTime) + " RSSI: " + WiFi.RSSI() + "dBm" ); //some stat
+                //Should also tell number of bytes sent/received.
             }
 
             if (!recvdData.length())
