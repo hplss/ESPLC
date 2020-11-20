@@ -602,34 +602,115 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 	if(args.size() >= 2)
 	{
 		String function = args[1];
-		//shared_ptr<Ladder_OBJ> newObj = 0;
+		uint8_t argSize = args.size();
+		if(argSize < 3)
+		{
+			sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
+		}
 		shared_ptr<Ladder_VAR> var1ptr = findLadderVarByID(args[2]);
 		shared_ptr<Ladder_VAR> var2ptr = 0;
+		shared_ptr<Ladder_VAR> var3ptr = 0;
+		
 		#ifdef DEBUG
-		Serial.println("Function is" + function);
+		Serial.println("Function is " + function);
 		#endif
-		if(args.size() >= 3)
+
+		//Arguments are arg[0] = math, arg[1] = function, arg[2] = first variable, arg[3] = second variable/dest, arg[4] = dest
+		if(argSize <= 4)
 		{
 			var2ptr = findLadderVarByID(args[3]);
 		}
+		else if(argSize == 5)
+		{
+			var3ptr = findLadderVarByID(args[4]);
+		}
+		else
+		{
+			sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+		}
+		
 		if(function == typeTagMTAN)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_TAN, var1ptr));
-			newObj->computeTAN();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize == 3)
+			{
+				shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_TAN, var1ptr));
+				newObj->computeTAN();
+				ladderObjects.emplace_back(newObj);
+				return newObj;
+			}
+			else if(argSize == 4)
+			{
+				shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_TAN, var1ptr, var2ptr));
+				newObj->computeTAN();
+				ladderObjects.emplace_back(newObj);
+				return newObj;
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMSIN)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_SIN, var1ptr));
-			newObj->computeSIN();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize == 3)
+			{
+				shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_SIN, var1ptr));
+				newObj->computeSIN();
+				ladderObjects.emplace_back(newObj);
+				return newObj;
+			}
+			else if(argSize == 4)
+			{
+				shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_SIN, var1ptr, var2ptr));
+				newObj->computeSIN();
+				ladderObjects.emplace_back(newObj);
+				return newObj;
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMCOS)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_COS, var1ptr));
-			newObj->computeCOS();
+			if(argSize == 3)
+			{
+				shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_COS, var1ptr));
+				newObj->computeCOS();
+				ladderObjects.emplace_back(newObj);
+				return newObj;
+			}
+			else if(argSize == 4)
+			{
+				shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_COS, var1ptr, var2ptr));
+				newObj->computeCOS();
+				ladderObjects.emplace_back(newObj);
+				return newObj;
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
+			
+		}
+		else if(function == typeTagMATAN)
+		{
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_ATAN, var1ptr));
+			newObj->computeATAN();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
+		}
+		else if(function == typeTagMASIN)
+		{
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_ASIN, var1ptr));
+			newObj->computeASIN();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
+		}
+		else if(function == typeTagMACOS)
+		{
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_ACOS, var1ptr));
+			newObj->computeACOS();
 			ladderObjects.emplace_back(newObj);
 			return newObj;
 		}
@@ -643,21 +724,15 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 		else if(function == typeTagMDIV)
 		{
 			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_DIV, var1ptr, var2ptr));
-			newObj->computeMUL();
+			newObj->computeDIV();
 			ladderObjects.emplace_back(newObj);
 			return newObj;
 		}
 		else if(function == typeTagMADD)
 		{
-			#ifdef DEBUG
-			Serial.println("In add creation");
-			#endif
 			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_ADD, var1ptr, var2ptr));
 			newObj->computeADD();
 			ladderObjects.emplace_back(newObj);
-			#ifdef DEBUG
-			Serial.println("In add creation");
-			#endif
 			return newObj;
 		}
 		else if(function == typeTagMSUB)
@@ -670,7 +745,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 		else if(function == typeTagMEQ)
 		{
 			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_EQ, var1ptr, var2ptr));
-			newObj->computeMUL();
+			newObj->computeEQ();
 			ladderObjects.emplace_back(newObj);
 			return newObj;
 		}
@@ -683,8 +758,8 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 		}
 		else if(function == typeTagMGRE)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_GRQ, var1ptr, var2ptr));
-			newObj->computeGRQ();
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_GRT, var1ptr, var2ptr));
+			newObj->computeGRT();
 			ladderObjects.emplace_back(newObj);
 			return newObj;
 		}
@@ -697,30 +772,42 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 		}
 		else if(function == typeTagMGREE)
 		{
-			 //Greater than or equal to
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_GRQ, var1ptr, var2ptr));
+			newObj->computeGRQ();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
 		}
 		else if(function == typeTagMLESE)
 		{
-			//Less than or equal to
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_LEQ, var1ptr, var2ptr));
+			newObj->computeLEQ();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
 		}
 		else if(function == typeTagMINC)
 		{
-			//Increment
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_INC, var1ptr));
+			newObj->computeINC();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
 		}
 		else if(function == typeTagMDEC)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_LES, var1ptr, var2ptr));
-			newObj->computeLES();
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_DEC, var1ptr));
+			newObj->computeDEC();
 			ladderObjects.emplace_back(newObj);
 			return newObj;
 		}
 		else if(function == typeTagMMOV)
 		{
-			//Move value
+			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_MOV, var1ptr, var2ptr));
+			newObj->computeMOV();
+			ladderObjects.emplace_back(newObj);
+			return newObj;
 		}
 		else
 		{
-			//Throw error
+			sendError(ERR_DATA::ERR_INVALID_FUNCTION, function);
 		}
 	}
 	return 0;
@@ -921,6 +1008,21 @@ void PLC_Main::sendError(ERR_DATA err, const String &info )
 		case ERR_DATA::ERR_OUT_OF_RANGE:
 		{
 			error = err_var_out_of_range;
+		}
+		break;
+		case ERR_DATA::ERR_INVALID_FUNCTION:
+		{
+			error = err_invalid_function;
+		}
+		break;
+		case ERR_DATA::ERR_MATH_TOO_MANY_ARGS:
+		{
+			error = err_math_too_many_args;
+		}
+		break;
+		case ERR_DATA::ERR_MATH_TOO_FEW_ARGS:
+		{
+			error = err_math_too_few_args;
 		}
 		break;
 	}

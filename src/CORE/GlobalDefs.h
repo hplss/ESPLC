@@ -122,7 +122,10 @@ extern const String &err_failed_creation PROGMEM,
 					&err_name_too_long PROGMEM,
 					&err_parser_failed PROGMEM,
 					&err_var_type_invalid PROGMEM,
-					&err_var_out_of_range PROGMEM;
+					&err_var_out_of_range PROGMEM,
+					&err_invalid_function PROGMEM,
+					&err_math_too_many_args PROGMEM,
+					&err_math_too_few_args PROGMEM;
 
 //Variable string definitions
 extern const String &VAR_INT32 PROGMEM,
@@ -236,7 +239,10 @@ enum class ERR_DATA : uint8_t
 	ERR_PARSER_FAILED, //This error indicatews that the parser failed to exit properly.
 	ERR_NAME_TOO_LONG, //This indicates that the name of an object being parsed is too long to be stored (exceeds allowed memory usage)
 	ERR_INCORRECT_VAR_TYPE, //Error for an incorrect variable type when naming a variable type
-	ERR_OUT_OF_RANGE //This indicates that the value assigned exceeds the maximum value of the variable type
+	ERR_OUT_OF_RANGE, //This indicates that the value assigned exceeds the maximum value of the variable type
+	ERR_INVALID_FUNCTION, //This indicates that a function was given to a math object that is not supported.
+	ERR_MATH_TOO_MANY_ARGS, //This indicates that a function was given too many arguments to use.
+	ERR_MATH_TOO_FEW_ARGS //This indicates that a function was given too few arguments to use.
 };
 
 
@@ -268,6 +274,9 @@ extern const String &bitTagDN PROGMEM,
 			 		&typeTagMSIN PROGMEM,
 			 		&typeTagMCOS PROGMEM,
 			 		&typeTagMTAN PROGMEM,
+					&typeTagMASIN PROGMEM,
+			 		&typeTagMACOS PROGMEM,
+			 		&typeTagMATAN PROGMEM,
 					&typeTagMMUL PROGMEM,
 					&typeTagMDIV PROGMEM,
 					&typeTagMADD PROGMEM,

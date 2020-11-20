@@ -51,6 +51,12 @@ class MathBlockOBJ : public Ladder_OBJ_Logical
     void computeSIN();
     //Outputs the cosine of Source A to DEST
     void computeCOS();
+    //Outputs the ArcTangent of Source A to DEST
+    void computeATAN();
+    //Outputs the ArcSine of Source A to DEST
+    void computeASIN();
+    //Outputs the ArcCosine of Source A to DEST
+    void computeACOS();
     //Multiplication function - multiplies Source A by Source B, then outputs to DEST
     void computeMUL();
     //Division function - divides Source A by Source B, then outputs to DEST

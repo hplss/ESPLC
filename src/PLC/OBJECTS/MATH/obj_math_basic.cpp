@@ -24,9 +24,50 @@ void MathBlockOBJ::setLineState(bool &state, bool bNot)
                 computeTAN();
             }
             break;
+            case OBJ_TYPE::TYPE_MATH_ASIN:
+            {
+                computeASIN();
+            }
+            break;
+            case OBJ_TYPE::TYPE_MATH_ACOS:
+            {
+                computeACOS();
+            }
+            break;
+            case OBJ_TYPE::TYPE_MATH_ATAN:
+            {
+                computeATAN();
+            }
+            break;
+            case OBJ_TYPE::TYPE_MATH_MUL:
+            {
+                computeMUL();
+            }
+            break;
+            case OBJ_TYPE::TYPE_MATH_DIV:
+            {
+                computeDIV();
+            }
+            break;
+            case OBJ_TYPE::TYPE_MATH_ADD:
+            {
+                computeADD();
+            }
+            break;
+            case OBJ_TYPE::TYPE_MATH_SUB:
+            {
+                computeSUB();
+            }
+            break;
             case OBJ_TYPE::TYPE_MATH_EQ:
             {
                 state = computeEQ();
+                destination->setValue(state);
+            }
+            break;
+            case OBJ_TYPE::TYPE_MATH_NEQ:
+            {
+                state = computeNEQ();
                 destination->setValue(state);
             }
             break;
@@ -52,6 +93,16 @@ void MathBlockOBJ::setLineState(bool &state, bool bNot)
             {
                 state = computeGRQ();
                 destination->setValue(state);
+            }
+            break;
+            case OBJ_TYPE::TYPE_MATH_INC:
+            {
+                computeINC();
+            }
+            break;
+            case OBJ_TYPE::TYPE_MATH_DEC:
+            {
+                computeDEC();
             }
             break;
             case OBJ_TYPE::TYPE_MATH_MOV:
@@ -86,12 +137,18 @@ void MathBlockOBJ::computeMUL()
         int64_t val2 = sourceB->getValue<int64_t>();
         destination->setValue( val1 * val2);
     }
+    #ifdef DEBUG
+	Serial.println(destination->getValueStr());
+	#endif
 }
 void MathBlockOBJ::computeDIV()
 {
     double val1 = sourceA->getValue<double>();
     double val2 = sourceB->getValue<double>();
     destination->setValue( val1 / val2); //always compute as float for now.
+    #ifdef DEBUG
+	Serial.println(destination->getValueStr());
+	#endif
 }
 void MathBlockOBJ::computeADD()
 {
@@ -137,6 +194,9 @@ void MathBlockOBJ::computeSUB()
         int64_t val2 = sourceB->getValue<int64_t>();
         destination->setValue( val1 - val2);
     }
+    #ifdef DEBUG
+	Serial.println(destination->getValueStr());
+	#endif
 }
 bool MathBlockOBJ::computeEQ()
 {
@@ -158,6 +218,9 @@ bool MathBlockOBJ::computeEQ()
         int64_t val2 = sourceB->getValue<int64_t>();
         destination->setValue( val1 == val2 ? true : false );
     }
+    #ifdef DEBUG
+	Serial.println(destination->getValueStr());
+	#endif
 
     return destination->getValue<bool>();
 }
@@ -167,13 +230,13 @@ bool MathBlockOBJ::computeNEQ()
     {
         uint64_t val1 = sourceA->getValue<uint64_t>();
         uint64_t val2 = sourceB->getValue<uint64_t>();
-        destination->setValue( val1 == val2 ? true : false );
+        destination->setValue( val1 != val2 ? true : false );
     }
     else if ( usesFloat() )
     {
         double val1 = sourceA->getValue<double>();
         double val2 = sourceB->getValue<double>();
-        destination->setValue( val1 == val2 ? true : false );
+        destination->setValue( val1 != val2 ? true : false );
     }
     else //assume signed int
     {
@@ -181,6 +244,9 @@ bool MathBlockOBJ::computeNEQ()
         int64_t val2 = sourceB->getValue<int64_t>();
         destination->setValue( val1 != val2 ? true : false );
     }
+    #ifdef DEBUG
+	Serial.println(destination->getValueStr());
+	#endif
 
     return destination->getValue<bool>();
 }
@@ -204,6 +270,9 @@ bool MathBlockOBJ::computeGRT()
         int64_t val2 = sourceB->getValue<int64_t>();
         destination->setValue( val1 > val2 ? true : false );
     }
+    #ifdef DEBUG
+	Serial.println(destination->getValueStr());
+	#endif
 
     return destination->getValue<bool>();
 }
@@ -227,6 +296,9 @@ bool MathBlockOBJ::computeGRQ()
         int64_t val2 = sourceB->getValue<int64_t>();
         destination->setValue( val1 >= val2 ? true : false );
     }
+    #ifdef DEBUG 
+    Serial.println("Dest value is: " + destination->getValueStr() );
+    #endif
     return destination->getValue<bool>();
 }
 bool MathBlockOBJ::computeLES()
@@ -249,7 +321,9 @@ bool MathBlockOBJ::computeLES()
         int64_t val2 = sourceB->getValue<int64_t>();
         destination->setValue( val1 < val2 ? true : false );
     }
-
+    #ifdef DEBUG 
+    Serial.println("Dest value is: " + destination->getValueStr() );
+    #endif
     return destination->getValue<bool>();
 }
 bool MathBlockOBJ::computeLEQ()
@@ -280,7 +354,12 @@ bool MathBlockOBJ::computeLEQ()
 
 void MathBlockOBJ::computeINC()
 {
-    if ( usesFloat() )
+    if(usesUnsignedInt())
+    {
+        uint64_t value = sourceA->getValue<uint64_t>();
+        sourceA->setValue(value + 1);
+    }
+    else if ( usesFloat() )
     {
         double value = sourceA->getValue<double>();
         sourceA->setValue(value + 1);
@@ -297,7 +376,12 @@ void MathBlockOBJ::computeINC()
 
 void MathBlockOBJ::computeDEC()
 {
-    if ( usesFloat() )
+    if(usesUnsignedInt())
+    {
+        uint64_t value = sourceA->getValue<uint64_t>();
+        sourceA->setValue(value - 1);
+    }
+    else if ( usesFloat() )
     {
         double value = sourceA->getValue<double>();
         sourceA->setValue(value - 1);
@@ -314,7 +398,27 @@ void MathBlockOBJ::computeDEC()
 
 void MathBlockOBJ::computeMOV()
 {
-    
+    if(usesUnsignedInt())
+    {
+        uint64_t value = sourceA->getValue<uint64_t>();
+        sourceB->setValue(value);
+        destination->setValue(value);
+    }
+    if ( usesFloat() )
+    {
+        double value = sourceA->getValue<double>();
+        sourceB->setValue(value);
+        destination->setValue(value);
+    }
+    else
+    {
+        int64_t value = sourceA->getValue<int64_t>();
+        sourceB->setValue(value);
+        destination->setValue(value);
+    }
+    #ifdef DEBUG 
+    Serial.println("SourceB value is: " + sourceB->getValueStr() );
+    #endif
 }
 
 void MathBlockOBJ::computeTAN()
@@ -339,6 +443,40 @@ void MathBlockOBJ::computeCOS()
 {
     double val = sourceA->getValue<double>();
     destination->setValue(cos(val));
+    if(sourceB != 0)
+    {
+        sourceB->setValue(cos(val));
+        #ifdef DEBUG 
+        Serial.println("Dest Value is: " + sourceB->getValueStr() );
+        #endif
+    }
+    #ifdef DEBUG 
+    Serial.println("Dest Value is: " + destination->getValueStr() );
+    #endif
+}
+
+void MathBlockOBJ::computeATAN()
+{
+    double val = sourceA->getValue<double>();
+    destination->setValue(atan(val));
+    #ifdef DEBUG 
+    Serial.println("Dest Value is: " + destination->getValueStr() );
+    #endif
+}
+
+void MathBlockOBJ::computeASIN()
+{
+    double val = sourceA->getValue<double>();
+    destination->setValue(asin(val));
+    #ifdef DEBUG 
+    Serial.println("Dest Value is: " + destination->getValueStr() );
+    #endif
+}
+
+void MathBlockOBJ::computeACOS()
+{
+    double val = sourceA->getValue<double>();
+    destination->setValue(acos(val));
     #ifdef DEBUG 
     Serial.println("Dest Value is: " + destination->getValueStr() );
     #endif

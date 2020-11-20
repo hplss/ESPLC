@@ -48,6 +48,9 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &typeTagMSIN PROGMEM = PSTR("SIN"), //TYPE: MATH - Sine function
 			 &typeTagMCOS PROGMEM = PSTR("COS"), //TYPE: MATH - Cosine function
 			 &typeTagMTAN PROGMEM = PSTR("TAN"), //TYPE: MATH - Tangent function
+			 &typeTagMASIN PROGMEM = PSTR("ASIN"), //TYPE: MATH - ArcSine function
+			 &typeTagMACOS PROGMEM = PSTR("ACOS"), //TYPE: MATH - ArcCosine function
+			 &typeTagMATAN PROGMEM = PSTR("ATAN"), //TYPE: MATH - ArcTangent function
 			 &typeTagMMUL PROGMEM = PSTR("MUL"), //TYPE: MATH - Multiply function
 			 &typeTagMDIV PROGMEM = PSTR("DIV"), //TYPE: MATH - Division function
 			 &typeTagMADD PROGMEM = PSTR("ADD"), //TYPE: MATH - Addition function
@@ -105,7 +108,10 @@ const String &err_failed_creation PROGMEM = PSTR("Failed to create object."),
 			 &err_name_too_long PROGMEM = PSTR("Object Name Too Long"),
 			 &err_parser_failed PROGMEM = PSTR("Parser operation failed."),
 			 &err_var_type_invalid PROGMEM = PSTR("Invalid variable type."),
-			 &err_var_out_of_range PROGMEM = PSTR("Value assigned exceeds variable range.");
+			 &err_var_out_of_range PROGMEM = PSTR("Value assigned exceeds variable range."),
+			 &err_invalid_function PROGMEM = PSTR("Function given is not supported."),
+			 &err_math_too_many_args PROGMEM = PSTR("Function was given too many arguments."),
+			 &err_math_too_few_args PROGMEM = PSTR("Function was given too few arguments.");
 //
 //Variable string definitions
 const String &VAR_INT32 PROGMEM = PSTR("INT32"),

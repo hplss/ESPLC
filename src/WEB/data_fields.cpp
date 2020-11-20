@@ -547,13 +547,13 @@ String getObjectType(OBJ_TYPE val)
 			obj_type = typeTagMTAN;
 			break;
 		case OBJ_TYPE::TYPE_MATH_ASIN:
-			obj_type = "ASIN";
+			obj_type = typeTagMASIN;
 			break;
 		case OBJ_TYPE::TYPE_MATH_ACOS:
-			obj_type = "ACOS";
+			obj_type = typeTagMACOS;
 			break;
 		case OBJ_TYPE::TYPE_MATH_ATAN:
-			obj_type = "ATAN";
+			obj_type = typeTagMATAN;
 			break;
 		case OBJ_TYPE::TYPE_MATH_LIMIT:
 			obj_type = "MLIM";
