@@ -471,16 +471,29 @@ String LADDER_OBJ_Datafield::GenerateHTML()
 {
  	String html = PSTR("<table>\n<thead>\n<tr>\n<th Colspan=\"2\">") + String(pObj->getID()) + PSTR("</th>\n</tr>\n<thead>\n</thead>\n<tbody>\n");
 	html += PSTR("<tr>\n<th Colspan=\"2\">") + getObjectType(pObj->getType()) + PSTR("</th>\n</tr>\n");
-	for (uint8_t i = 0; i < pObj->getObjectVARs().size(); i++)
-	{
-		shared_ptr<Ladder_VAR> varPtr = pObj->getObjectVARs()[i]; //declare a pointer to the variable object
+	if ( pObj->getType() >= OBJ_TYPE::TYPE_VAR_UBYTE && pObj->getType() <= OBJ_TYPE::TYPE_VAR_STRING ) //if it's a variable type..
+    {
+		shared_ptr<Ladder_VAR> varPtr = static_pointer_cast<Ladder_VAR>(pObj); //declare a pointer to the variable object
 
 		html += PSTR("<tr>\n");
-	 	html += PSTR("<td id=\"") + pObj->getID() + varPtr->getID() + "_Type\">" + varPtr->getID() + "</td>";
+		html += PSTR("<td id=\"") + pObj->getID() + varPtr->getID() + "_Type\">" + varPtr->getID() + "</td>";
 		html += PSTR("<td id=\"") + pObj->getID() + varPtr->getID() + "\">" + varPtr->getValueStr() + "</td>\n"; 
 		html += PSTR("</tr>\n");
 	}
-	 html += PSTR("</tbody>\n</table>\n");
+	else
+	{
+		for (uint8_t i = 0; i < pObj->getObjectVARs().size(); i++)
+		{
+			shared_ptr<Ladder_VAR> varPtr = pObj->getObjectVARs()[i]; //declare a pointer to the variable object
+
+			html += PSTR("<tr>\n");
+			html += PSTR("<td id=\"") + pObj->getID() + varPtr->getID() + "_Type\">" + varPtr->getID() + "</td>";
+			html += PSTR("<td id=\"") + pObj->getID() + varPtr->getID() + "\">" + varPtr->getValueStr() + "</td>\n"; 
+			html += PSTR("</tr>\n");
+		}
+	}
+	
+	html += PSTR("</tbody>\n</table>\n");
 	return html;
 }
 

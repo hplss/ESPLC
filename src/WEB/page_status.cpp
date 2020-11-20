@@ -70,21 +70,38 @@ void UICore::handleUpdateStatus()
 
   for (uint16_t i = 0; i < numObjects; i++)
   {
-    shared_ptr<Ladder_OBJ_Logical> objPtr = PLCObj.getLadderObjects()[i];
+      shared_ptr<Ladder_OBJ_Logical> objPtr = PLCObj.getLadderObjects()[i];
 
-    for (uint8_t j = 0; j < objPtr->getObjectVARs().size(); j++)
-    {
-      shared_ptr<Ladder_VAR> varPtr = objPtr->getObjectVARs()[j];
+      if ( objPtr->getType() >= OBJ_TYPE::TYPE_VAR_UBYTE && objPtr->getType() <= OBJ_TYPE::TYPE_VAR_STRING ) //if it's a variable type..
+      {
+          JSON += PSTR("{\"ID\":\"") + objPtr->getID() + objPtr->getID() + PSTR("\", \"Status\":\"") + static_pointer_cast<Ladder_VAR>(objPtr)->getValueStr() + "\"}";
 
-      JSON += PSTR("{\"ID\":\"") + objPtr->getID() + varPtr->getID() + PSTR("\", \"Status\":\"") + varPtr->getValueStr() + "\"}";
-      
-      if (i != (numObjects - 1))
-        JSON += ",\n";
+          if (i != (numObjects - 1))
+              JSON += ",\n";
+          else
+          {
+              JSON += CHAR_NEWLINE;
+          }
+      }
       else
       {
-        JSON += CHAR_NEWLINE;
+          for (uint8_t j = 0; j < objPtr->getObjectVARs().size(); j++)
+          {
+              shared_ptr<Ladder_VAR> varPtr = objPtr->getObjectVARs()[j];
+
+              JSON += PSTR("{\"ID\":\"") + objPtr->getID() + varPtr->getID() + PSTR("\", \"Status\":\"") + varPtr->getValueStr() + "\"}";
+              
+              if ( i >= (numObjects - 1) && j >= (objPtr->getObjectVARs().size() - 1) ) //are we at the end of the list?
+              {
+                  JSON += CHAR_NEWLINE;
+              }
+              else
+              {
+                  JSON += ",\n";
+              }
+          }
       }
-    }
+    
   }
   JSON += "]}";
   getWebServer().send(200, PSTR("text/plain"), JSON);
@@ -93,7 +110,7 @@ void UICore::handleUpdateStatus()
 String UICore::generateStatusScript()
 {
   const String script PROGMEM = PSTR("\n<script>"
-                "setInterval(getObjectStatus, 1500)\n"
+                "setInterval(getObjectStatus, 500)\n"
                 "function getObjectStatus()\n"
                 "{\n"
                   //Alerts Start

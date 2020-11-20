@@ -31,14 +31,7 @@ class Ladder_VAR : public Ladder_OBJ_Logical
 		Ladder_OBJ_Logical::updateObject(); 
 	}
 
-	bool getBoolValue(){ if (b_usesPtr && values.b.val_ptr) return *values.b.val_ptr; else return values.b.val; }
-	int64_t getLongValue(){ if (b_usesPtr && values.l.val_ptr) return *values.l.val_ptr; else return values.l.val; }
-	uint64_t getULongValue(){ if (b_usesPtr && values.ul.val_ptr) return *values.ul.val_ptr; else return values.ul.val; }
-	double getDoubleValue(){ if (b_usesPtr && values.d.val_ptr) return *values.d.val_ptr; else return values.d.val; }
-	int_fast32_t getIntValue(){ if (b_usesPtr && values.i.val_ptr) return *values.i.val_ptr; else return values.i.val; }
-	uint_fast32_t getUIntValue(){ if (b_usesPtr && values.ui.val_ptr) return *values.ui.val_ptr; else return values.ui.val; }
-	uint16_t getUShortValue(){ if (b_usesPtr && values.us.val_ptr) return *values.us.val_ptr; else return values.us.val;  }
-
+	//this function returns a string that represents the currently stored value in the variable object.
 	String getValueStr();
 
 	template <class T>

@@ -21,25 +21,28 @@ class MathBlockOBJ : public Ladder_OBJ_Logical
         getObjectVARs().emplace_back(sourceA); //add to the storage vector for local VAR object pointers.
         sourceB = B;
 
-        if ( sourceB )
-            getObjectVARs().emplace_back(sourceB);
-
-        if (!dest) //no destination object given so create one for later reference by other objects. This is also the equivalent to an output stored in memory.
+        if ( type != OBJ_TYPE::TYPE_MATH_INC && type != OBJ_TYPE::TYPE_MATH_DEC ) //These are the only types of math functions that act on their source, hence need no DEST.
         {
-            if ( usesFloat() || type == OBJ_TYPE::TYPE_MATH_COS || type == OBJ_TYPE::TYPE_MATH_SIN || type == OBJ_TYPE::TYPE_MATH_TAN ) //floating point operation
-                dest = make_shared<Ladder_VAR>( &destValues.dValue, bitTagDEST );
-            else if ( usesUnsignedInt() ) //both have unsigned integers, so default to unsigned long for storage
-            {
-                dest = make_shared<Ladder_VAR>( &destValues.ulValue, bitTagDEST );
-            }
-            else //default to signed integer (long)
-            {
-                dest = make_shared<Ladder_VAR>( &destValues.lValue, bitTagDEST );
-            }
-        } 
+            if ( sourceB )
+                getObjectVARs().emplace_back(sourceB);
 
-        destination = dest; //store it off
-        getObjectVARs().emplace_back(destination); //push to storage vector for all variables
+            if (!dest ) //no destination object given so create one for later reference by other objects. This is also the equivalent to an output stored in memory.
+            {
+                if ( usesFloat() || type == OBJ_TYPE::TYPE_MATH_COS || type == OBJ_TYPE::TYPE_MATH_SIN || type == OBJ_TYPE::TYPE_MATH_TAN ) //floating point operation
+                    dest = make_shared<Ladder_VAR>( static_cast<double>(0), bitTagDEST );
+                else if ( usesUnsignedInt() ) //both have unsigned integers, so default to unsigned long for storage
+                {
+                    dest = make_shared<Ladder_VAR>( static_cast<uint64_t>(0), bitTagDEST );
+                }
+                else //default to signed integer (long)
+                {
+                    dest = make_shared<Ladder_VAR>( static_cast<int64_t>(0), bitTagDEST );
+                }
+            } 
+            
+            destination = dest; //store it off
+            getObjectVARs().emplace_back(destination); //push to storage vector for all variables
+        }
     }
 	~MathBlockOBJ() //deconstructor
     {}
@@ -109,22 +112,10 @@ class MathBlockOBJ : public Ladder_OBJ_Logical
         return (sourceA->getType() == OBJ_TYPE::TYPE_VAR_UINT || sourceA->getType() == OBJ_TYPE::TYPE_VAR_ULONG);
     }
 	
-    string getMathResult();
-
-
 	private:
 	shared_ptr<Ladder_VAR> sourceA,
 						   sourceB,
 						   destination;
-    union
-	{
-		bool bValue;
-		double dValue;
-		int_fast32_t iValue; //signed int
-		uint_fast32_t uiValue; //unsigned int
-		int64_t lValue;
-		uint64_t ulValue;
-	} destValues;
 };
 
 #endif /* MATH_BASIC */

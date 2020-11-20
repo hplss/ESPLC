@@ -178,13 +178,26 @@ shared_ptr<Ladder_OBJ_Accessor> PLC_Main::findAccessorByID( const String &id )
 	return 0;
 }
 
-shared_ptr<Ladder_VAR> PLC_Main::findLadderVarByID( const String &id ) //Search through all created objects thus far. This assumes that the object was created successfully.
+shared_ptr<Ladder_VAR> PLC_Main::findLadderVarByID( const String &id ) 
 {
-	for ( uint16_t x = 0; x < ladderVars.size(); x++ )
+	if ( strContains(id, CHAR_VAR_OPERATOR) ) //are we looking into a specific object that has already initialized? curently only supports local objects and not accessors
 	{
-		shared_ptr<Ladder_VAR> pObj = ladderVars[x];
-		if ( pObj && pObj->getID() == id )
-			return pObj;
+		vector<String> argVec = splitString(id, CHAR_VAR_OPERATOR); //create a vector of strings to poll with
+		if ( argVec.size() > 1) //make sure number of elements is valid, must have an object ID and a variable ID
+		{
+			shared_ptr<Ladder_OBJ> currentObj = findLadderObjByID(argVec[0]); //use the first index of the vector to find the existing object.
+			if ( currentObj ) //must exist
+				return currentObj->getObjectVAR(argVec[1]);
+		}
+	}
+	else //This is a variable object that was explicitly declared in the script.
+	{
+		for ( uint16_t x = 0; x < ladderVars.size(); x++ )
+		{
+			shared_ptr<Ladder_VAR> pObj = ladderVars[x];
+			if ( pObj && pObj->getID() == id )
+				return pObj;
+		}
 	}
 	
 	return 0; //default
@@ -235,9 +248,6 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewLadderObject(const String &name, const
 		if (ObjArgs.size() >= 1) //must have at least one arg (first indictes the object type)
 		{
 			String type = ObjArgs[0];
-			#ifdef DEBUG
-			Serial.println("Type is " + type);
-			#endif
 			if ( type == variableTag1 || type == variableTag2 ) //Is this a variable type object? (Used for local data storage in memory, to facilitate communication between objects)
 			{
 				return createVariableOBJ(name, ObjArgs);
@@ -260,9 +270,6 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewLadderObject(const String &name, const
 			}
 			else if ( type == mathTag ) 
 			{
-				#ifdef DEBUG
-				Serial.println("Math object is here");
-				#endif
 				return createMathOBJ(name, ObjArgs);
 			}
 			else if ( type == remoteTag )
@@ -600,29 +607,31 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOneshotOBJ()
 shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const vector<String> & args)
 {
 	shared_ptr<MathBlockOBJ> newObj = 0;
-	if(args.size() >= 3)
+	uint8_t argSize = args.size(); //get number of arguments that were passed in
+
+	if(argSize >= 3)
 	{
-		String function = args[1];
-		uint8_t argSize = args.size();
+		String function = args[1]; //this is the type of function that is being created
 		shared_ptr<Ladder_VAR> var1ptr = findLadderVarByID(args[2]);
 		shared_ptr<Ladder_VAR> var2ptr = 0;
 		shared_ptr<Ladder_VAR> var3ptr = 0;
 		
-		
-		#ifdef DEBUG
-		Serial.println("Function is " + function);
-		#endif
+		if ( !var1ptr ) //must always have at least one valid source to continue
+		{
+			//error here could not find argument
+			return 0;
+		}
 
-		//Arguments are arg[0] = math, arg[1] = function, arg[2] = first variable, arg[3] = second variable/dest, arg[4] = dest
-		if(argSize <= 4)
+		//Arguments are arg[0] = math, arg[1] = function, arg[2] = first variable, arg[3] = second variable, arg[4] = dest
+		if(argSize >= 4) //must have at least 4 args to access string at args[3]
 		{
 			var2ptr = findLadderVarByID(args[3]);
 		}
-		else if(argSize == 5)
+		if(argSize == 5) //must have at least 5 args
 		{
 			var3ptr = findLadderVarByID(args[4]);
 		}
-		else
+		else if ( argSize > 5 )
 		{
 			sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
 		}
@@ -632,12 +641,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			if(argSize == 3)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_TAN, var1ptr);
-				newObj->computeTAN();
 			}
 			else if(argSize == 4)
 			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_TAN, var1ptr, make_shared<Ladder_VAR>(0, bitTagSRCB), var2ptr);
-				newObj->computeTAN();
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_TAN, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
 			}
 			else
 			{
@@ -649,12 +656,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			if(argSize == 3)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_SIN, var1ptr);
-				newObj->computeSIN();
 			}
 			else if(argSize == 4)
 			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_SIN, var1ptr, make_shared<Ladder_VAR>(0, bitTagSRCB), var2ptr);
-				newObj->computeSIN();
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_SIN, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
 			}
 			else
 			{
@@ -666,12 +671,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			if(argSize == 3)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_COS, var1ptr);
-				newObj->computeCOS();
 			}
 			else if(argSize == 4)
 			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_COS, var1ptr, make_shared<Ladder_VAR>(0, bitTagSRCB), var2ptr);
-				newObj->computeCOS();
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_COS, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
 			}
 			else
 			{
@@ -683,12 +686,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			if(argSize == 3)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ATAN, var1ptr);
-				newObj->computeATAN();
 			}
 			else if(argSize == 4)
 			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ATAN, var1ptr, make_shared<Ladder_VAR>(0, bitTagSRCB), var2ptr);
-				newObj->computeATAN();
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ATAN, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
 			}
 			else
 			{
@@ -700,12 +701,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			if(argSize == 3)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ASIN, var1ptr);
-				newObj->computeASIN();
 			}
 			else if(argSize == 4)
 			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ASIN, var1ptr, make_shared<Ladder_VAR>(0, bitTagSRCB), var2ptr);
-				newObj->computeASIN();
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ASIN, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
 			}
 			else
 			{
@@ -717,12 +716,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			if(argSize == 3)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ACOS, var1ptr);
-				newObj->computeACOS();
 			}
 			else if(argSize == 4)
 			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ACOS, var1ptr, make_shared<Ladder_VAR>(0, bitTagSRCB), var2ptr);
-				newObj->computeACOS();
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ACOS, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
 			}
 			else
 			{
@@ -738,12 +735,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			else if(argSize == 4)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_MUL, var1ptr, var2ptr);
-				newObj->computeMUL();
 			}
 			else if(argSize == 5)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_MUL, var1ptr, var2ptr, var3ptr);
-				newObj->computeMUL();
 			}
 			else
 			{
@@ -764,12 +759,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			else if(argSize == 4)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_DIV, var1ptr, var2ptr);
-				newObj->computeDIV();
 			}
 			else if(argSize == 5)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_DIV, var1ptr, var2ptr, var3ptr);
-				newObj->computeDIV();
 			}
 			else
 			{
@@ -785,12 +778,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			else if(argSize == 4)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ADD, var1ptr, var2ptr);
-				newObj->computeADD();
 			}
 			else if(argSize == 5)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ADD, var1ptr, var2ptr, var3ptr);
-				newObj->computeADD();
 			}
 			else
 			{
@@ -806,12 +797,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			else if(argSize == 4)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_SUB, var1ptr, var2ptr);
-				newObj->computeSUB();
 			}
 			else if(argSize == 5)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_SUB, var1ptr, var2ptr, var3ptr);
-				newObj->computeSUB();
 			}
 			else
 			{
@@ -827,12 +816,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			else if(argSize == 4)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_EQ, var1ptr, var2ptr);
-				newObj->computeEQ();
 			}
 			else if(argSize == 5)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_EQ, var1ptr, var2ptr, var3ptr);
-				newObj->computeEQ();
 			}
 			else
 			{
@@ -848,12 +835,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			else if(argSize == 4)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_NEQ, var1ptr, var2ptr);
-				newObj->computeNEQ();
 			}
 			else if(argSize == 5)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_NEQ, var1ptr, var2ptr, var3ptr);
-				newObj->computeNEQ();
 			}
 			else
 			{
@@ -869,12 +854,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			else if(argSize == 4)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_GRT, var1ptr, var2ptr);
-				newObj->computeGRT();
 			}
 			else if(argSize == 5)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_GRT, var1ptr, var2ptr, var3ptr);
-				newObj->computeGRT();
 			}
 			else
 			{
@@ -890,12 +873,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			else if(argSize == 4)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_LES, var1ptr, var2ptr);
-				newObj->computeLES();
 			}
 			else if(argSize == 5)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_LES, var1ptr, var2ptr, var3ptr);
-				newObj->computeLES();
 			}
 			else
 			{
@@ -911,12 +892,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			else if(argSize == 4)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_GRQ, var1ptr, var2ptr);
-				newObj->computeGRQ();
 			}
 			else if(argSize == 5)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_GRQ, var1ptr, var2ptr, var3ptr);
-				newObj->computeGRQ();
 			}
 			else
 			{
@@ -932,12 +911,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			else if(argSize == 4)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_LEQ, var1ptr, var2ptr);
-				newObj->computeLEQ();
 			}
 			else if(argSize == 5)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_LEQ, var1ptr, var2ptr, var3ptr);
-				newObj->computeLEQ();
 			}
 			else
 			{
@@ -949,7 +926,6 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			if(argSize == 3)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_INC, var1ptr);
-				newObj->computeINC();
 			}
 			else
 			{
@@ -961,7 +937,6 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			if(argSize == 3)
 			{
 				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_DEC, var1ptr);
-				newObj->computeDEC();
 			}
 			else
 			{
@@ -976,8 +951,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			}
 			else if(argSize == 4)
 			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_MOV, var1ptr, make_shared<Ladder_VAR>(0, bitTagSRCB), var2ptr);
-				newObj->computeMOV();
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_MOV, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
 			}
 			else
 			{
@@ -989,6 +963,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 			sendError(ERR_DATA::ERR_INVALID_FUNCTION, function);
 		}
 	}
+
 	if(newObj)
 	{
 		ladderObjects.emplace_back(newObj);
