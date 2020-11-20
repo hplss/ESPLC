@@ -401,23 +401,20 @@ void MathBlockOBJ::computeMOV()
     if(usesUnsignedInt())
     {
         uint64_t value = sourceA->getValue<uint64_t>();
-        sourceB->setValue(value);
         destination->setValue(value);
     }
     if ( usesFloat() )
     {
         double value = sourceA->getValue<double>();
-        sourceB->setValue(value);
         destination->setValue(value);
     }
     else
     {
         int64_t value = sourceA->getValue<int64_t>();
-        sourceB->setValue(value);
         destination->setValue(value);
     }
     #ifdef DEBUG 
-    Serial.println("SourceB value is: " + sourceB->getValueStr() );
+    Serial.println("Dest value is: " + destination->getValueStr() );
     #endif
 }
 
@@ -443,13 +440,6 @@ void MathBlockOBJ::computeCOS()
 {
     double val = sourceA->getValue<double>();
     destination->setValue(cos(val));
-    if(sourceB != 0)
-    {
-        sourceB->setValue(cos(val));
-        #ifdef DEBUG 
-        Serial.println("Dest Value is: " + sourceB->getValueStr() );
-        #endif
-    }
     #ifdef DEBUG 
     Serial.println("Dest Value is: " + destination->getValueStr() );
     #endif

@@ -111,7 +111,8 @@ const String &err_failed_creation PROGMEM = PSTR("Failed to create object."),
 			 &err_var_out_of_range PROGMEM = PSTR("Value assigned exceeds variable range."),
 			 &err_invalid_function PROGMEM = PSTR("Function given is not supported."),
 			 &err_math_too_many_args PROGMEM = PSTR("Function was given too many arguments."),
-			 &err_math_too_few_args PROGMEM = PSTR("Function was given too few arguments.");
+			 &err_math_too_few_args PROGMEM = PSTR("Function was given too few arguments."),
+			 &err_math_division_by_zero PROGMEM = PSTR("A division by zero was about to occur.");
 //
 //Variable string definitions
 const String &VAR_INT32 PROGMEM = PSTR("INT32"),

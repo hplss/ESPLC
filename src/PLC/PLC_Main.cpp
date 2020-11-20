@@ -599,17 +599,15 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOneshotOBJ()
 
 shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const vector<String> & args)
 {
-	if(args.size() >= 2)
+	shared_ptr<MathBlockOBJ> newObj = 0;
+	if(args.size() >= 3)
 	{
 		String function = args[1];
 		uint8_t argSize = args.size();
-		if(argSize < 3)
-		{
-			sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
-		}
 		shared_ptr<Ladder_VAR> var1ptr = findLadderVarByID(args[2]);
 		shared_ptr<Ladder_VAR> var2ptr = 0;
 		shared_ptr<Ladder_VAR> var3ptr = 0;
+		
 		
 		#ifdef DEBUG
 		Serial.println("Function is " + function);
@@ -633,17 +631,13 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 		{
 			if(argSize == 3)
 			{
-				shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_TAN, var1ptr));
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_TAN, var1ptr);
 				newObj->computeTAN();
-				ladderObjects.emplace_back(newObj);
-				return newObj;
 			}
 			else if(argSize == 4)
 			{
-				shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_TAN, var1ptr, var2ptr));
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_TAN, var1ptr, make_shared<Ladder_VAR>(0, bitTagSRCB), var2ptr);
 				newObj->computeTAN();
-				ladderObjects.emplace_back(newObj);
-				return newObj;
 			}
 			else
 			{
@@ -654,17 +648,13 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 		{
 			if(argSize == 3)
 			{
-				shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_SIN, var1ptr));
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_SIN, var1ptr);
 				newObj->computeSIN();
-				ladderObjects.emplace_back(newObj);
-				return newObj;
 			}
 			else if(argSize == 4)
 			{
-				shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_SIN, var1ptr, var2ptr));
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_SIN, var1ptr, make_shared<Ladder_VAR>(0, bitTagSRCB), var2ptr);
 				newObj->computeSIN();
-				ladderObjects.emplace_back(newObj);
-				return newObj;
 			}
 			else
 			{
@@ -675,142 +665,335 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const 
 		{
 			if(argSize == 3)
 			{
-				shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_COS, var1ptr));
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_COS, var1ptr);
 				newObj->computeCOS();
-				ladderObjects.emplace_back(newObj);
-				return newObj;
 			}
 			else if(argSize == 4)
 			{
-				shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_COS, var1ptr, var2ptr));
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_COS, var1ptr, make_shared<Ladder_VAR>(0, bitTagSRCB), var2ptr);
 				newObj->computeCOS();
-				ladderObjects.emplace_back(newObj);
-				return newObj;
 			}
 			else
 			{
 				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
 			}
-			
 		}
 		else if(function == typeTagMATAN)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_ATAN, var1ptr));
-			newObj->computeATAN();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize == 3)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ATAN, var1ptr);
+				newObj->computeATAN();
+			}
+			else if(argSize == 4)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ATAN, var1ptr, make_shared<Ladder_VAR>(0, bitTagSRCB), var2ptr);
+				newObj->computeATAN();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMASIN)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_ASIN, var1ptr));
-			newObj->computeASIN();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize == 3)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ASIN, var1ptr);
+				newObj->computeASIN();
+			}
+			else if(argSize == 4)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ASIN, var1ptr, make_shared<Ladder_VAR>(0, bitTagSRCB), var2ptr);
+				newObj->computeASIN();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMACOS)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_ACOS, var1ptr));
-			newObj->computeACOS();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize == 3)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ACOS, var1ptr);
+				newObj->computeACOS();
+			}
+			else if(argSize == 4)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ACOS, var1ptr, make_shared<Ladder_VAR>(0, bitTagSRCB), var2ptr);
+				newObj->computeACOS();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMMUL)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_MUL, var1ptr, var2ptr));
-			newObj->computeMUL();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize < 4)
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
+			}
+			else if(argSize == 4)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_MUL, var1ptr, var2ptr);
+				newObj->computeMUL();
+			}
+			else if(argSize == 5)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_MUL, var1ptr, var2ptr, var3ptr);
+				newObj->computeMUL();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMDIV)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_DIV, var1ptr, var2ptr));
-			newObj->computeDIV();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize < 4)
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
+			}
+			else if(var2ptr->getValue<double>() == 0)
+			{
+				newObj = 0;
+				sendError(ERR_DATA::ERR_MATH_DIV_BY_0);
+			}
+			else if(argSize == 4)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_DIV, var1ptr, var2ptr);
+				newObj->computeDIV();
+			}
+			else if(argSize == 5)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_DIV, var1ptr, var2ptr, var3ptr);
+				newObj->computeDIV();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMADD)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_ADD, var1ptr, var2ptr));
-			newObj->computeADD();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize < 4)
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
+			}
+			else if(argSize == 4)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ADD, var1ptr, var2ptr);
+				newObj->computeADD();
+			}
+			else if(argSize == 5)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ADD, var1ptr, var2ptr, var3ptr);
+				newObj->computeADD();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMSUB)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_SUB, var1ptr, var2ptr));
-			newObj->computeSUB();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize < 4)
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
+			}
+			else if(argSize == 4)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_SUB, var1ptr, var2ptr);
+				newObj->computeSUB();
+			}
+			else if(argSize == 5)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_SUB, var1ptr, var2ptr, var3ptr);
+				newObj->computeSUB();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMEQ)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_EQ, var1ptr, var2ptr));
-			newObj->computeEQ();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize < 4)
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
+			}
+			else if(argSize == 4)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_EQ, var1ptr, var2ptr);
+				newObj->computeEQ();
+			}
+			else if(argSize == 5)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_EQ, var1ptr, var2ptr, var3ptr);
+				newObj->computeEQ();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMNEQ)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_NEQ, var1ptr, var2ptr));
-			newObj->computeNEQ();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize < 4)
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
+			}
+			else if(argSize == 4)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_NEQ, var1ptr, var2ptr);
+				newObj->computeNEQ();
+			}
+			else if(argSize == 5)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_NEQ, var1ptr, var2ptr, var3ptr);
+				newObj->computeNEQ();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMGRE)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_GRT, var1ptr, var2ptr));
-			newObj->computeGRT();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize < 4)
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
+			}
+			else if(argSize == 4)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_GRT, var1ptr, var2ptr);
+				newObj->computeGRT();
+			}
+			else if(argSize == 5)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_GRT, var1ptr, var2ptr, var3ptr);
+				newObj->computeGRT();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMLES)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_LES, var1ptr, var2ptr));
-			newObj->computeLES();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize < 4)
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
+			}
+			else if(argSize == 4)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_LES, var1ptr, var2ptr);
+				newObj->computeLES();
+			}
+			else if(argSize == 5)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_LES, var1ptr, var2ptr, var3ptr);
+				newObj->computeLES();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMGREE)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_GRQ, var1ptr, var2ptr));
-			newObj->computeGRQ();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize < 4)
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
+			}
+			else if(argSize == 4)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_GRQ, var1ptr, var2ptr);
+				newObj->computeGRQ();
+			}
+			else if(argSize == 5)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_GRQ, var1ptr, var2ptr, var3ptr);
+				newObj->computeGRQ();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMLESE)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_LEQ, var1ptr, var2ptr));
-			newObj->computeLEQ();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize < 4)
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
+			}
+			else if(argSize == 4)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_LEQ, var1ptr, var2ptr);
+				newObj->computeLEQ();
+			}
+			else if(argSize == 5)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_LEQ, var1ptr, var2ptr, var3ptr);
+				newObj->computeLEQ();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMINC)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_INC, var1ptr));
-			newObj->computeINC();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize == 3)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_INC, var1ptr);
+				newObj->computeINC();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMDEC)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_DEC, var1ptr));
-			newObj->computeDEC();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize == 3)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_DEC, var1ptr);
+				newObj->computeDEC();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else if(function == typeTagMMOV)
 		{
-			shared_ptr<MathBlockOBJ> newObj(new MathBlockOBJ(id, OBJ_TYPE::TYPE_MATH_MOV, var1ptr, var2ptr));
-			newObj->computeMOV();
-			ladderObjects.emplace_back(newObj);
-			return newObj;
+			if(argSize < 4)
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
+			}
+			else if(argSize == 4)
+			{
+				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_MOV, var1ptr, make_shared<Ladder_VAR>(0, bitTagSRCB), var2ptr);
+				newObj->computeMOV();
+			}
+			else
+			{
+				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
+			}
 		}
 		else
 		{
 			sendError(ERR_DATA::ERR_INVALID_FUNCTION, function);
 		}
 	}
-	return 0;
+	if(newObj)
+	{
+		ladderObjects.emplace_back(newObj);
+	}
+	return newObj;
 }
 
 shared_ptr<Ladder_OBJ_Accessor> PLC_Main::createRemoteClient( const String &id, const vector<String> &args )
@@ -1023,6 +1206,11 @@ void PLC_Main::sendError(ERR_DATA err, const String &info )
 		case ERR_DATA::ERR_MATH_TOO_FEW_ARGS:
 		{
 			error = err_math_too_few_args;
+		}
+		break;
+		case ERR_DATA::ERR_MATH_DIV_BY_0:
+		{
+			error = err_math_division_by_zero;
 		}
 		break;
 	}

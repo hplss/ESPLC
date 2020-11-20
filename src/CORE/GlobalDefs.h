@@ -125,7 +125,8 @@ extern const String &err_failed_creation PROGMEM,
 					&err_var_out_of_range PROGMEM,
 					&err_invalid_function PROGMEM,
 					&err_math_too_many_args PROGMEM,
-					&err_math_too_few_args PROGMEM;
+					&err_math_too_few_args PROGMEM,
+					&err_math_division_by_zero PROGMEM;
 
 //Variable string definitions
 extern const String &VAR_INT32 PROGMEM,
@@ -242,7 +243,8 @@ enum class ERR_DATA : uint8_t
 	ERR_OUT_OF_RANGE, //This indicates that the value assigned exceeds the maximum value of the variable type
 	ERR_INVALID_FUNCTION, //This indicates that a function was given to a math object that is not supported.
 	ERR_MATH_TOO_MANY_ARGS, //This indicates that a function was given too many arguments to use.
-	ERR_MATH_TOO_FEW_ARGS //This indicates that a function was given too few arguments to use.
+	ERR_MATH_TOO_FEW_ARGS, //This indicates that a function was given too few arguments to use.
+	ERR_MATH_DIV_BY_0 //This indicates that a division by zero was about to occur.
 };
 
 
