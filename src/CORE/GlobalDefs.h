@@ -144,6 +144,7 @@ extern const String &VAR_INT32 PROGMEM,
 //The OBJ_TYPE enum contains identifiers that indicate a given LADDER_OBJ object's functionality. This is typically used by the parser and object creation functions.
 enum class OBJ_TYPE : uint8_t
 {
+	TYPE_INVALID = 0, //invalid type (just in case)
 	TYPE_INPUT,		//physical input (digital read)
 	TYPE_INPUT_ANALOG,  //physical input (analog read)
 	TYPE_OUTPUT,		//physical output - digital (1/0)

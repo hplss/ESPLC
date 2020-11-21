@@ -74,7 +74,6 @@ class PLC_Remote_Server
 	uint16_t i_Port;
 };
 
-
 //The PLC_Main object handles the parsing of a user-inputtd logic script and functions as the central manager for all created ladder logic objects. 
 class PLC_Main
 {
@@ -96,6 +95,8 @@ class PLC_Main
 	void generatePWMMap();
 	//This is used to reserve an available PWM channel from the PWM map. A return value of -1 indicatces a failure
 	int8_t reservePWMChannel();
+
+	OBJ_TYPE findMathObjectType( const String & ); //testing - clean up later
 
 	//Overloaded function that parses a logic script by string reference.
 	//Returns true on success.
