@@ -29,22 +29,22 @@ void PLC_Remote_Server::processRequests()
 {
     WiFiClient client = localServer->available();
 
-    if ( client )
+    if (client)
     {
-        uint32_t storedTime = millis(); //Store the current time
+        uint32_t storedTime = millis();
 
-        IPAddress addr = client.remoteIP();
-        while( !client.available() && (millis() - storedTime) < 200 ){} //wait to receive a command from the connected client, break out if we have
+        while( !client.available() && (millis() - storedTime) < 1000 ){}
 
         if ( client.available() ) //have we actually received something from?
         {
             client.setNoDelay(true); 
-            client.setTimeout(0);
+            client.setTimeout(1000);
             client.print(handleRequest(client.readStringUntil(CHAR_TRANSMIT_END)) + CHAR_TRANSMIT_END ); //Figure out what the client wants and then write the reply
         }
-        
-        client.stop(); //end this connection after sending the reply
     }
+    
+    client.flush();
+    client.stop();
 }
 
 String PLC_Remote_Server::handleRequest( const String &request ) 
@@ -65,7 +65,7 @@ bool PLC_Remote_Server::clientExists( const WiFiClient &client )
 {
     for ( uint8_t x = 0; x < localClients.size(); x++ )
     {
-        if ( localClients[x] == client.remoteIP() )
+        if ( localClients[x]->remoteIP() == client.remoteIP() )
             return true;
     }  
 

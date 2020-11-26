@@ -22,7 +22,7 @@ using namespace std;
 const unsigned char NULL_CHAR = 0;//'/0';
 #define MAX_BUFFERSIZE 128
 
-#define MAX_PLC_OBJ_NAME 32 //32 chars seems like a reasonably long enough name for a ladder logic object.
+#define MAX_PLC_OBJ_NAME 1500 //32 chars seems like a reasonably long enough name for a ladder logic object.
 
 #define VERBOSE_MAX 2
 
@@ -318,6 +318,8 @@ vector<String> splitString(const String &, const char, bool = true, const char =
 
 void reverse(char* begin, char* end); //taken from 'stdlib_noniso.c'
 
+OBJ_TYPE findMathObjectType( const String &str );
+
 template <typename T>
 char* intToASCII(T value, char* result, uint8_t base = 10) 
 {
@@ -367,6 +369,7 @@ bool strBeginsWith( const String &, const vector<char> & );
 bool strBeginsWith( const String &, const char  );
 bool strEndsWith( const String &, const vector<char> & );
 bool strEndsWith( const String &, const char );
+uint8_t strDataType( const String &str );
 //Remove specific character(s) from a given string.
 String removeFromStr( const String &, const vector<char> &);
 String removeFromStr( const String &, const char);

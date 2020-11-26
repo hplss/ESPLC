@@ -34,6 +34,12 @@ class Ladder_VAR : public Ladder_OBJ_Logical
 	//this function returns a string that represents the currently stored value in the variable object.
 	String getValueStr();
 
+	bool operator>(const Ladder_VAR &);
+	bool operator>=(const Ladder_VAR &);
+	bool operator<(const Ladder_VAR &);
+	bool operator<=(const Ladder_VAR &);
+	bool operator==(const Ladder_VAR &);
+
 	template <class T>
 	T getValue()
 	{

@@ -11,6 +11,7 @@ class PLC_Remote_Client : public Ladder_OBJ_Accessor
 	PLC_Remote_Client( const String &, const IPAddress &, uint16_t, uint32_t = 2000, uint32_t = 1000, uint8_t = 10 );
 	~PLC_Remote_Client() //deconstructor
 	{
+		nodeClient.stop();
 	}
 
 	//This updates an individual remote object, if an update is requested.
@@ -37,7 +38,11 @@ class PLC_Remote_Client : public Ladder_OBJ_Accessor
              i_updateFreq;
 	uint16_t i_hostPort;
 	uint8_t i_numRetries;
+
+	WiFiClient nodeClient;
 	IPAddress ip_hostAddress; //This is the address for the remote server.
+
+	bool b_enabled;
 };
 
 #endif

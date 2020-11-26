@@ -43,65 +43,6 @@ String &toUpper(String &strn)
 	return strn; //pass it along
 }
 
-OBJ_TYPE PLC_Main::findMathObjectType( const String &str )
-{
-	if( str == typeTagMACOS )
-		return OBJ_TYPE::TYPE_MATH_ACOS;
-
-	else if( str == typeTagMADD )
-		return OBJ_TYPE::TYPE_MATH_ADD;
-
-	else if( str == typeTagMASIN )
-		return OBJ_TYPE::TYPE_MATH_ASIN;
-
-	else if( str == typeTagMATAN )
-		return OBJ_TYPE::TYPE_MATH_ATAN;
-
-	else if ( str == typeTagMCOS )
-		return OBJ_TYPE::TYPE_MATH_COS;
-
-	else if ( str == typeTagMDEC )
-		return OBJ_TYPE::TYPE_MATH_DEC;
-
-	else if ( str == typeTagMDIV )
-		return OBJ_TYPE::TYPE_MATH_DIV;
-
-	else if ( str == typeTagMEQ )
-		return OBJ_TYPE::TYPE_MATH_EQ;
-
-	else if ( str == typeTagMGRE )
-		return OBJ_TYPE::TYPE_MATH_GRT;
-
-	else if ( str == typeTagMGREE )
-		return OBJ_TYPE::TYPE_MATH_GRQ;
-
-	else if ( str == typeTagMINC )
-		return OBJ_TYPE::TYPE_MATH_INC;
-
-	else if ( str == typeTagMLES )
-		return OBJ_TYPE::TYPE_MATH_ACOS;
-
-	else if ( str == typeTagMLESE )
-		return OBJ_TYPE::TYPE_MATH_LEQ;
-
-	else if ( str == typeTagMMOV )
-		return OBJ_TYPE::TYPE_MATH_MOV;
-
-	else if ( str == typeTagMMUL )
-		return OBJ_TYPE::TYPE_MATH_MUL;
-
-	else if ( str == typeTagMSUB )
-		return OBJ_TYPE::TYPE_MATH_SUB;
-
-	else if ( str == typeTagMSIN )
-		return OBJ_TYPE::TYPE_MATH_SIN;
-
-	else if ( str == typeTagMNEQ )
-		return OBJ_TYPE::TYPE_MATH_NEQ;
-
-	return OBJ_TYPE::TYPE_INVALID; //could not find the object
-}
-
 void PLC_Main::generatePinMap()
 {
 	pinMap.clear(); //empty first, just in case.
@@ -307,6 +248,8 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewLadderObject(const String &name, const
 		if (ObjArgs.size() >= 1) //must have at least one arg (first indictes the object type)
 		{
 			String type = ObjArgs[0];
+			OBJ_TYPE objType = findMathObjectType(type);
+
 			if ( type == variableTag1 || type == variableTag2 ) //Is this a variable type object? (Used for local data storage in memory, to facilitate communication between objects)
 			{
 				return createVariableOBJ(name, ObjArgs);
@@ -327,9 +270,9 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewLadderObject(const String &name, const
 			{
 				return createCounterOBJ(name, ObjArgs);
 			}
-			else if ( type == mathTag ) 
+			else if ( objType != OBJ_TYPE::TYPE_INVALID ) //type == mathTag 
 			{
-				return createMathOBJ(name, ObjArgs);
+				return createMathOBJ(name, objType ,ObjArgs);
 			}
 			else if ( type == remoteTag )
 			{
@@ -409,7 +352,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOutputOBJ( const String &id, cons
 	if ( numArgs > 5 ) //frequency
 	{
 		double tempDbl = args[5].toDouble();
-		if ( tempDbl > 0 && tempDbl < CPU_CLK_FREQ/exp2(resolution) ) //80Mhz may or may not be the right value here. Look into later.
+		if ( tempDbl > 0 && tempDbl < (CPU_CLK_FREQ/exp2(resolution)) ) //80Mhz may or may not be the right value here. Look into later.
 			frequency = tempDbl;
 		else
 			sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[5] );
@@ -540,7 +483,6 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 	if ( args.size() > 1 )
 	{
 		bool isDouble = false;
-		String val;
 		
 		if(args[1] == "TRUE")
 		{
@@ -553,25 +495,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 
 		if ( !newObj ) //No explicit boolean object was created
 		{
-			for (uint8_t x = 0; x < args[1].length(); x++ )
-			{
-				if (x > 18) //this is plenty of digits, more than will ever likely be needed
-					break;
-					
-				if ( (args[1][x] >= '0' && args[1][x] <= '9') || args[1][x] == '.' || ( args[1][x] == '-' && x == 0 ) )
-				{
-					if ( args[1][x] == '.' )
-					{
-						if ( isDouble )// multiple '.' chars should be ignored
-							continue;
-							
-						isDouble = true;
-					}
-					val += args[1][x];
-				}
-			}
-			
-			if ( !val.length() )
+			uint8_t type = strDataType( args[1] );
+			if ( type == 2)
+				isDouble = true;
+			else if ( !type || ( type && args[1].length() > 18 ) ) //string value in args[1] cannot be converted to int
 				return 0;
 		}
 
@@ -579,51 +506,51 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 		{
 			if (args[2] == VAR_INT32)
 			{
-				int64_t value = static_cast<int64_t>(atoll(val.c_str()));
+				int64_t value = static_cast<int64_t>(atoll(args[1].c_str()));
 				if( value < INT32_MIN || value > INT32_MAX )
 				{
-					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2] + CHAR_SPACE + val );
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2] + CHAR_SPACE + args[1] );
 					return 0;
 				}
 				newObj = make_shared<Ladder_VAR>( static_cast<int32_t>(value), id );
 			}
 			else if (args[2] == VAR_UINT32)
 			{
-				int64_t value = static_cast<int64_t>(atoll(val.c_str()));
+				int64_t value = static_cast<int64_t>(atoll(args[1].c_str()));
 				if(value < 0 || value > UINT32_MAX)
 				{
-					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2] + CHAR_SPACE + val );
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2] + CHAR_SPACE + args[1] );
 					return 0;
 				}
 				newObj = make_shared<Ladder_VAR>( static_cast<uint_fast32_t>(value), id );
 			}
 			else if (args[2] == VAR_INT64)
 			{
-				int64_t value = static_cast<int64_t>(atoll(val.c_str())); //variable > int64 needed?
+				int64_t value = static_cast<int64_t>(atoll(args[1].c_str())); //variable > int64 needed?
 				if( value < INT64_MIN || value > INT64_MAX ) //Are these criteria possible? -- probably not. Look into later.
 				{
-					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2] + CHAR_SPACE + val );
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2] + CHAR_SPACE + args[1] );
 					return 0;
 				}
 				newObj = make_shared<Ladder_VAR>(value, id);
 			}
 			else if (args[2] == VAR_UINT64)
 			{
-				uint64_t value = static_cast<uint64_t>(strtoull(val.c_str(), NULL, 10));
+				uint64_t value = static_cast<uint64_t>(strtoull(args[1].c_str(), NULL, 10));
 				if( value > UINT64_MAX ) //Is this possible?
 				{
-					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2] + CHAR_SPACE + val );
+					sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[2] + CHAR_SPACE + args[1] );
 					return 0;
 				}
 				newObj = make_shared<Ladder_VAR>( value, id );
 			}
 			else if (args[2] == VAR_DOUBLE)
 			{
-				newObj = make_shared<Ladder_VAR>(atof(val.c_str()), id );
+				newObj = make_shared<Ladder_VAR>(atof(args[1].c_str()), id );
 			}
 			else if (args[2] == VAR_BOOL || args[2] == VAR_BOOLEAN)
 			{
-				newObj = make_shared<Ladder_VAR>(static_cast<bool>(val.c_str()), id );
+				newObj = make_shared<Ladder_VAR>(static_cast<bool>(args[1].c_str()), id );
 			}
 			else 
 			{
@@ -636,11 +563,11 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 		{
 			if (isDouble)
 			{
-				newObj = make_shared<Ladder_VAR>( atof(val.c_str()), id );
+				newObj = make_shared<Ladder_VAR>( atof(args[1].c_str()), id );
 			}
 			else
 			{
-				newObj = make_shared<Ladder_VAR>( atoll(val.c_str()), id ); //assume a long (greater than 32 bits) This is a safe data type to use as it is a signed 64 bit int
+				newObj = make_shared<Ladder_VAR>( atoll(args[1].c_str()), id ); //assume a long (greater than 32 bits) This is a safe data type to use as it is a signed 64 bit int
 			}
 		}
 	}
@@ -663,301 +590,86 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOneshotOBJ()
 	return newObj;
 }
 
-shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, const vector<String> & args)
+shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, OBJ_TYPE type, const vector<String> & args)
 {
 	shared_ptr<MathBlockOBJ> newObj = 0;
 	uint8_t argSize = args.size(); //get number of arguments that were passed in
 
-	if(argSize >= 3)
+	if(argSize >= 2)
 	{
-		//OBJ_TYPE function = findMathObjectType(args[1]);
-		String function = args[1]; //this is the type of function that is being created
-		shared_ptr<Ladder_VAR> var1ptr = findLadderVarByID(args[2]);
+		uint8_t var1DataType = strDataType(args[1]), var2DataType = 0, var3DataType = 0;
+		shared_ptr<Ladder_VAR> var1ptr = 0;
 		shared_ptr<Ladder_VAR> var2ptr = 0;
 		shared_ptr<Ladder_VAR> var3ptr = 0;
 		
-		if ( !var1ptr || function == OBJ_TYPE::TYPE_INVALID ) //must always have at least one valid source and valid math type to continue
+		if ( !var1DataType )
 		{
-			//error here could not find argument
-			return 0;
+			var1ptr = findLadderVarByID(args[1]);
+			if ( !var1ptr ) //must always have at least one valid source and valid math type to continue
+			{
+				//error here could not find argument
+				return 0;
+			}
 		}
+		
 
 		//Arguments are arg[0] = math, arg[1] = function, arg[2] = first variable, arg[3] = second variable, arg[4] = dest
-		if(argSize >= 4) //must have at least 4 args to access string at args[3]
+		if(argSize >= 3) //must have at least 4 args to access string at args[3]
 		{
-			var2ptr = findLadderVarByID(args[3]);
+			var2DataType = strDataType(args[2]);
+			if ( !var2DataType ) // string type data only
+				var2ptr = findLadderVarByID(args[2]);
 		}
-		if(argSize == 5) //must have at least 5 args
+		if(argSize == 4) //must have at least 5 args
 		{
-			var3ptr = findLadderVarByID(args[4]);
+			var3DataType = strDataType(args[3]);
+			if ( !var3DataType ) 
+				var3ptr = findLadderVarByID(args[3]);
 		}
-		else if ( argSize > 5 )
+		else if ( argSize > 4 )
 		{
 			sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
 		}
 		
-		if(function == typeTagMTAN)
+		//check for objects that need SourceA only
+		if ( type == OBJ_TYPE::TYPE_MATH_INC || type == OBJ_TYPE::TYPE_MATH_DEC )
 		{
-			if(argSize <= 4)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_TAN, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
+			newObj = make_shared<MathBlockOBJ>(id, type, var1ptr);
 		}
-		else if(function == typeTagMSIN)
+		// check for objects that use SourceA / DEST (Optional) only
+		else if(type == OBJ_TYPE::TYPE_MATH_TAN || type == OBJ_TYPE::TYPE_MATH_SIN || type == OBJ_TYPE::TYPE_MATH_ACOS || type == OBJ_TYPE::TYPE_MATH_COS
+		|| type == OBJ_TYPE::TYPE_MATH_ATAN || type == OBJ_TYPE::TYPE_MATH_ASIN || type == OBJ_TYPE::TYPE_MATH_MOV ) 
 		{
-			if(argSize <= 4)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_SIN, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMCOS)
-		{
-			if(argSize <= 4)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_COS, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMATAN)
-		{
-			if(argSize <= 4)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ATAN, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMASIN)
-		{
-			if(argSize <= 4)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ASIN, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMACOS)
-		{
-			if(argSize <= 4)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ACOS, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMMUL)
-		{
-			if(argSize < 4)
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
-			}
-			else if(argSize <= 5)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_MUL, var1ptr, var2ptr, var3ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMDIV)
-		{
-			if(argSize < 4)
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
-			}
-			else if(argSize <= 5)
-			{
-				if(var2ptr->getValue<double>() == 0)
-				{
-					newObj = 0;
-					sendError(ERR_DATA::ERR_MATH_DIV_BY_0);
-				}
+			if ( var1ptr )
+				newObj = make_shared<MathBlockOBJ>(id, type, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
+			else if ( var1DataType == 1 ) //int type
+				newObj = make_shared<MathBlockOBJ>(id, type, atoll(args[1].c_str()), shared_ptr<Ladder_VAR>(0), var2ptr);
+			else if ( var1DataType == 2 )//double type
+				newObj = make_shared<MathBlockOBJ>(id, type, atof(args[1].c_str()), shared_ptr<Ladder_VAR>(0), var2ptr);
 
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_DIV, var1ptr, var2ptr, var3ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
 		}
-		else if(function == typeTagMADD)
+		//check for objects that require SourceA, SourceB, and DEST (Optional)
+		else if(type == OBJ_TYPE::TYPE_MATH_MUL || type == OBJ_TYPE::TYPE_MATH_DIV || type == OBJ_TYPE::TYPE_MATH_ADD || type == OBJ_TYPE::TYPE_MATH_SUB
+		|| type == OBJ_TYPE::TYPE_MATH_EQ || type == OBJ_TYPE::TYPE_MATH_NEQ || type == OBJ_TYPE::TYPE_MATH_GRT || type == OBJ_TYPE::TYPE_MATH_GRQ
+		|| type == OBJ_TYPE::TYPE_MATH_LES || type == OBJ_TYPE::TYPE_MATH_LEQ   )
 		{
-			if(argSize < 4)
+			if(argSize < 3)
 			{
 				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
 			}
-			else if(argSize <= 5)
+			else if(argSize <= 4)
 			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_ADD, var1ptr, var2ptr, var3ptr);
+				if ( var1ptr && var2ptr ) //must have valid pointers
+					newObj = make_shared<MathBlockOBJ>(id, type, var1ptr, var2ptr, var3ptr);
+				else if ( var1DataType == 2 && var2DataType == 2)
+					newObj = make_shared<MathBlockOBJ>(id, type, atof(args[1].c_str()), atof(args[2].c_str()), var3ptr);
+				else if ( var1DataType == 1 && var2DataType == 2 )
+					newObj = make_shared<MathBlockOBJ>(id, type, atoll(args[1].c_str()), atof(args[2].c_str()), var3ptr);
+				else if ( var1DataType == 2 && var2DataType == 1 )
+					newObj = make_shared<MathBlockOBJ>(id, type, atof(args[1].c_str()), atoll(args[2].c_str()), var3ptr);
+				else if ( var1DataType == 1 && var2DataType == 1 )
+					newObj = make_shared<MathBlockOBJ>(id, type, atoll(args[1].c_str()), atoll(args[2].c_str()), var3ptr);
 			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMSUB)
-		{
-			if(argSize < 4)
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
-			}
-			else if(argSize <= 5)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_SUB, var1ptr, var2ptr, var3ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMEQ)
-		{
-			if(argSize < 4)
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
-			}
-			else if(argSize <= 5)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_EQ, var1ptr, var2ptr, var3ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMNEQ)
-		{
-			if(argSize < 4)
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
-			}
-			else if(argSize <= 5)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_NEQ, var1ptr, var2ptr, var3ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMGRE)
-		{
-			if(argSize < 4)
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
-			}
-			else if(argSize <= 5)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_GRT, var1ptr, var2ptr, var3ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMLES)
-		{
-			if(argSize < 4)
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
-			}
-			else if(argSize <= 5)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_LES, var1ptr, var2ptr, var3ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMGREE)
-		{
-			if(argSize < 4)
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
-			}
-			else if(argSize <= 5)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_GRQ, var1ptr, var2ptr, var3ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMLESE)
-		{
-			if(argSize < 4)
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
-			}
-			else if(argSize <= 5)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_LEQ, var1ptr, var2ptr, var3ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMINC)
-		{
-			if(argSize == 3)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_INC, var1ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMDEC)
-		{
-			if(argSize == 3)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_DEC, var1ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else if(function == typeTagMMOV)
-		{
-			if(argSize < 4)
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_FEW_ARGS);
-			}
-			else if(argSize == 4)
-			{
-				newObj = make_shared<MathBlockOBJ>(id, OBJ_TYPE::TYPE_MATH_MOV, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
-			}
-			else
-			{
-				sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
-			}
-		}
-		else
-		{
-			sendError(ERR_DATA::ERR_INVALID_FUNCTION, function);
 		}
 	}
 

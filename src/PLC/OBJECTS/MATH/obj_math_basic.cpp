@@ -121,21 +121,15 @@ void MathBlockOBJ::computeMUL()
 {
     if ( usesUnsignedInt() )
     {
-        uint64_t val1 = sourceA->getValue<uint64_t>();
-        uint64_t val2 = sourceB->getValue<uint64_t>();
-        destination->setValue( val1 * val2);
+        destination->setValue( sourceA->getValue<uint64_t>() * sourceB->getValue<uint64_t>());
     }
     else if ( usesFloat() )
     {
-        double val1 = sourceA->getValue<double>();
-        double val2 = sourceB->getValue<double>();
-        destination->setValue( val1 * val2);
+        destination->setValue( sourceA->getValue<double>() * sourceB->getValue<double>());
     }
     else //assume signed int
     {
-        int64_t val1 = sourceA->getValue<int64_t>();
-        int64_t val2 = sourceB->getValue<int64_t>();
-        destination->setValue( val1 * val2);
+        destination->setValue( sourceA->getValue<int64_t>() * sourceB->getValue<int64_t>());
     }
 }
 
@@ -143,28 +137,24 @@ void MathBlockOBJ::computeDIV()
 {
     double val1 = sourceA->getValue<double>();
     double val2 = sourceB->getValue<double>();
-    destination->setValue( val1 / val2); //always compute as float for now.
+
+    if (val2 != 0) //cannot divide by zero
+        destination->setValue( val1 / val2); //always compute as float for now.
 }
 
 void MathBlockOBJ::computeADD()
 {
     if ( usesUnsignedInt() )
     {
-        uint64_t val1 = sourceA->getValue<uint64_t>();
-        uint64_t val2 = sourceB->getValue<uint64_t>();
-        destination->setValue( val1 + val2);
+        destination->setValue( sourceA->getValue<uint64_t>() + sourceB->getValue<uint64_t>());
     }
     else if ( usesFloat() )
     {
-        double val1 = sourceA->getValue<double>();
-        double val2 = sourceB->getValue<double>();
-        destination->setValue( val1 + val2);
+        destination->setValue( sourceA->getValue<double>() + sourceB->getValue<double>());
     }
     else //assume signed int
     {
-        int64_t val1 = sourceA->getValue<int64_t>();
-        int64_t val2 = sourceB->getValue<int64_t>();
-        destination->setValue( val1 + val2);
+        destination->setValue( sourceA->getValue<int64_t>() + sourceB->getValue<int64_t>());
     }
 }
 
@@ -172,21 +162,15 @@ void MathBlockOBJ::computeSUB()
 {
     if ( usesUnsignedInt() )
     {
-        uint64_t val1 = sourceA->getValue<uint64_t>();
-        uint64_t val2 = sourceB->getValue<uint64_t>();
-        destination->setValue( val1 - val2 );
+        destination->setValue( sourceA->getValue<uint64_t>() - sourceB->getValue<uint64_t>() );
     }
     else if ( usesFloat() )
     {
-        double val1 = sourceA->getValue<double>();
-        double val2 = sourceB->getValue<double>();
-        destination->setValue( val1 - val2);
+        destination->setValue( sourceA->getValue<double>() - sourceB->getValue<double>());
     }
     else //assume signed int
-    {
-        int64_t val1 = sourceA->getValue<int64_t>();
-        int64_t val2 = sourceB->getValue<int64_t>();
-        destination->setValue( val1 - val2);
+    { 
+        destination->setValue( sourceA->getValue<int64_t>() - sourceB->getValue<int64_t>());
     }
 }
 
@@ -241,15 +225,11 @@ bool MathBlockOBJ::computeGRT()
 {
     if ( usesUnsignedInt() )
     {
-        uint64_t val1 = sourceA->getValue<uint64_t>();
-        uint64_t val2 = sourceB->getValue<uint64_t>();
-        destination->setValue( val1 > val2 ? true : false );
+        destination->setValue( sourceA->getValue<uint64_t>() > sourceB->getValue<uint64_t>() ? true : false );
     }
     else if ( usesFloat() )
     {
-        double val1 = sourceA->getValue<double>();
-        double val2 = sourceB->getValue<double>();
-        destination->setValue( val1 > val2 ? true : false );
+        destination->setValue( sourceA->getValue<double>() > sourceB->getValue<double>() ? true : false );
     }
     else //assume signed int
     {
@@ -288,21 +268,15 @@ bool MathBlockOBJ::computeLES()
 {
     if ( usesUnsignedInt() )
     {
-        uint64_t val1 = sourceA->getValue<uint64_t>();
-        uint64_t val2 = sourceB->getValue<uint64_t>();
-        destination->setValue( val1 < val2 ? true : false );
+        destination->setValue( sourceA->getValue<uint64_t>() < sourceB->getValue<uint64_t>() ? true : false );
     }
     else if ( usesFloat() )
     {
-        double val1 = sourceA->getValue<double>();
-        double val2 = sourceB->getValue<double>();
-        destination->setValue( val1 < val2 ? true : false );
+        destination->setValue( sourceA->getValue<double>() < sourceB->getValue<double>() ? true : false );
     }
     else //assume signed int
     {
-        int64_t val1 = sourceA->getValue<int64_t>();
-        int64_t val2 = sourceB->getValue<int64_t>();
-        destination->setValue( val1 < val2 ? true : false );
+        destination->setValue( sourceA->getValue<int64_t>() < sourceB->getValue<int64_t>() ? true : false );
     }
     return destination->getValue<bool>();
 }
@@ -366,18 +340,15 @@ void MathBlockOBJ::computeMOV()
 {
     if(usesUnsignedInt())
     {
-        uint64_t value = sourceA->getValue<uint64_t>();
-        destination->setValue(value);
+        destination->setValue( sourceA->getValue<uint64_t>() );
     }
     if ( usesFloat() )
     {
-        double value = sourceA->getValue<double>();
-        destination->setValue(value);
+        destination->setValue(sourceA->getValue<double>());
     }
     else
     {
-        int64_t value = sourceA->getValue<int64_t>();
-        destination->setValue(value);
+        destination->setValue(sourceA->getValue<int64_t>());
     }
 }
 

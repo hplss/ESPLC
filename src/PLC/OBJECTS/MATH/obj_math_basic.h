@@ -13,8 +13,10 @@
 class MathBlockOBJ : public Ladder_OBJ_Logical 
 {
 	public:
+    template <typename A>
+    MathBlockOBJ(const String &id, OBJ_TYPE type, A var1, shared_ptr<Ladder_VAR> SrcB = 0, shared_ptr<Ladder_VAR> dest = 0) : MathBlockOBJ(id, type, make_shared<Ladder_VAR>(var1, bitTagSRCA), SrcB, dest ) {}
     template <typename A, typename B>
-    MathBlockOBJ(const String &id, OBJ_TYPE type, A var1,  B var2 = 0, shared_ptr<Ladder_VAR> dest = 0) : MathBlockOBJ(id, type, make_shared<Ladder_VAR>(var1, bitTagSRCA), make_shared<Ladder_VAR>(var2, bitTagSRCB), dest ) {}
+    MathBlockOBJ(const String &id, OBJ_TYPE type, A var1, B var2 = 0, shared_ptr<Ladder_VAR> dest = 0) : MathBlockOBJ(id, type, make_shared<Ladder_VAR>(var1, bitTagSRCA), make_shared<Ladder_VAR>(var2, bitTagSRCB), dest ) {}
 	MathBlockOBJ(const String &id, OBJ_TYPE type, shared_ptr<Ladder_VAR> A, shared_ptr<Ladder_VAR> B = 0, shared_ptr<Ladder_VAR> dest = 0) : Ladder_OBJ_Logical(id, type)
     { 
         sourceA = A; //must always have a valid pointer

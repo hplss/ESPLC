@@ -70,7 +70,7 @@ class PLC_Remote_Server
 	private:
 	shared_ptr<WiFiServer> localServer; //The actual WiFiServer object
 
-	vector<IPAddress> localClients;
+	vector<shared_ptr<WiFiClient>> localClients;
 	uint16_t i_Port;
 };
 
@@ -95,8 +95,6 @@ class PLC_Main
 	void generatePWMMap();
 	//This is used to reserve an available PWM channel from the PWM map. A return value of -1 indicatces a failure
 	int8_t reservePWMChannel();
-
-	OBJ_TYPE findMathObjectType( const String & ); //testing - clean up later
 
 	//Overloaded function that parses a logic script by string reference.
 	//Returns true on success.
@@ -131,7 +129,7 @@ class PLC_Main
 	//Creates a oneshot object, which pulses HIGH for one cycle, then LOW until reset. Declared inline.
 	shared_ptr<Ladder_OBJ_Logical> createOneshotOBJ();
     //Creates a new basic math object, which is capable of performing a series of simple calculations based on inputted arguments.
-	shared_ptr<Ladder_OBJ_Logical> createMathOBJ( const String &, const vector<String> &);
+	shared_ptr<Ladder_OBJ_Logical> createMathOBJ( const String &, OBJ_TYPE, const vector<String> &);
 	//Creates a new virtual type object, which represents a stored value in memory, to be accessed by other objects such as counters or timers or comparison blocks, etc.
 	shared_ptr<Ladder_OBJ_Logical> createVariableOBJ( const String &, const vector<String> &);
 	//Creates a ladder object reference that represents the current state of an object that is initialized on another ESPLC device.

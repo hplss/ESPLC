@@ -86,8 +86,8 @@ bool PLC_Parser::parseLine()
                 {
                     firstEQObjects.push_back(newObj);
                 }
-                else
-                    return false;
+                //else
+                   // return false;
             }
             continue; //It doesn't, so move to the next entry
         }

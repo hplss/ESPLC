@@ -51,3 +51,28 @@ String Ladder_VAR::getValueStr()
 
     return value;
 }
+
+bool Ladder_VAR::operator<=(const Ladder_VAR &B)
+{
+    return true;
+}
+
+bool Ladder_VAR::operator<(const Ladder_VAR &B)
+{
+    return true;
+}
+
+bool Ladder_VAR::operator>=(const Ladder_VAR &B)
+{
+    return true;
+}
+
+bool Ladder_VAR::operator>(const Ladder_VAR &B)
+{
+    return true;
+}
+
+bool Ladder_VAR::operator==(const Ladder_VAR &B)
+{
+    return true;
+}

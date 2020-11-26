@@ -302,6 +302,23 @@ void reverse(char* begin, char* end) {
     }
 }
 //
+uint8_t strDataType( const String &str )
+{
+	uint8_t numDots = 0;
+	for (uint16_t x = 0; x < str.length(); x++ )
+	{
+		if ( str[x] == '.')
+			numDots++;
+		if ( str[x] > 57 || ( (str[x] < 48 ) && (str[x] != '.') && (str[x] != '-' && x == 0) ) || numDots > 1 )
+			return 0; //string type
+	}
+
+	if ( numDots )
+		return 2; //double type
+	
+	return 1; //integer type
+}
+
 bool strContains( const String &str, const vector<char> &c )
 {
 	for ( uint16_t x = 0; x < str.length(); x++ )
@@ -363,3 +380,27 @@ String removeFromStr( const String &str, const vector<char> &c )
 }
 
 String removeFromStr( const String &str, const char c ){ return removeFromStr( str, vector<char>{c} ); }
+
+OBJ_TYPE findMathObjectType( const String &str )
+{
+	if( str == typeTagMACOS ) return OBJ_TYPE::TYPE_MATH_ACOS;
+	else if( str == typeTagMADD ) return OBJ_TYPE::TYPE_MATH_ADD;
+	else if( str == typeTagMASIN ) return OBJ_TYPE::TYPE_MATH_ASIN;
+	else if( str == typeTagMATAN ) return OBJ_TYPE::TYPE_MATH_ATAN;
+	else if ( str == typeTagMCOS ) return OBJ_TYPE::TYPE_MATH_COS;
+	else if ( str == typeTagMDEC ) return OBJ_TYPE::TYPE_MATH_DEC;
+	else if ( str == typeTagMDIV ) return OBJ_TYPE::TYPE_MATH_DIV;
+	else if ( str == typeTagMEQ ) return OBJ_TYPE::TYPE_MATH_EQ;
+	else if ( str == typeTagMGRE ) return OBJ_TYPE::TYPE_MATH_GRT;
+	else if ( str == typeTagMGREE ) return OBJ_TYPE::TYPE_MATH_GRQ;
+	else if ( str == typeTagMINC ) return OBJ_TYPE::TYPE_MATH_INC;
+	else if ( str == typeTagMLES ) return OBJ_TYPE::TYPE_MATH_LES;
+	else if ( str == typeTagMLESE ) return OBJ_TYPE::TYPE_MATH_LEQ;
+	else if ( str == typeTagMMOV ) return OBJ_TYPE::TYPE_MATH_MOV;
+	else if ( str == typeTagMMUL ) return OBJ_TYPE::TYPE_MATH_MUL;
+	else if ( str == typeTagMSUB ) return OBJ_TYPE::TYPE_MATH_SUB;
+	else if ( str == typeTagMSIN ) return OBJ_TYPE::TYPE_MATH_SIN;
+	else if ( str == typeTagMNEQ ) return OBJ_TYPE::TYPE_MATH_NEQ;
+
+	return OBJ_TYPE::TYPE_INVALID; //could not find the object
+}

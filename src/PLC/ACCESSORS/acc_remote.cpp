@@ -15,6 +15,18 @@ PLC_Remote_Client::PLC_Remote_Client( const String &id, const IPAddress &addr, u
     setState(true); //default to enabled -- maybe make a new ENUM for states tat can be used across all object types... TODO
 
     i_nextUpdate = millis();
+
+
+    if( nodeClient.connect(getHostAddress(), getHostPort(), i_timeout) )
+        b_enabled = true;
+    else
+    {
+        b_enabled = false;
+        Core.sendMessage(connection + getHostAddress().toString() + PSTR(" failed.") );
+    }
+
+    getObjectVARs().emplace_back(make_shared<Ladder_VAR>(&b_enabled, bitTagEN));
+    //getObjectVARs().emplace_back(make_shared<Ladder_VAR>(&i_updateFreq, "UPFREQ")); //currently unused 
 }
 
 String PLC_Remote_Client::requestFromHost(const vector<String> &cmdVector)
@@ -38,46 +50,55 @@ String PLC_Remote_Client::requestFromHost(const String &cmd)
 {
     String recvdData;
     uint8_t retries = 0;
-    WiFiClient nodeClient;
-    while ( retries < i_numRetries ) //were we able to connect to the inputted IP address on the given port?
+
+    if( !nodeClient.connected() )
     {
-        if( nodeClient.connect(getHostAddress(), getHostPort(), i_timeout) )
+        while ( !nodeClient.connected() && retries < i_numRetries ) //were we able to connect to the inputted IP address on the given port?
         {
-            uint32_t storedTime = millis();
-            nodeClient.setNoDelay(true); //Send immediately (don't wait for significant packet size unless epcifically told to do so)
-            nodeClient.setTimeout(0); 
-            nodeClient.print(cmd + CHAR_TRANSMIT_END); //send some message
-            //Wait to receive a reply...
-
-            while( !nodeClient.available() && ((millis() - storedTime) < i_timeout) ){} //loop until the conditions are met
-
-            if ( nodeClient.available() ) //Did we receive anything for realz?
-            {
-                nodeClient.setTimeout(0); 
-                recvdData += nodeClient.readStringUntil(CHAR_TRANSMIT_END); //just remove these now
-                Core.sendMessage( PSTR("TX Bytes: ") + String(cmd.length() + 1) + PSTR("RX Bytes: ") + String(recvdData.length()) + PSTR(" Latency: ") + String(millis() - storedTime) + " RSSI: " + WiFi.RSSI() + "dBm" ); //some stat
-                //Should also tell number of bytes sent/received.
-            }
-
-            if (!recvdData.length())
-                Core.sendMessage( PSTR("No valid response from host at: ") + getHostAddress().toString() );
-
-            nodeClient.stop();
-            return recvdData;
+            nodeClient.connect(getHostAddress(), getHostPort(), i_timeout);
+            retries++; //increment before we try again.
         }
 
-        retries++; //increment before we try again.
+        if ( !nodeClient.connected() ) //still couldn't connect
+        {
+            Core.sendMessage(connection + getHostAddress().toString() + PSTR(" failed.") );
+        
+            b_enabled = false; //Connection is no good, so disable this accessor
+        }
     }
 
-    Core.sendMessage(connection + getHostAddress().toString() + PSTR(" failed.") );
-    setState(false); //Connection is no good, so disable this accessor
+    if( nodeClient.connected() )
+    {
+        uint32_t storedTime = millis();
+        nodeClient.setNoDelay(true); //Send immediately (don't wait for significant packet size unless epcifically told to do so)
+        nodeClient.setTimeout(i_timeout); 
+        nodeClient.print(cmd + CHAR_TRANSMIT_END); //send some message
+        nodeClient.flush();
+        //Wait to receive a reply...
 
+        while( !nodeClient.available() && ((millis() - storedTime) < i_timeout) ){} //loop until the conditions are met
+
+        if ( nodeClient.available() ) //Did we receive anything for realz?
+        {
+            recvdData += nodeClient.readStringUntil(CHAR_TRANSMIT_END); //just remove these now
+            Core.sendMessage(recvdData);
+            Core.sendMessage( PSTR("TX Bytes: ") + String(cmd.length() + 1) + PSTR(" RX Bytes: ") + String(recvdData.length()) + PSTR(" Latency: ") + String(millis() - storedTime) + " RSSI: " + WiFi.RSSI() + "dBm" ); //some stat
+            //Should also tell number of bytes sent/received.
+        }
+
+        if (!recvdData.length())
+            Core.sendMessage( PSTR("No valid response from host at: ") + getHostAddress().toString() );
+
+    }
+    nodeClient.stop();
+    
+    
     return recvdData;
 }
 
 void PLC_Remote_Client::updateObject()
 {
-    if (!checkNetworkConnection() || !getState() )
+    if (!checkNetworkConnection() || !b_enabled )
         return; //end here if failed.
 
     if ( millis() > i_nextUpdate ) //time to update?
@@ -111,7 +132,7 @@ bool PLC_Remote_Client::checkNetworkConnection()
     {
         if ( getState() )
         {
-            setState(false); //disabled now
+            b_enabled = false;
             Core.sendMessage(connection + getHostAddress().toString() + PSTR(" interrupted."));
         }
 

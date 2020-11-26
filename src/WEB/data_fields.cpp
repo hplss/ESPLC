@@ -559,6 +559,12 @@ String getObjectType(OBJ_TYPE val)
 		case OBJ_TYPE::TYPE_MATH_TAN:
 			obj_type = typeTagMTAN;
 			break;
+		case OBJ_TYPE::TYPE_MATH_ADD:
+			obj_type = typeTagMADD;
+			break;
+		case OBJ_TYPE::TYPE_MATH_SUB:
+			obj_type = typeTagMSUB;
+			break;
 		case OBJ_TYPE::TYPE_MATH_ASIN:
 			obj_type = typeTagMASIN;
 			break;
