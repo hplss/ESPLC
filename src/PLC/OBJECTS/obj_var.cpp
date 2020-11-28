@@ -54,25 +54,51 @@ String Ladder_VAR::getValueStr()
 
 bool Ladder_VAR::operator<=(const Ladder_VAR &B)
 {
-    return true;
+    if ( this->getValue<double>() <= Ladder_VAR(B).getValue<double>() )
+        return true;
+    
+    return false;
 }
 
 bool Ladder_VAR::operator<(const Ladder_VAR &B)
 {
-    return true;
+    if ( this->getValue<double>() < Ladder_VAR(B).getValue<double>() )
+        return true;
+    
+    return false;
 }
 
 bool Ladder_VAR::operator>=(const Ladder_VAR &B)
 {
-    return true;
+    if ( this->getValue<double>() >= Ladder_VAR(B).getValue<double>() )
+        return true;
+    
+    return false;
 }
 
 bool Ladder_VAR::operator>(const Ladder_VAR &B)
 {
-    return true;
+    if ( this->getValue<double>() > Ladder_VAR(B).getValue<double>() )
+        return true;
+    
+    return false;
 }
 
 bool Ladder_VAR::operator==(const Ladder_VAR &B)
 {
-    return true;
+    if ( this->getValue<double>() == Ladder_VAR(B).getValue<double>() )
+        return true;
+    
+    return false;
+}
+
+bool Ladder_VAR::operator!=(const Ladder_VAR &B)
+{
+    return !this->operator==(B);
+}
+
+void Ladder_VAR::operator=(const Ladder_VAR &B)
+{
+    this->values = B.values;
+    this->b_usesPtr = B.b_usesPtr;
 }

@@ -9,6 +9,7 @@ class Ladder_VAR : public Ladder_OBJ_Logical
 {
 	public:
 	//These constructors are for pointers to existing variables
+	Ladder_VAR( shared_ptr<Ladder_VAR> var, const String &id ) : Ladder_OBJ_Logical( id, var->getType() ){ values = var->values; b_usesPtr = var->b_usesPtr; }  
 	Ladder_VAR( int_fast32_t *value, const String &id ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_INT ){ values.i.val_ptr = value; b_usesPtr = true; }
 	Ladder_VAR( uint_fast32_t *value, const String &id ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_UINT ){ values.ui.val_ptr = value; b_usesPtr = true; }
 	Ladder_VAR( bool *value, const String &id ) : Ladder_OBJ_Logical( id, OBJ_TYPE::TYPE_VAR_BOOL ){ values.b.val_ptr = value; b_usesPtr = true; }
@@ -39,6 +40,8 @@ class Ladder_VAR : public Ladder_OBJ_Logical
 	bool operator<(const Ladder_VAR &);
 	bool operator<=(const Ladder_VAR &);
 	bool operator==(const Ladder_VAR &);
+	bool operator!=(const Ladder_VAR &);
+	void operator=(const Ladder_VAR &);
 
 	template <class T>
 	T getValue()

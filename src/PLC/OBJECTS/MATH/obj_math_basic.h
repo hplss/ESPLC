@@ -108,10 +108,16 @@ class MathBlockOBJ : public Ladder_OBJ_Logical
     //returns true if there are exclusively unsigned numbers at play.
     bool usesUnsignedInt()
     {
+        OBJ_TYPE AType = sourceA->getType();
+
         if ( sourceB )
-            return (sourceA->getType() == OBJ_TYPE::TYPE_VAR_UINT || sourceA->getType() == OBJ_TYPE::TYPE_VAR_ULONG) && ( sourceB->getType() == OBJ_TYPE::TYPE_VAR_UINT || sourceB->getType() == OBJ_TYPE::TYPE_VAR_ULONG );
+        {
+            OBJ_TYPE BType = sourceB->getType();
+            return (AType == OBJ_TYPE::TYPE_VAR_UINT || AType == OBJ_TYPE::TYPE_VAR_ULONG || AType == OBJ_TYPE::TYPE_VAR_USHORT) 
+            && ( BType == OBJ_TYPE::TYPE_VAR_UINT || BType == OBJ_TYPE::TYPE_VAR_ULONG || BType == OBJ_TYPE::TYPE_VAR_USHORT);
+        }
         
-        return (sourceA->getType() == OBJ_TYPE::TYPE_VAR_UINT || sourceA->getType() == OBJ_TYPE::TYPE_VAR_ULONG);
+        return (AType == OBJ_TYPE::TYPE_VAR_UINT || AType == OBJ_TYPE::TYPE_VAR_ULONG);
     }
 	
 	private:
