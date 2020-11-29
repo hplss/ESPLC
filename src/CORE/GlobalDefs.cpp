@@ -304,6 +304,9 @@ void reverse(char* begin, char* end) {
 //
 uint8_t strDataType( const String &str )
 {
+	if ( str.length() > 18 )
+		return 0; //can't have this many numbers in a valid value 
+
 	uint8_t numDots = 0;
 	for (uint16_t x = 0; x < str.length(); x++ )
 	{
@@ -342,7 +345,7 @@ bool strBeginsWith( const String &str, const vector<char> &c )
 	}
 	return false;
 }
-bool strBeginsWith( const String &str, const char c ){ return strContains(str, vector<char>{c}); }
+bool strBeginsWith( const String &str, const char c ){ return strBeginsWith(str, vector<char>{c}); }
 
 bool strEndsWith( const String &str, const vector<char> &c )
 {
@@ -353,7 +356,7 @@ bool strEndsWith( const String &str, const vector<char> &c )
 	}
 	return false;
 }
-bool strEndsWith( const String &str, const char c ){ return strContains(str, vector<char>{c}); }
+bool strEndsWith( const String &str, const char c ){ return strEndsWith(str, vector<char>{c}); }
 
 String removeFromStr( const String &str, const vector<char> &c )
 {

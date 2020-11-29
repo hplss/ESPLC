@@ -49,11 +49,11 @@ void PLC_Remote_Server::processRequests()
 
 String PLC_Remote_Server::handleRequest( const String &request ) 
 {
-    if ( strBeginsWith(request, CMD_REQUEST_UPDATE) && strEndsWith(request, CHAR_QUERY_END) ) //Requesting update info for an object that is already initialized on the remote client.
+    if ( strContains(request, CMD_REQUEST_UPDATE) && strContains(request, CHAR_QUERY_END) ) //Requesting update info for an object that is already initialized on the remote client.
     {
         return handleUpdate(removeFromStr( request, {CMD_REQUEST_UPDATE, CHAR_QUERY_END} ));
     }
-    else if ( strBeginsWith(request, CMD_REQUEST_INIT) && strEndsWith(request, CHAR_QUERY_END) ) //requesting enough information to initialize a new object on the client
+    else if ( strContains(request, CMD_REQUEST_INIT) && strContains(request, CHAR_QUERY_END) ) //requesting enough information to initialize a new object on the client
     {
         return handleInit(removeFromStr( request, {CMD_REQUEST_INIT, CHAR_QUERY_END} ));
     }

@@ -21,7 +21,7 @@ class PLC_Remote_Client : public Ladder_OBJ_Accessor
 	//Send an update request to the client node for the corresponding local Ladder_OBJ.
 	bool sendUpdateRequest( shared_ptr<Ladder_OBJ_Logical> );
 	//This virtual function is called when searching for an object that is supposed to be managed by this accessor object.
-	virtual shared_ptr<Ladder_OBJ_Logical> findLadderObjByID( const String & );
+	virtual shared_ptr<Ladder_OBJ_Logical> findAccessorVarByID( const String & );
 	//Returns the stored IP address pertaining to the remote host.
 	const IPAddress &getHostAddress(){ return ip_hostAddress; }
 	//Send a specific update request command to the host device, and returns the data String that is received.

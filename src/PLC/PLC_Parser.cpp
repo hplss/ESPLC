@@ -169,67 +169,75 @@ bool PLC_Parser::parseLine()
 
 bool PLC_Parser::buildObjectStr(const String &str)
 {
-    bool accessor = strContains(str, CHAR_ACCESSOR_OPERATOR);
-
-    for (uint8_t char_index = 0; char_index < str.length(); char_index++)
-    { 
-        switch (str[char_index])
+    if ( strBeginsWith( str, CHAR_BRACKET_START ) ) //jumping to special single-use objects such as ONS
+    {
+        sParsedArgs = removeFromStr(str, { CHAR_BRACKET_START, CHAR_BRACKET_END });
+        if ( !sParsedArgs.length() )
+            return false;
+    }
+    else //regular objects
+    {
+        vector<String> definitions = splitString( str, { CHAR_BRACKET_START, CHAR_BRACKET_END });
+        
+        if ( definitions.size() > 2 )
         {
-            case CHAR_VAR_OPERATOR: // For Bit operators for existing objects. Example: Timer1.DN, where DN is the DONE bit for the timer.
+            Core.sendMessage(PSTR("Error: Invalid argument syntax."));
+            return false;
+        } 
+        if (definitions.size() > 1) //Have args and object name, with name (including bit/accessor operator) coming first
+        {
+            sParsedArgs = definitions.back(); //Args are the second element. Save off here
+        }
+        if ( definitions.size() > 0 ) //have only the object name,accessor, etc.
+        {
+            vector<String> accessorDetails = splitString( definitions.front(), CHAR_ACCESSOR_OPERATOR );
+            vector<String> bitDetails;
+            if ( accessorDetails.size() > 2) //multiple accessor operators found
             {
-                if ( !accessor ) //no var operators allowed when parsing accessor name
+                Core.sendMessage(PSTR("Error: Multiple Accessor operators detected."));
+                return false;
+            }
+
+            if ( accessorDetails.size() == 2 ) //Accessor found
+            {
+                sParsedAccessor = accessorDetails.front();      //Store off the accessor name here.       
+            }
+
+            bitDetails = splitString(accessorDetails.back(), CHAR_VAR_OPERATOR );
+
+            if ( bitDetails.size() > 2) //variable operator
+            {  
+                Core.sendMessage(PSTR("Error: Multiple Variable operators detected."));
+                return false;
+            }
+
+            if ( bitDetails.size() > 1)
+            {
+                sParsedBit = bitDetails.back(); 
+            }
+
+            if ( bitDetails.size() > 0) //lone object
+            {
+                if (strContains(bitDetails.front(), CHAR_NOT_OPERATOR))
                 {
-                    if ( !getArgsOP() ) //Must not currently be parsing args
-                        setBitOP(true); //chars parsed are now an operator to an object variable (or bit tag)
-                    else //Actually, this is a part of an argument being passed in
-                        appendToObjArgs( str[char_index] );
-                }
-            }
-            break;
-            case CHAR_NOT_OPERATOR: //Indicates NOT logic
-            {
-                if ( !getArgsOP() ) //Must not currently be parsing args
-                    setNotOP(!getNotOP()); //invert from previous value / = not -> // == NOT NOT 
-            }
-            break;
-            case CHAR_BRACKET_START:
-            case CHAR_BRACKET_END:
-            {
-                setArgsOP( !getArgsOP() );
-            }
-            break;
-            case CHAR_ACCESSOR_OPERATOR:
-            {
-                accessor = false; //looks like we have built the accessor name
-            }
-            break;
-            default: //standard case, which simply entails appending the current character in the line to our temporary string used in the parser.
-            {
-                if ( accessor )
-                {
-                    appendToAccessorName( str[char_index] );
+                    setNotOP(!getNotOP());
+                    sParsedObj = removeFromStr( bitDetails.front(), {CHAR_NOT_OPERATOR} );
                 }
                 else
                 {
-                    if ( !getArgsOP() ) //Must not currently be parsing args
-                    {
-                        if ( !getBitOP() )
-                            appendToObjName( str[char_index] ); //looks like we're building the name of an object so far
-                        else //nope, it's a bit, so build the bit ID tag string instead.
-                            appendToBitName( str[char_index] );
-                    }
-                    else
-                        appendToObjArgs( str[char_index] );
-
-                //here there should probably be some detection to see if we're still parsing args at the end of the string? ERROR -> to console
+                    sParsedObj = bitDetails.front();
                 }
             }
-            break;
-        } 
+            else
+            {
+                Core.sendMessage(PSTR("Error: No object found."));
+                return false;
+            }
+        }
+        else 
+            return false;
     }
-
-    //if ( !getParsedObjectStr().length() ) //must have some name for the object at least
-    //    return false;
+    
 
     return true; //default condition (success)
 }
@@ -251,7 +259,7 @@ shared_ptr<Ladder_OBJ_Wrapper> PLC_Parser::createNewWrapper( shared_ptr<Ladder_O
     if ( obj ) //pointer must be valid
     {
         shared_ptr<Ladder_OBJ_Wrapper> newOBJWrapper = 0; //init
-        if ( bitOperator && !getParsedAccessorStr().length() ) //accessing a specific bit? -- bit of a hack for now. accessors utilize entire names including bit operators for assigning new objects.
+        if ( getParsedBitStr().length() && !getParsedAccessorStr().length() ) //accessing a specific bit? -- bit of a hack for now. accessors utilize entire names including bit operators for assigning new objects.
         {
             newOBJWrapper = getObjectVARWrapper(obj);
         }
@@ -282,7 +290,7 @@ shared_ptr<Ladder_OBJ_Wrapper> PLC_Parser::handleObject()
         {
             String varObject = getParsedObjectStr() + CHAR_VAR_OPERATOR + getParsedBitStr(); //only variable type objects for now
 
-            obj = createNewWrapper(accessor->findLadderObjByID(varObject));
+            obj = createNewWrapper(accessor->findAccessorVarByID(varObject));
             if ( !obj )
                 Core.sendMessage(PSTR("Failed to find or init the accessor object: ") + varObject );
         }
@@ -315,31 +323,8 @@ shared_ptr<Ladder_OBJ_Wrapper> PLC_Parser::handleObject()
 
 vector<String> PLC_Parser::parseObjectArgs()
 {
-    const String &args = getParsedArgs(); //retrieve the arguments that were already stored earlier in the parsing operation (for this object)
-    String parsed;
-	vector<String> ObjArgs;
+	vector<String> ObjArgs = splitString(getParsedArgs(), CHAR_COMMA);
     
-    for ( uint8_t x = 0; x < args.length(); x++ ) //At this point, we're parsing the arguments within the () of an object. IE: OUTPUT( PIN )
-    {
-        switch(args[x])
-        {
-            case CHAR_COMMA:
-            {
-                ObjArgs.push_back(parsed); 
-                parsed.clear();
-                continue;
-            }
-            break;
-            default:
-            {
-                parsed += args[x];
-            }
-        }
-    }
-
-    if ( parsed.length() )
-        ObjArgs.push_back(parsed);
-
     #ifdef DEBUG
     for ( uint8_t x = 0; x < ObjArgs.size(); x++ )
         Serial.println("Arg: " + ObjArgs[x]);

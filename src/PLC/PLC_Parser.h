@@ -87,9 +87,7 @@ public:
 		/*create a new ladder rung when the helper is initialized. 
 		Presumably each helper represents a line being parsed, and each line represents a "rung" in the ladder logic.*/
 		pRung = make_shared<Ladder_Rung>(); 
-		bitOperator = false;
 		bitNot = false; 
-		argsOP = false;
 		sParsedLine = parsed;
 		iRung = rung;
 	}
@@ -100,25 +98,15 @@ public:
 	bool parseLine();
 	//This function breaks up the arguments that are passed in during object declaration and instantiation. Putting them into a vector of Strings
     vector<String> parseObjectArgs();
-	//Appends an inputted char to the string that stores the given object's name.
-	void appendToObjName( const char c ) { sParsedObj += c; }
-	//Appends an inputted char to the string that stores the given object's bit name.
-	void appendToBitName( const char c ){ sParsedBit += c; }
-	//Appends an inputted char to the string that stores the given object's initializer arguments.
-	void appendToObjArgs( const char c ){ sParsedArgs += c; }
-	//Appends an inputted char to the string that stores the accessor name for a peripheral
-	void appendToAccessorName( const char c ){ sParsedAccessor += c; }
 	//Resets the values typically used by the parser to their default values.
-	void reset(){ sParsedAccessor.clear(); sParsedObj.clear(); sParsedBit.clear(); sParsedArgs.clear(); bitNot = false; bitOperator = false; argsOP = false; }
+	void reset(){ sParsedAccessor.clear(); sParsedObj.clear(); sParsedBit.clear(); sParsedArgs.clear(); bitNot = false; }
 	
 	//Attempts to create a new object wrapper using an already defined ladder object, applies necessary wrapper flags, and returns the created object.
 	shared_ptr<Ladder_OBJ_Wrapper> getObjectVARWrapper(shared_ptr<Ladder_OBJ_Logical> );
 	//This is responsible for generating the object wrapper by associating it with the (already initialized) object. May return a wrapper for the object itself, or an associated bit in the object.
 	shared_ptr<Ladder_OBJ_Wrapper> createNewWrapper( shared_ptr<Ladder_OBJ_Logical> );
 
-	void setBitOP( bool bit ){ bitOperator = bit; }
 	void setNotOP( bool bit ){ bitNot = bit; }
-	void setArgsOP( uint8_t op ){ argsOP = op; }
 
 	//This function is responsible for determining what to do with an object that was parsed in the logic script. 
     shared_ptr<Ladder_OBJ_Wrapper> handleObject();
@@ -141,18 +129,12 @@ public:
 
 	shared_ptr<Ladder_Rung> &getRung(){ return pRung; }
 	bool getNotOP(){ return bitNot; }
-	bool getBitOP(){ return bitOperator; }
-	bool getArgsOP(){ return argsOP; }
 	uint16_t getRungNum(){ return iRung; } 
-	uint16_t &getLinePos() { return iLinePos; }
 	uint16_t getLineLength() { return sParsedLine.length(); }
 	const String &getParsedLineStr(){ return sParsedLine; }
-	const char getCurrentLineChar(){ return getParsedLineStr()[getLinePos()]; }
 
 private:
-	bool bitOperator;
 	bool bitNot; 
-	bool argsOP; //Last operator used by the parser
 	uint16_t iLinePos; //position at which the line is currently being parsed (in the string character array)
 	uint16_t iLineLength; //total length of the parsed line (number of chars)
 	uint16_t iRung; 

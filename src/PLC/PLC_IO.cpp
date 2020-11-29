@@ -42,7 +42,7 @@ shared_ptr<Ladder_VAR> Ladder_OBJ::addObjectVAR( const String &id )
 void Ladder_OBJ_Accessor::handleUpdates( const String &str)
 {
 	//Update Record Order: <ID>,<VALUE> -- only updating Ladder_VAR objects that are locally stored, for now
-	if (strBeginsWith(str, CMD_SEND_UPDATE) && strEndsWith(str, CHAR_QUERY_END) ) //Updates only contain data that might change between updates (omitted: logic, type)
+	if (strContains(str, CMD_SEND_UPDATE) && strContains(str, CHAR_QUERY_END) ) //Updates only contain data that might change between updates (omitted: logic, type)
 	{
 		vector<String> groupData = splitString(removeFromStr(str, {CMD_SEND_UPDATE, CHAR_QUERY_END} ), CHAR_UPDATE_GROUP); //remove the update prefix, then break the string up
 
@@ -75,7 +75,7 @@ shared_ptr<Ladder_OBJ_Logical> Ladder_OBJ_Accessor::handleInit(const String &str
 {
 	shared_ptr<Ladder_OBJ_Logical> newObj = 0;
 	Core.sendMessage(PSTR("Received Reply from remote: ") + str);
-	if(strBeginsWith(str, CMD_SEND_INIT) && strEndsWith(str, CHAR_QUERY_END)) //should only be initializing individual objects (not groups of them? Hmm...)
+	if(strContains(str, CMD_SEND_INIT) && strContains(str, CHAR_QUERY_END)) //should only be initializing individual objects (not groups of them? Hmm...)
 	{
 		vector<String> initObjects = splitString(removeFromStr(str, {CMD_SEND_INIT, CHAR_QUERY_END} ), CHAR_UPDATE_GROUP ); //just in case there are multiple items
 		for ( uint16_t x = 0; x < initObjects.size(); x++ )

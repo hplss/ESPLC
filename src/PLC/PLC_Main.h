@@ -130,8 +130,11 @@ class PLC_Main
 	shared_ptr<Ladder_OBJ_Logical> createOneshotOBJ();
     //Creates a new basic math object, which is capable of performing a series of simple calculations based on inputted arguments.
 	shared_ptr<Ladder_OBJ_Logical> createMathOBJ( const String &, OBJ_TYPE, const vector<String> &);
-	//Creates a new virtual type object, which represents a stored value in memory, to be accessed by other objects such as counters or timers or comparison blocks, etc.
+	//Creates a new variable type object which represents a stored value in memory, to be accessed by other objects such as counters or timers or comparison blocks, etc.
+	//Stored on the global list of initialized ladder objects for reference.
 	shared_ptr<Ladder_OBJ_Logical> createVariableOBJ( const String &, const vector<String> &);
+	//Creates a ladder variable object for reference by a different part of the code based on the type of data stored in the argument string.
+	shared_ptr<Ladder_VAR> createVariableInstance( const String &, const String &);
 	//Creates a ladder object reference that represents the current state of an object that is initialized on another ESPLC device.
 	shared_ptr<Ladder_OBJ_Accessor> createRemoteClient( const String &, const vector<String> &);
 	//performs a lookup to make sure the inputted pin number corresponds to a pin that is valid for the device. Used for some basic error checking in the parser. 

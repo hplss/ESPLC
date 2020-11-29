@@ -25,7 +25,7 @@ PLC_Remote_Client::PLC_Remote_Client( const String &id, const IPAddress &addr, u
         Core.sendMessage(connection + getHostAddress().toString() + PSTR(" failed.") );
     }
 
-    getObjectVARs().emplace_back(make_shared<Ladder_VAR>(&b_enabled, bitTagEN));
+    //getObjectVARs().emplace_back(make_shared<Ladder_VAR>(&b_enabled, bitTagEN));
     //getObjectVARs().emplace_back(make_shared<Ladder_VAR>(&i_updateFreq, "UPFREQ")); //currently unused 
 }
 
@@ -51,7 +51,7 @@ String PLC_Remote_Client::requestFromHost(const String &cmd)
     String recvdData;
     uint8_t retries = 0;
 
-    if( !nodeClient.connected() )
+    if( !nodeClient.connected() && b_enabled )
     {
         while ( !nodeClient.connected() && retries < i_numRetries ) //were we able to connect to the inputted IP address on the given port?
         {
@@ -142,7 +142,7 @@ bool PLC_Remote_Client::checkNetworkConnection()
     return true;
 }
 
-shared_ptr<Ladder_OBJ_Logical> PLC_Remote_Client::findLadderObjByID( const String &id )
+shared_ptr<Ladder_OBJ_Logical> PLC_Remote_Client::findAccessorVarByID( const String &id )
 {
     //shared_ptr<Ladder_OBJ_Logical> accObj = Ladder_OBJ_Accessor::findLadderObjByID(id); //is it already locally stored?
     shared_ptr<Ladder_OBJ_Logical> accObj = getObjectVAR(id);

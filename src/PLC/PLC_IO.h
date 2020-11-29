@@ -86,7 +86,7 @@ class Ladder_OBJ_Accessor : public Ladder_OBJ
 	Ladder_OBJ_Accessor( const String &id, OBJ_TYPE type ) : Ladder_OBJ( id, type ){}
 	~Ladder_OBJ_Accessor()
 	{
-		getObjects().clear();
+		accessorVars.clear();
 	}
 
 	virtual void updateObject(){}
@@ -97,26 +97,26 @@ class Ladder_OBJ_Accessor : public Ladder_OBJ
 	//This function handles the initialization of an object(s) that does not already exist in the accessor, essentially parsing the reply from a server that is sent after an init request.
 	shared_ptr<Ladder_OBJ_Logical> handleInit( const String &);
 
-	bool addObject(shared_ptr<Ladder_OBJ_Logical> obj) { getObjects().push_back(obj); return true;}
+	bool addObject(shared_ptr<Ladder_OBJ_Logical> obj) { accessorVars.push_back(obj); return true;}
 
-	vector<shared_ptr<Ladder_OBJ_Logical>> getObjects(){ return accessorObjects; }
+	const vector<shared_ptr<Ladder_OBJ_Logical>> &getAccessorVars(){ return accessorVars; }
 
 	//Returns the locally stored Ladder_OBJ copy as it pertains to the remote client.
-	virtual shared_ptr<Ladder_OBJ_Logical> findLadderObjByID( const String &id )
+	virtual shared_ptr<Ladder_OBJ_Logical> findAccessorVarByID( const String &id )
 	{
 		for ( uint16_t x = 0; x < getNumObjects(); x++ )
 		{
-			if ( getObjects()[x]->getID() == id )
-				return getObjects()[x];
+			if ( getAccessorVars()[x]->getID() == id )
+				return getAccessorVars()[x];
 		}
 		
 		return 0;
 	}
 	//Returns the number of locally stored remote objects for a given client.
-	const uint16_t getNumObjects() { return getObjects().size(); }
+	const uint16_t getNumObjects() { return getAccessorVars().size(); }
 
 	private:
-	vector<shared_ptr<Ladder_OBJ_Logical>> accessorObjects; //Storage for any initialized ladder objects on the remote client.
+	vector<shared_ptr<Ladder_OBJ_Logical>> accessorVars; //Storage for any initialized ladder objects on the remote client.
 };
 
 //This object serves as a means of storing logic script specific flags that pertain to a single ladder object. 

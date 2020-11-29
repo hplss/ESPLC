@@ -180,9 +180,23 @@ shared_ptr<Ladder_OBJ_Accessor> PLC_Main::findAccessorByID( const String &id )
 
 shared_ptr<Ladder_VAR> PLC_Main::findLadderVarByID( const String &id ) 
 {
-	if ( strContains(id, CHAR_VAR_OPERATOR) ) //are we looking into a specific object that has already initialized? curently only supports local objects and not accessors
+	if ( strContains(id, CHAR_ACCESSOR_OPERATOR)) //looks like we're trying to access variables that are stored in an accessor
+	{
+		vector<String> argVec = splitString(id, CHAR_ACCESSOR_OPERATOR); //create a vector of strings to poll with
+
+		if ( argVec.size() > 1) //make sure number of elements is valid, must have an object ID and a variable ID
+		{
+			shared_ptr<Ladder_OBJ_Accessor> accessor = findAccessorByID( argVec[0]);
+			if ( accessor )
+			{
+				return static_pointer_cast<Ladder_VAR>(accessor->findAccessorVarByID(argVec[1])); //use the first index of the vector to find the existing object.
+			}
+		}
+	}
+	else if ( strContains(id, CHAR_VAR_OPERATOR) ) //are we looking into a specific object that has already initialized locally? 
 	{
 		vector<String> argVec = splitString(id, CHAR_VAR_OPERATOR); //create a vector of strings to poll with
+
 		if ( argVec.size() > 1) //make sure number of elements is valid, must have an object ID and a variable ID
 		{
 			shared_ptr<Ladder_OBJ> currentObj = findLadderObjByID(argVec[0]); //use the first index of the vector to find the existing object.
@@ -482,8 +496,6 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 	//could use an else here for but it really doesn't matter
 	if ( args.size() > 1 )
 	{
-		bool isDouble = false;
-		
 		if(args[1] == "TRUE")
 		{
 			newObj = make_shared<Ladder_VAR>(true, id);
@@ -491,15 +503,6 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 		else if(args[1] == "FALSE")
 		{
 			newObj = make_shared<Ladder_VAR>(false, id);
-		}
-
-		if ( !newObj ) //No explicit boolean object was created
-		{
-			uint8_t type = strDataType( args[1] );
-			if ( type == 2)
-				isDouble = true;
-			else if ( !type || ( type && args[1].length() > 18 ) ) //string value in args[1] cannot be converted to int
-				return 0;
 		}
 
 		if (args.size() > 2 && !newObj) // in this case, we are manually specifying the type of variable that we are initializing
@@ -561,14 +564,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 
 		if ( !newObj ) //So we haven't created an object yet (for one reason or another) -- So try to create one from the parsed value string
 		{
-			if (isDouble)
-			{
-				newObj = make_shared<Ladder_VAR>( atof(args[1].c_str()), id );
-			}
-			else
-			{
-				newObj = make_shared<Ladder_VAR>( atoll(args[1].c_str()), id ); //assume a long (greater than 32 bits) This is a safe data type to use as it is a signed 64 bit int
-			}
+			newObj = createVariableInstance(id, args[1]);
 		}
 	}
 
@@ -582,6 +578,19 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 	}
 
 	return newObj;
+}
+
+shared_ptr<Ladder_VAR> PLC_Main::createVariableInstance(const String &id, const String &arg)
+{
+	shared_ptr<Ladder_VAR> newVar = 0;
+	uint8_t dataType = strDataType(arg);
+
+	if ( dataType == 2) //double type
+		newVar = make_shared<Ladder_VAR>( atof(arg.c_str()),id);
+	else if ( dataType == 1)//integer type
+		newVar = make_shared<Ladder_VAR>( atoll(arg.c_str()),id);
+
+	return newVar;
 }
 
 shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOneshotOBJ()
@@ -602,25 +611,25 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, OBJ_TY
 		shared_ptr<Ladder_VAR> var2ptr = 0;
 		shared_ptr<Ladder_VAR> var3ptr = 0;
 		
-		if ( !var1DataType )
-		{
+		if ( !var1DataType ) //searching for a string 
 			var1ptr = findLadderVarByID(args[1]);
-			if ( !var1ptr ) //must always have at least one valid source and valid math type to continue
-			{
-				//error here could not find argument
-				return 0;
-			}
-		}
-		
+		else
+			var1ptr = createVariableInstance(bitTagSRCA, args[1]); //attempt to create the source A from a constant numeric value that was given
 
-		//Arguments are arg[0] = math, arg[1] = function, arg[2] = first variable, arg[3] = second variable, arg[4] = dest
+		if ( !var1ptr ) //must always have at least one valid source and valid math type to continue
+		{
+			//error here could not find argument
+			return 0;
+		}
+
+		//Arguments are: arg[0] = function, arg[1] = first variable, arg[2] = second variable, arg[3] = third variable
 		if(argSize >= 3) //must have at least 4 args to access string at args[3]
 		{
 			var2DataType = strDataType(args[2]);
 			if ( !var2DataType ) // string type data only
 				var2ptr = findLadderVarByID(args[2]);
 		}
-		if(argSize == 4) //must have at least 5 args
+		if(argSize == 4) //must have at least 4 args
 		{
 			var3DataType = strDataType(args[3]);
 			if ( !var3DataType ) 
@@ -640,13 +649,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, OBJ_TY
 		else if(type == OBJ_TYPE::TYPE_MATH_TAN || type == OBJ_TYPE::TYPE_MATH_SIN || type == OBJ_TYPE::TYPE_MATH_ACOS || type == OBJ_TYPE::TYPE_MATH_COS
 		|| type == OBJ_TYPE::TYPE_MATH_ATAN || type == OBJ_TYPE::TYPE_MATH_ASIN || type == OBJ_TYPE::TYPE_MATH_MOV ) 
 		{
-			if ( var1ptr )
-				newObj = make_shared<MathBlockOBJ>(id, type, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr);
-			else if ( var1DataType == 1 ) //int type
-				newObj = make_shared<MathBlockOBJ>(id, type, atoll(args[1].c_str()), shared_ptr<Ladder_VAR>(0), var2ptr);
-			else if ( var1DataType == 2 )//double type
-				newObj = make_shared<MathBlockOBJ>(id, type, atof(args[1].c_str()), shared_ptr<Ladder_VAR>(0), var2ptr);
+			if ( !var2ptr && var2DataType )
+				var2ptr = createVariableInstance(bitTagDEST, args[2]);
 
+			newObj = make_shared<MathBlockOBJ>(id, type, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr );
 		}
 		//check for objects that require SourceA, SourceB, and DEST (Optional)
 		else if(type == OBJ_TYPE::TYPE_MATH_MUL || type == OBJ_TYPE::TYPE_MATH_DIV || type == OBJ_TYPE::TYPE_MATH_ADD || type == OBJ_TYPE::TYPE_MATH_SUB
@@ -659,16 +665,14 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, OBJ_TY
 			}
 			else if(argSize <= 4)
 			{
-				if ( var1ptr && var2ptr ) //must have valid pointers
+				if ( !var2ptr && var2DataType )
+					var2ptr = createVariableInstance(bitTagSRCB, args[2]);
+
+				if ( !var3ptr && var3DataType )
+					var3ptr = createVariableInstance(bitTagDEST, args[3]);
+
+				if ( var2ptr ) //must have valid pointers
 					newObj = make_shared<MathBlockOBJ>(id, type, var1ptr, var2ptr, var3ptr);
-				else if ( var1DataType == 2 && var2DataType == 2)
-					newObj = make_shared<MathBlockOBJ>(id, type, atof(args[1].c_str()), atof(args[2].c_str()), var3ptr);
-				else if ( var1DataType == 1 && var2DataType == 2 )
-					newObj = make_shared<MathBlockOBJ>(id, type, atoll(args[1].c_str()), atof(args[2].c_str()), var3ptr);
-				else if ( var1DataType == 2 && var2DataType == 1 )
-					newObj = make_shared<MathBlockOBJ>(id, type, atof(args[1].c_str()), atoll(args[2].c_str()), var3ptr);
-				else if ( var1DataType == 1 && var2DataType == 1 )
-					newObj = make_shared<MathBlockOBJ>(id, type, atoll(args[1].c_str()), atoll(args[2].c_str()), var3ptr);
 			}
 		}
 	}
