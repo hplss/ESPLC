@@ -45,7 +45,6 @@ class InputOBJ : public Ladder_OBJ_Logical
 	uint8_t getInputPin(){ return iPin; }
 	virtual void updateObject();
 	virtual void setLineState(bool &, bool);
-	virtual shared_ptr<Ladder_VAR> addObjectVAR( const String & );
 	
 	private:
 	uint8_t iPin;

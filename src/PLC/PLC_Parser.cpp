@@ -244,10 +244,7 @@ bool PLC_Parser::buildObjectStr(const String &str)
 
 shared_ptr<Ladder_OBJ_Wrapper> PLC_Parser::getObjectVARWrapper(shared_ptr<Ladder_OBJ_Logical> ptr)
 {
-    shared_ptr<Ladder_VAR> pVar = ptr->getObjectVAR(sParsedBit);
-    if ( !pVar ) //couldn't find it, so let's try to add it
-        pVar = ptr->addObjectVAR( sParsedBit ); //try to create the VAR object
-    
+    shared_ptr<Ladder_VAR> pVar = ptr->getObjectVAR(sParsedBit); //This will attempt to find the existing variable object (or sometimes create it, depending on the object type)
     if ( pVar ) //If successful (not null), make the wrapper and return it
         return make_shared<Ladder_OBJ_Wrapper>( pVar, getRungNum(), getNotOP() );
 

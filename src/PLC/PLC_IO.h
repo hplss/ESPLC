@@ -42,8 +42,6 @@ public:
 
 	//Returns an object's bit (Ladder_VAR pointer) based on an inputted bit ID string
 	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String & );
-	//Adds a Ladder_VAR object to the logical object based on the given identifying string. Must pass the appropriate checks before it is initialized.
-	virtual shared_ptr<Ladder_VAR> addObjectVAR( const String & );
 	//This function returns a reference to the object's local variable storage container (this may or may not be used, depending on the object's type).
 	vector<shared_ptr<Ladder_VAR>> &getObjectVARs(){ return localVars; }
 

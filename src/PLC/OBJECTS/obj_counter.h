@@ -31,7 +31,7 @@ class CounterOBJ : public Ladder_OBJ_Logical
 	void setAccumVal(uint_fast32_t val){ iAccum = val; }
 	//returns the current value of the counter's "count-to" value
 	void setCountVal(uint_fast32_t val) {iCount = val; }
-	virtual shared_ptr<Ladder_VAR> addObjectVAR( const String & );
+	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String & );
 
 	bool getENBitVal(){ return enableBit; }
 	bool getDNbitVal(){ return doneBit; }

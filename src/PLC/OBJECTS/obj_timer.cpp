@@ -36,11 +36,12 @@ void TimerOBJ::updateObject()
 	Ladder_OBJ_Logical::updateObject(); //parent class
 }
 
-shared_ptr<Ladder_VAR> TimerOBJ::addObjectVAR( const String &id )
+shared_ptr<Ladder_VAR> TimerOBJ::getObjectVAR( const String &id )
 { 
-    if ( !getObjectVAR(id) ) //proceed if it doesn't already exist
+	shared_ptr<Ladder_VAR> var = Ladder_OBJ_Logical::getObjectVAR(id);
+    if ( !var ) //proceed if it doesn't already exist
     {
-        shared_ptr<Ladder_VAR> var = 0;
+        
         if ( id == bitTagEN )
             var = make_shared<Ladder_VAR>(&enableBit, id);
         else if ( id == bitTagDN )
@@ -58,12 +59,16 @@ shared_ptr<Ladder_VAR> TimerOBJ::addObjectVAR( const String &id )
             #ifdef DEBUG 
             Serial.println(PSTR("Created new Timer Object Tag: ") + id ); 
             #endif
-            return var; 
         }
     }
-    #ifdef DEBUG 
-    Serial.println(PSTR("Failed: Object Tag: ") + id ); 
-    #endif
-    return 0; //failed to add
+
+	if ( !var )
+	{
+		#ifdef DEBUG 
+    	Serial.println(PSTR("Failed: Object Tag: ") + id ); 
+    	#endif
+	}
+    
+    return var; //failed to add
 }
 

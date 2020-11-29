@@ -33,12 +33,6 @@ shared_ptr<Ladder_VAR> Ladder_OBJ::getObjectVAR( const String &id )
 	return 0;
 }
 
-shared_ptr<Ladder_VAR> Ladder_OBJ::addObjectVAR( const String &id )
-{
-	//Error here? Should only be called if the derived class doesn't support the requested bit tag. Like a counter referencing the TT bit.
-	return 0;
-}
-
 void Ladder_OBJ_Accessor::handleUpdates( const String &str)
 {
 	//Update Record Order: <ID>,<VALUE> -- only updating Ladder_VAR objects that are locally stored, for now

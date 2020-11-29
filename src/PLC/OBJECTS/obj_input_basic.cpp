@@ -37,8 +37,3 @@ void InputOBJ::setLineState( bool &state, bool bNot)
 	
 	Ladder_OBJ_Logical::setLineState( state, bNot ); //let the parent handle anything else from here.
 }
-
-shared_ptr<Ladder_VAR> InputOBJ::addObjectVAR( const String &id )
-{
-	return Ladder_OBJ_Logical::addObjectVAR( id );
-}
