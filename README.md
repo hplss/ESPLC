@@ -12,9 +12,12 @@ A simple overview and demonstration video for this project, as presented to the 
 <br>
 <br>
 
-Current team members include:
-  - Brendan Dunne 
-  - Dakotah Lyons
-  - Ryan McClure
+Current developers include:
   - <a href="mailto:aswmkm@umsystem.edu">Andrew Ward</a>
-  - Donald Wunsch
+
+  
+Past developers include:
+  - <a href = "https://github.com/bd9232">Brendan Dunne</a>
+  - <a href = "https://github.com/Dakotah3121">Dakotah Lyons</a>
+  - <a href = "https://github.com/CosmicStrife">Ryan McClure</a>
+  - <a href = "https://github.com/donaldcwunsch">Donald Wunsch</a>
