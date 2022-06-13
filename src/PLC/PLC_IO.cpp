@@ -26,7 +26,7 @@ shared_ptr<Ladder_VAR> Ladder_OBJ::getObjectVAR( const String &id )
 {
 	for ( uint16_t x = 0; x < getObjectVARs().size(); x++ )
 	{
-		if ( getObjectVARs()[x]->getID() == id )
+		if ( getObjectVARs()[x]->sObjID == id )
 			return getObjectVARs()[x];
 	}
 

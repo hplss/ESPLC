@@ -3,21 +3,20 @@
 const String PROGMEM &connection = PSTR("Connection to: ");
 
 PLC_Remote_Client::PLC_Remote_Client( const String &id, const IPAddress &addr, uint16_t port, uint32_t timeout, uint32_t updateFreq, uint8_t retries) 
-    : Ladder_OBJ_Accessor( id, OBJ_TYPE::TYPE_REMOTE )
+    : Ladder_OBJ_Accessor( id, OBJ_TYPE::TYPE_REMOTE ), iHostPort(port)
 {
-    i_hostPort = port;
     i_timeout = timeout;
     i_updateFreq = updateFreq;
     ip_hostAddress = addr;
     
     i_numRetries = retries;
 
-    setState(true); //default to enabled -- maybe make a new ENUM for states tat can be used across all object types... TODO
+    iState = true; //default to enabled -- maybe make a new ENUM for states tat can be used across all object types... TODO
 
     i_nextUpdate = millis();
 
 
-    if( nodeClient.connect(getHostAddress(), getHostPort(), i_timeout) )
+    if( nodeClient.connect(getHostAddress(), iHostPort, i_timeout) )
         b_enabled = true;
     else
     {
@@ -55,7 +54,7 @@ String PLC_Remote_Client::requestFromHost(const String &cmd)
     {
         while ( !nodeClient.connected() && retries < i_numRetries ) //were we able to connect to the inputted IP address on the given port?
         {
-            nodeClient.connect(getHostAddress(), getHostPort(), i_timeout);
+            nodeClient.connect(getHostAddress(), iHostPort, i_timeout);
             retries++; //increment before we try again.
         }
 
@@ -110,9 +109,9 @@ void PLC_Remote_Client::updateObject()
             for ( uint16_t x = 0; x < numObjects; x++ )
             {
                 if ( x == numObjects )
-                    newRequest += getObjectVARs()[x]->getID();
+                    newRequest += getObjectVARs()[x]->sObjID;
                 else
-                    newRequest += getObjectVARs()[x]->getID() + CHAR_UPDATE_RECORD; //split the requested object ID's up by the record char
+                    newRequest += getObjectVARs()[x]->sObjID + CHAR_UPDATE_RECORD; //split the requested object ID's up by the record char
             }
             newRequest += CHAR_QUERY_END;
 
@@ -128,9 +127,9 @@ void PLC_Remote_Client::updateObject()
 
 bool PLC_Remote_Client::checkNetworkConnection()
 {
-    if ( !WiFi.isConnected() ) //looks like the connection died? 
+    if ( !WiFi.isConnected() && b_enabled ) //looks like the connection died? 
     {
-        if ( getState() )
+        if ( iState )
         {
             b_enabled = false;
             Core.sendMessage(connection + getHostAddress().toString() + PSTR(" interrupted."));
@@ -142,10 +141,10 @@ bool PLC_Remote_Client::checkNetworkConnection()
     return true;
 }
 
-shared_ptr<Ladder_OBJ_Logical> PLC_Remote_Client::findAccessorVarByID( const String &id )
+OBJ_LOGIC_PTR PLC_Remote_Client::findAccessorVarByID( const String &id )
 {
     //shared_ptr<Ladder_OBJ_Logical> accObj = Ladder_OBJ_Accessor::findLadderObjByID(id); //is it already locally stored?
-    shared_ptr<Ladder_OBJ_Logical> accObj = getObjectVAR(id);
+    OBJ_LOGIC_PTR accObj = getObjectVAR(id);
     if ( !accObj ) //guess not, so we'll poll the remote host for it and initialize it as necessary.
     {
         //Request to initialize from the host

@@ -9,9 +9,8 @@
 class InputOBJ : public Ladder_OBJ_Logical
 {
 	public:
-	InputOBJ( const String &id, uint8_t pin, OBJ_TYPE type = OBJ_TYPE::TYPE_INPUT, uint8_t logic = LOGIC_NO ) : Ladder_OBJ_Logical(id, type)
+	InputOBJ( const String &id, uint8_t pin, OBJ_TYPE type = OBJ_TYPE::TYPE_INPUT, uint8_t logic = LOGIC_NO ) : Ladder_OBJ_Logical(id, type), iPin(pin), iLogic(logic)
 	{ 
-		iPin = pin; 
 		iValue = 0; //default
 
 		getObjectVARs().emplace_back(make_shared<Ladder_VAR>(&iValue, bitTagVAL)); 
@@ -25,8 +24,6 @@ class InputOBJ : public Ladder_OBJ_Logical
 		io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE; //always pull low
 		io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
 		gpio_config(&io_conf);
-
-		setLogic(logic); 
 	}
 	virtual ~InputOBJ()
 	{ 
@@ -37,18 +34,20 @@ class InputOBJ : public Ladder_OBJ_Logical
 
 	uint16_t getInput()
 	{ 
-		if ( getType() == OBJ_TYPE::TYPE_INPUT_ANALOG )
+		if ( iType == OBJ_TYPE::TYPE_INPUT_ANALOG )
 			return analogRead(iPin);
 		
 		return digitalRead(iPin);
 	} //Return the value of the input from the assigned pin.
-	uint8_t getInputPin(){ return iPin; }
+
 	virtual void updateObject();
 	virtual void setLineState(bool &, bool);
-	
-	private:
-	uint8_t iPin;
+
+private:
 	uint16_t iValue; //input value that was read and stored off
+
+	const uint8_t iPin,
+	              iLogic;
 };
 
 #endif

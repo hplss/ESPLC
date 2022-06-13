@@ -14,74 +14,38 @@ const String &err_Script PROGMEM = PSTR("Failed to load PLC Script!"),
              &succ_Style_loaded PROGMEM = PSTR("Web stylesheet loaded."),
              &succ_Config_loaded PROGMEM = PSTR("Device configuration loaded.");
 
-void Device_Setting::setSettingValue( const String &str )
+void Device_Setting::setValue( const String &str )
 {
-    switch(getType())
+    switch(i_Type)
     {
         case OBJ_TYPE::TYPE_VAR_BOOL:
         {
-            getBOOL() = str.toInt() > 0 ? true : false;
+            *data.b_Ptr = str.toInt() > 0 ? true : false;
         }
         break;
         case OBJ_TYPE::TYPE_VAR_STRING:
         {
-            getSTRING() = str;
+            *data.s_Ptr = str;
         }
         break;
         case OBJ_TYPE::TYPE_VAR_UBYTE:
         {
-            getUINT8() = static_cast<uint8_t>(parseInt(str)); //we can only assume it won't overflow
+            *data.ui8_Ptr = static_cast<uint8_t>(parseInt(str)); //we can only assume it won't overflow
         }
         break;
         case OBJ_TYPE::TYPE_VAR_UINT:
         {
-            getUINT() = parseInt(str); //we can only assume it won't overflow
+            *data.ui_Ptr = parseInt(str); //we can only assume it won't overflow
         }
         break;
         case OBJ_TYPE::TYPE_VAR_USHORT:
         {
-            getUINT16() = static_cast<uint16_t>(parseInt(str)); //we can only assume it won't overflow
+            *data.ui16_Ptr = static_cast<uint16_t>(parseInt(str)); //we can only assume it won't overflow
         }
         break;
         default:
         break;
     }
-}
-
-String Device_Setting::getSettingValue()
-{
-    switch(getType())
-    {
-        case OBJ_TYPE::TYPE_VAR_BOOL:
-        {
-            return String(getBOOL());
-        }
-        break;
-        case OBJ_TYPE::TYPE_VAR_STRING:
-        {
-            return getSTRING();
-        }
-        break;
-        case OBJ_TYPE::TYPE_VAR_UBYTE:
-        {
-            return String(getUINT8());
-        }
-        break;
-        case OBJ_TYPE::TYPE_VAR_UINT:
-        {
-            return String(getUINT());
-        }
-        break;
-        case OBJ_TYPE::TYPE_VAR_USHORT:
-        {
-            return String(getUINT16());
-        }
-        break;
-        default:
-        break;
-    }
-
-    return "";
 }
 
 void UICore::generateSettingsMap()
@@ -148,7 +112,7 @@ bool UICore::loadSettings()
         for ( settings_itr = settingsMap.begin(); settings_itr != settingsMap.end(); settings_itr++ )
         {
             if ( settings_itr->first == settingID ) //search for the specific setting string identifier
-                settings_itr->second.get()->setSettingValue(settingValue);
+                settings_itr->second.get()->setValue(settingValue);
         }
     }
 
@@ -235,7 +199,7 @@ bool UICore::saveSettings()
 
     for ( settings_itr = settingsMap.begin(); settings_itr != settingsMap.end(); settings_itr++ )
     {
-        String settingValue = settings_itr->second.get()->getSettingValue();
+        String settingValue = settings_itr->second.get()->getValue<String>();
         settingsFile.print(settings_itr->first + CHAR_EQUALS + settingValue + CHAR_NEWLINE);
         #ifdef DEBUG
         Serial.println(settings_itr->first + CHAR_EQUALS + settingValue);

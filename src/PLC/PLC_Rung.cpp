@@ -14,7 +14,7 @@ Ladder_Rung::~Ladder_Rung()
 	firstRungObjects.clear();
 }
 
-bool Ladder_Rung::addRungObject( shared_ptr<Ladder_OBJ_Wrapper> obj )
+bool Ladder_Rung::addRungObject( OBJ_WRAPPER_PTR obj )
 {
 	if ( !obj )
 		return false; //must be a valid object.
@@ -22,7 +22,7 @@ bool Ladder_Rung::addRungObject( shared_ptr<Ladder_OBJ_Wrapper> obj )
 	 rungObjects.emplace_back(obj); 
 	 return true;
 }
-bool Ladder_Rung::addInitialRungObject( const vector<shared_ptr<Ladder_OBJ_Wrapper>> &vec )
+bool Ladder_Rung::addInitialRungObject( const vector<OBJ_WRAPPER_PTR> &vec )
 {
 	for ( uint8_t x = 0; x < vec.size(); x++ )
 	{
@@ -32,7 +32,7 @@ bool Ladder_Rung::addInitialRungObject( const vector<shared_ptr<Ladder_OBJ_Wrapp
 	
 	return true; //default return path 
 }
-bool Ladder_Rung::addInitialRungObject( shared_ptr<Ladder_OBJ_Wrapper> obj )
+bool Ladder_Rung::addInitialRungObject( OBJ_WRAPPER_PTR obj )
 {
 	#ifdef DEBUG
 	Serial.println(PSTR("Adding Initial"));
@@ -42,11 +42,11 @@ bool Ladder_Rung::addInitialRungObject( shared_ptr<Ladder_OBJ_Wrapper> obj )
 	return true;
 }
 
-shared_ptr<Ladder_OBJ_Wrapper> Ladder_Rung::getRungObjectByID(const String &id)
+OBJ_WRAPPER_PTR Ladder_Rung::getRungObjectByID(const String &id)
 {
 	for ( uint16_t x = 0; x < getNumRungObjects(); x++ )
 	{
-		if ( rungObjects[x]->getObject()->getID() == id )
+		if ( rungObjects[x]->pObj->sObjID == id )
 			return rungObjects[x];
 	}
 	

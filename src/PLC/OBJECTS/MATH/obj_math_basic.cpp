@@ -7,7 +7,7 @@ void MathBlockOBJ::setLineState(bool &state, bool bNot)
 { 
     if (state) //must have a HIGH state before computing.
     {
-        switch ( getType() )
+        switch ( iType )
         {
             case OBJ_TYPE::TYPE_MATH_SIN:
             {

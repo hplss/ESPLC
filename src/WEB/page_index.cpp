@@ -9,8 +9,6 @@
 #include <CORE/UICore.h>
 #include <PLC/PLC_Main.h>
 
-extern PLC_Main PLCObj;
-extern UICore Core;
 
 void UICore::createIndexFields() //Probably shouldnt be called more than once.
 {
@@ -29,7 +27,9 @@ void UICore::handleIndex() //Generate the HTML for our main page.
 {	  
 	createIndexFields();
 	
-	String HTML = generateHeader();
+	String HTML;
+	HTML.reserve(4096);
+	HTML += generateHeader();
 	HTML += generateTitle();
 	for ( uint8_t x = 0; x < p_UIDataTables.size(); x++ )
 		HTML += p_UIDataTables[x]->GenerateTableHTML(); //Add each datafield to the HTML body

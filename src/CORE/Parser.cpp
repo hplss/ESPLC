@@ -194,7 +194,7 @@ void UICore::parseCfg( const vector<String> &args )
 	if ( args.size() <= 0 )
 	{
 		for ( settings_itr = settingsMap.begin(); settings_itr != settingsMap.end(); settings_itr++ )
-			sendMessage( settings_itr->first + CHAR_EQUALS + settings_itr->second.get()->getSettingValue(), PRIORITY_HIGH);
+			sendMessage( settings_itr->first + CHAR_EQUALS + settings_itr->second.get()->getValue<String>(), PRIORITY_HIGH);
 	}
 	else
 	{
@@ -207,7 +207,7 @@ void UICore::parseCfg( const vector<String> &args )
 				{
 					if ( settings_itr->first == splitArgs[0] ) //search for the specific setting string identifier
 					{
-						settings_itr->second.get()->setSettingValue(splitArgs[1]);
+						settings_itr->second.get()->setValue(splitArgs[1]);
 						sendMessage(PSTR("Applying setting to ") + splitArgs[0], PRIORITY_HIGH);
 					}
 				}

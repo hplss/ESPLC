@@ -28,15 +28,15 @@ class PLC_Remote_Client : public Ladder_OBJ_Accessor
     String requestFromHost(const vector<String> &);
 	String requestFromHost( const String &);
 	//Returns the port that the remote update server is accepting requests on.
-	const uint16_t getHostPort(){ return i_hostPort; }
 	//Performs a simple check to make sure that we are still capable of talking to a remote host.
 	bool checkNetworkConnection();
 
+	const uint16_t iHostPort;
+	
 	private: 
 	uint32_t i_timeout;
     uint32_t i_nextUpdate,
              i_updateFreq;
-	uint16_t i_hostPort;
 	uint8_t i_numRetries;
 
 	WiFiClient nodeClient;

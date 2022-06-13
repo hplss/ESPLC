@@ -8,12 +8,26 @@
 class CounterOBJ : public Ladder_OBJ_Logical
 {
 	public:
-	CounterOBJ(const String &id, uint_fast32_t count = 0, uint_fast32_t accum = 0, OBJ_TYPE type = OBJ_TYPE::TYPE_COUNTER_UP) : Ladder_OBJ_Logical(id, type)
+	CounterOBJ(const String &id, VAR_PTR count, VAR_PTR accum, OBJ_TYPE type = OBJ_TYPE::TYPE_COUNTER_UP) : Ladder_OBJ_Logical(id, type)
 	{ 
-		iCount = count;
-		iAccum = accum;
 		doneBit = false;
 		enableBit = false;
+
+		if ( !count )
+		{
+			count = make_shared<Ladder_VAR>( (uint32_t)0, bitTagPRE ); //just in case
+		}
+
+		if ( !accum )
+		{
+			accum = make_shared<Ladder_VAR>( (uint32_t)0, bitTagACC );
+		}
+
+		ptr_count = count;
+		ptr_accum = accum;
+
+		getObjectVARs().emplace_back(count);
+		getObjectVARs().emplace_back(accum);
 	}
 	~CounterOBJ()
 	{ 
@@ -23,24 +37,19 @@ class CounterOBJ : public Ladder_OBJ_Logical
 	}
 	virtual void setLineState(bool &state, bool bNot){ Ladder_OBJ_Logical::setLineState(state, bNot); }
 	virtual void updateObject(bool);
-	//returns the current value of the counter's enable bit 
-	void setENBitVal(bool val){ enableBit = val; }
-	//returns the current value of the counter's done bit
-	void setDNBitVal(bool val){ doneBit = val; }
-	//returns the current value of the counter's accumulator value
-	void setAccumVal(uint_fast32_t val){ iAccum = val; }
-	//returns the current value of the counter's "count-to" value
-	void setCountVal(uint_fast32_t val) {iCount = val; }
+
 	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String & );
 
-	bool getENBitVal(){ return enableBit; }
-	bool getDNbitVal(){ return doneBit; }
-	uint_fast32_t getAccumVal(){ return iAccum; }
-	uint_fast32_t getCountVal(){ return iCount; }
-	void reset(){iCount = 0; iAccum = 0;}
+	void reset()
+	{
+		ptr_accum->setValue(0);
+		ptr_count->setValue(0); 
+		doneBit = false;
+		enableBit = false;
+	}
 		
 	private:
-	uint_fast32_t iCount, iAccum;
+	VAR_PTR ptr_accum, ptr_count;
 	bool doneBit, enableBit;
 };
 

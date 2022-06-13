@@ -33,24 +33,65 @@ class Device_Setting
 	Device_Setting( uint16_t *ptr  ){ i_Type = OBJ_TYPE::TYPE_VAR_USHORT; data.ui16_Ptr = ptr; }
 	Device_Setting( uint_fast32_t *ptr  ){ i_Type = OBJ_TYPE::TYPE_VAR_UINT; data.ui_Ptr = ptr; }
 	Device_Setting( String *ptr  ){ i_Type = OBJ_TYPE::TYPE_VAR_STRING; data.s_Ptr = ptr; }
-	Device_Setting( shared_ptr<String> ptr ){ i_Type = OBJ_TYPE::TYPE_VAR_STRING; data.s_Ptr = ptr.get(); }
+	Device_Setting( shared_ptr<String> ptr ){ i_Type = OBJ_TYPE::TYPE_VAR_STRING; data.s_Ptr = ptr.get(); } //uses raw pointers... ew
 	virtual ~Device_Setting(){} //destructor
 
-	OBJ_TYPE getType(){ return i_Type; }
+	void setValue( const String &str );
+	template <typename T>
+	void setValue(const T &val)
+	{
+		switch(i_Type) //local type
+		{
+			case OBJ_TYPE::TYPE_VAR_BOOL:
+				*data.b_Ptr = static_cast<bool>(val);
+			break;
+			case OBJ_TYPE::TYPE_VAR_UBYTE:
+				*data.ui8_Ptr = static_cast<uint8_t>(val);
+			break;
+			case OBJ_TYPE::TYPE_VAR_USHORT:
+				*data.ui16_Ptr = static_cast<uint16_t>(val);
+			break;
+			case OBJ_TYPE::TYPE_VAR_UINT:
+				*data.ui_Ptr = static_cast<uint_fast32_t>(val);
+			break;
+			case OBJ_TYPE::TYPE_VAR_STRING:
+				*data.s_Ptr = static_cast<String>(val);
+			break;
+			default:
+			break;
+		}
+	}
 
-	//This function converts a string to the proper value and stores it into the appropriate variable
-	void setSettingValue( const String & );
 	//Returns the current value of the setting stored in the object.
-	String getSettingValue();
-
-	uint8_t &getUINT8(){ return *data.ui8_Ptr; }
-	uint_fast32_t &getUINT(){ return *data.ui_Ptr; }
-	uint16_t &getUINT16(){ return *data.ui16_Ptr; }
-	bool &getBOOL(){ return *data.b_Ptr; }
-	String &getSTRING(){ return *data.s_Ptr; }
+	template <typename T>
+	const T getValue()
+	{
+		switch(i_Type) //local type
+		{
+			case OBJ_TYPE::TYPE_VAR_BOOL:
+				return static_cast<T>(*data.b_Ptr);
+			break;
+			case OBJ_TYPE::TYPE_VAR_UBYTE:
+				return static_cast<T>(*data.ui8_Ptr);
+			break;
+			case OBJ_TYPE::TYPE_VAR_USHORT:
+				return static_cast<T>(*data.ui16_Ptr);
+			break;
+			case OBJ_TYPE::TYPE_VAR_UINT:
+				return static_cast<T>(*data.ui_Ptr);
+			break;
+			case OBJ_TYPE::TYPE_VAR_STRING:
+				return static_cast<T>(*data.s_Ptr);
+			break;
+			default:
+				return static_cast<T>(0);
+			break;
+		}
+	}
+	
 	
 	private:
-	union settingVar
+	union
 	{
 		bool *b_Ptr;
 		String *s_Ptr;
@@ -61,6 +102,8 @@ class Device_Setting
 
 	OBJ_TYPE i_Type; //stored the field type, because we can't cast
 };
+
+using SETTING_PTR = shared_ptr<Device_Setting>;
 
 class UICore
 {
@@ -174,6 +217,15 @@ public:
 	void sendStyleSheet(); 
 	//Sends ystem alerts and other info over the web interface.
 	void handleAlerts();
+
+	//File Page related functions
+	bool handleFileRead(const String &);
+	void handleFileDisplay();
+	void handleFileUpload();
+	void handleFileDelete();
+	void handleFileCreate();
+	void handleFileList();
+	//
 
 	void resestFieldContainers();
 
@@ -327,10 +379,12 @@ private:
 	vector<String> alerts; //vestor that stores alerts that have yet to be forwarded to a web client.
 
 	//Settings storage/reading variables
-	std::map<String, shared_ptr<Device_Setting>> settingsMap;
-	std::map<String, shared_ptr<Device_Setting>>::iterator settings_itr;
+	std::map<String, SETTING_PTR> settingsMap;
+	std::map<String, SETTING_PTR>::iterator settings_itr;
 	//
 };
 
+
+extern UICore Core;
 
 #endif /* UICore_H_ */

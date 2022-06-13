@@ -27,27 +27,27 @@ class Ladder_Rung
 	Ladder_Rung(){ };
 	~Ladder_Rung();
 	//Adds a new ladder logic object to the rung, provided it passes the appropriate tests.
-	bool addRungObject( shared_ptr<Ladder_OBJ_Wrapper> ); 
+	bool addRungObject( OBJ_WRAPPER_PTR ); 
 	//Returns the ladder object associated within this rung object, based on the object's index in the storage vector.
-	shared_ptr<Ladder_OBJ_Wrapper>getRungObjectByIndex(uint16_t x){ return rungObjects[x]; }
+	OBJ_WRAPPER_PTR getRungObjectByIndex(uint16_t x){ return rungObjects[x]; }
 	//Returns the ladder object associated with this rung object, based on the object's unique ID number.
-	shared_ptr<Ladder_OBJ_Wrapper>getRungObjectByID(const String &);
+	OBJ_WRAPPER_PTR getRungObjectByID(const String &);
 	//Returns the total number of objects stored in the rung object.
 	uint16_t getNumRungObjects(){ return rungObjects.size(); }
 	//Returns the number of rung objects stored in the container for ladder objects that are referenced at the beginning of each ladder logic scan.
 	uint8_t getNumInitialRungObjects() { return firstRungObjects.size(); }
 	//Adds an inputted object to the container for the ladder objects that are referenced at the beginning of each ladder logic scan.
-	bool addInitialRungObject( shared_ptr<Ladder_OBJ_Wrapper> );
-	bool addInitialRungObject( const vector<shared_ptr<Ladder_OBJ_Wrapper>> & );
+	bool addInitialRungObject( OBJ_WRAPPER_PTR );
+	bool addInitialRungObject( const vector<OBJ_WRAPPER_PTR> & );
 	//Returns a reference to the container for the rung object's ladder objects.
-	vector<shared_ptr<Ladder_OBJ_Wrapper>> &getRungObjects(){ return rungObjects; }
+	vector<OBJ_WRAPPER_PTR> &getRungObjects(){ return rungObjects; }
 	//Begins the process of setting the line state to HIGH for the appropriate ladder object from the initial objects container, and iteratively determining the state for each subsequently associated object and applying changes as needed.
 	void processRung( uint16_t );
 
 		
 	private:
-	vector<shared_ptr<Ladder_OBJ_Wrapper>> rungObjects; //Container used to store all of the pointers to objects associated with a given rung.
-	vector<shared_ptr<Ladder_OBJ_Wrapper>> firstRungObjects; //Container used to store the objects that are first checked in the rung when it comes time to scan.
+	vector<OBJ_WRAPPER_PTR> rungObjects; //Container used to store all of the pointers to objects associated with a given rung.
+	vector<OBJ_WRAPPER_PTR> firstRungObjects; //Container used to store the objects that are first checked in the rung when it comes time to scan.
 };
 
 

@@ -11,7 +11,7 @@
 
 bool DataField::SetFieldValue( shared_ptr<String> input )
 {
-	if ( input->length() > MAX_DATA_LENGTH && GetType() != FIELD_TYPE::TEXT && GetType() != FIELD_TYPE::TEXTAREA )
+	if ( input->length() > MAX_DATA_LENGTH && iType != FIELD_TYPE::TEXT && iType != FIELD_TYPE::TEXTAREA )
 		return false; //Die here, data string too long.
 	
 	s_fieldValue = input;
@@ -20,10 +20,10 @@ bool DataField::SetFieldValue( shared_ptr<String> input )
 
 bool DataField::SetFieldValue( const String &input )
 {
-	if ( GetType() == FIELD_TYPE::FILE_UPLOAD )
+	if ( iType == FIELD_TYPE::FILE_UPLOAD )
 		return true;
 
-	else if ( input.length() > iCols && GetType() != FIELD_TYPE::TEXTAREA ) //columns used as a data limiter size for non-textarea fields.
+	else if ( input.length() > iCols && iType != FIELD_TYPE::TEXTAREA ) //columns used as a data limiter size for non-textarea fields.
 	{
 		return false; //Die here, data string too long.
 	}
@@ -35,15 +35,16 @@ bool DataField::SetFieldValue( const String &input )
 String DataField::GenerateHTML() //Baseclass GenerateHTML
 {
 	String HTML;
+	HTML.reserve(2048); 
 
-	if ( strlen( GetFieldLabel().c_str() ) && GetType() != FIELD_TYPE::SUBMIT ) //Is there a label? If so, generate the appropriate HTML
-		HTML += PSTR("<label for=\"") + String(GetAddress()) + "\">" + GetFieldLabel() + PSTR(": </label>");
+	if ( sFieldLabel.length() && iType != FIELD_TYPE::SUBMIT ) //Is there a label? If so, generate the appropriate HTML
+		HTML += PSTR("<label for=\"") + String(iAddress) + "\">" + sFieldLabel + PSTR(": </label>");
 	
-	if ( GetType() != FIELD_TYPE::TEXTAREA )
+	if ( iType != FIELD_TYPE::TEXTAREA )
 	{
 		HTML += PSTR("<INPUT ");
 
-		switch ( GetType() )
+		switch ( iType )
 		{
 			case FIELD_TYPE::TEXT:
 				HTML += PSTR("type=\"text\" maxlength=\"") + String(iCols) + PSTR("\"") + PSTR("size=\"") + String(iCols) + PSTR("\"");
@@ -67,24 +68,24 @@ String DataField::GenerateHTML() //Baseclass GenerateHTML
 			break;
 		}
 	
-		switch ( GetType() ) //This switch case is exclusively used for setting the "value" html tag for certain forms. 
+		switch ( iType ) //This switch case is exclusively used for setting the "value" html tag for certain forms. 
 		{
 			case FIELD_TYPE::CHECKBOX: //Checkboxes are special
 				if ( strlen( GetFieldValue().c_str() ) && GetFieldValue() != String(false) ) //Only set this if we have some value there, otherwise it'll just count as "enabled" - weird.
 					HTML += "checked ";
 				break;
 			case FIELD_TYPE::SUBMIT:
-				HTML += PSTR("value=\"") + GetFieldLabel() + "\" "; //Label text goes into the button itself
+				HTML += PSTR("value=\"") + sFieldLabel + "\" "; //Label text goes into the button itself
 				break;
 			default: //Everything else does this.
 				HTML += PSTR("value=\"") + GetFieldValue() + "\" ";
 				break;
 		}
 
-		if ( strlen( GetFieldName().c_str() ) && GetType() != FIELD_TYPE::SUBMIT ) //If we even have a name.
+		if ( strlen( GetFieldName().c_str() ) && iType != FIELD_TYPE::SUBMIT ) //If we even have a name.
 			HTML += PSTR("name=\"") + GetFieldName() + "\" ";		
 
-		HTML += PSTR("id=\"") + String(GetAddress()) + "\"";
+		HTML += PSTR("id=\"") + String(iAddress) + "\"";
 		HTML += ">"; //End of the <INPUT 
 	}
 	else
@@ -92,7 +93,7 @@ String DataField::GenerateHTML() //Baseclass GenerateHTML
 		HTML += PSTR("<textarea form=\"");
 		if ( getSpecialParams().size() )
 			HTML += getSpecialParams().front(); //first only	
-		HTML += PSTR("\" id=\"") + String(GetAddress()) + PSTR("\" rows=\"") + String(iRows) + PSTR("\" cols=\"") + String (iCols) + "\"";//"form" is the default form name. It'll work for now
+		HTML += PSTR("\" id=\"") + String(iAddress) + PSTR("\" rows=\"") + String(iRows) + PSTR("\" cols=\"") + String (iCols) + "\"";//"form" is the default form name. It'll work for now
 		if ( strlen( GetFieldName().c_str() ) ) //If we even have a name.
 			HTML += PSTR("name=\"") + GetFieldName() + "\"";	
 		HTML += ">";
@@ -100,7 +101,7 @@ String DataField::GenerateHTML() //Baseclass GenerateHTML
 		HTML += PSTR("</textarea>");
 	}
 
-	if ( DoNewline() )	//Generate newline?
+	if ( bNewLine )	//Generate newline?
 		HTML += PSTR("<br>");
 
 	return HTML;
@@ -109,14 +110,15 @@ String DataField::GenerateHTML() //Baseclass GenerateHTML
 String SSID_Datafield::GenerateHTML() //This is a specific type of field, tailored to a specific function.
 {
 	String HTML;
+	HTML.reserve(4096);
 
 	int16_t networks = WiFi.scanNetworks(false, false, false, 200); //200MS instead of 300ms - make scans faster
 
-	if ( strlen( GetFieldLabel().c_str() ) ) //Is there a label?
-		HTML += PSTR("<label for=\"") + String(GetAddress()) + "\">" + GetFieldLabel() + PSTR(": </label>");
+	if ( sFieldLabel.length() ) //Is there a label?
+		HTML += PSTR("<label for=\"") + String(iAddress) + "\">" + sFieldLabel + PSTR(": </label>");
 	
 	HTML += PSTR("<select ");
-	HTML += PSTR("id=\"") + String(GetAddress()) + PSTR("\" name=\"") + GetFieldName() + PSTR("\" >");
+	HTML += PSTR("id=\"") + String(iAddress) + PSTR("\" name=\"") + GetFieldName() + PSTR("\" >");
 	
 	if ( networks <= 0 )
 	{
@@ -144,7 +146,7 @@ String SSID_Datafield::GenerateHTML() //This is a specific type of field, tailor
 	
 	HTML += F("</select>"); //End of the <INPUT
 	
-	if ( DoNewline() )	//Generate newline?
+	if ( bNewLine )	//Generate newline?
 		HTML += F("<br>");
 
 	return HTML;
@@ -153,11 +155,13 @@ String SSID_Datafield::GenerateHTML() //This is a specific type of field, tailor
 String Select_Datafield::GenerateHTML()
 {
 	String HTML;
-	if ( strlen( GetFieldLabel().c_str() ) ) //Is there a label?
-		HTML += PSTR("<label for=\"") + String(GetAddress()) + "\">" + GetFieldLabel() + PSTR(": </label>");
+	HTML.reserve(4096); 
+
+	if ( sFieldLabel.length() ) //Is there a label?
+		HTML += PSTR("<label for=\"") + String(iAddress) + "\">" + sFieldLabel + PSTR(": </label>");
 	
 	HTML += PSTR("<select ");
-	HTML += PSTR("id=\"") + String(GetAddress()) + PSTR("\" name=\"") + GetFieldName() + PSTR("\" >");
+	HTML += PSTR("id=\"") + String(iAddress) + PSTR("\" name=\"") + GetFieldName() + PSTR("\" >");
 	
 	if ( getSpecialParams().size() > 0 )
 	{
@@ -178,7 +182,7 @@ String Select_Datafield::GenerateHTML()
 	
 	HTML += PSTR("</select>");
 	
-	if ( DoNewline() )	//Generate newline?
+	if ( bNewLine )	//Generate newline?
 		HTML += PSTR("<br>");
 
 	return HTML;
@@ -187,8 +191,10 @@ String Select_Datafield::GenerateHTML()
 String FILE_Datafield::GenerateHTML()
 {
 	String HTML;
-	if ( strlen( GetFieldLabel().c_str() ) ) //Is there a label for the field?
-		HTML += PSTR("<label for=\"") + String(GetAddress()) + "\">" + GetFieldLabel() + PSTR(": </label>");
+	HTML.reserve(2048);
+
+	if ( sFieldLabel.length() ) //Is there a label for the field?
+		HTML += PSTR("<label for=\"") + String(iAddress) + "\">" + sFieldLabel + PSTR(": </label>");
 
 	HTML += PSTR("<Input type=\"file\" accept=\"");
 
@@ -201,7 +207,7 @@ String FILE_Datafield::GenerateHTML()
 	}
 	HTML += "\" "; //end accept param
 	HTML += PSTR("name=\"") + GetFieldName() + "\" ";		
-	HTML += PSTR("id=\"") + String(GetAddress()) + "\" ";
+	HTML += PSTR("id=\"") + String(iAddress) + "\" ";
 	if (b_multiple)
 		HTML += PSTR("multiple");
 	HTML += ">"; //End of the <INPUT 
@@ -248,7 +254,7 @@ shared_ptr<DataField> DataTable::GetElementByName( const String &name )
 
 bool DataTable::AddElement( shared_ptr<DataField> field )
 {
-	if ( IteratorFromAddress( field->GetAddress() ) > -1 ) //Valid iterator found, index already taken.
+	if ( IteratorFromAddress( field->iAddress ) > -1 ) //Valid iterator found, index already taken.
 		return false;
 	
 	p_fields.push_back( field );
@@ -259,7 +265,7 @@ int8_t DataTable::IteratorFromAddress( unsigned int index )
 {
 	for ( uint8_t x = 0; x < p_fields.size(); x++ )
 	{
-		if ( p_fields[x]->GetAddress() == index ) //Address exists?
+		if ( p_fields[x]->iAddress == index ) //Address exists?
 			return x;
 	}
 	
@@ -269,6 +275,8 @@ int8_t DataTable::IteratorFromAddress( unsigned int index )
 String DataTable::GenerateTableHTML()
 {
 	String HTML;
+	HTML.reserve(8196);
+
 	//sprintf_P(HTML.c_str(), " ", "");
 	//HTML += PSTR("<h2>") + s_tableName + PSTR("</h2>");
 	//HTML += PSTR("<table id =\"\" > ");
@@ -290,8 +298,10 @@ String DataTable::GenerateTableHTML()
 
 String Hyperlink_Datafield::GenerateHTML()
 {
-	String HTML = PSTR("<li><a href=\"") + GetFieldValue() + "\">" + GetFieldLabel() + PSTR("</a></li>");
-	if ( DoNewline() )	//Generate newline?
+	String HTML;
+	HTML.reserve(1024);
+	HTML += PSTR("<li><a href=\"") + GetFieldValue() + "\">" + sFieldLabel + PSTR("</a></li>");
+	if ( bNewLine )	//Generate newline?
 		HTML += PSTR("<br>");
 	return HTML;
 }
@@ -469,26 +479,32 @@ int_fast32_t VAR_Datafield::intFromValue()
 
 String LADDER_OBJ_Datafield::GenerateHTML() 
 {
- 	String html = PSTR("<table>\n<thead>\n<tr>\n<th Colspan=\"2\">") + String(pObj->getID()) + PSTR("</th>\n</tr>\n<thead>\n</thead>\n<tbody>\n");
-	html += PSTR("<tr>\n<th Colspan=\"2\">") + getObjectType(pObj->getType()) + PSTR("</th>\n</tr>\n");
-	if ( pObj->getType() >= OBJ_TYPE::TYPE_VAR_UBYTE && pObj->getType() <= OBJ_TYPE::TYPE_VAR_STRING ) //if it's a variable type..
+	const String &objID = pObj->sObjID;
+				
+ 	String html;
+	html.reserve(2048);
+	PSTR("<table>\n<thead>\n<tr>\n<th Colspan=\"2\">") + String(pObj->sObjID) + PSTR("</th>\n</tr>\n<thead>\n</thead>\n<tbody>\n");
+	html += PSTR("<tr>\n<th Colspan=\"2\">") + getObjectType(pObj->iType) + PSTR("</th>\n</tr>\n");
+	if ( pObj->iType >= OBJ_TYPE::TYPE_VAR_UBYTE && pObj->iType <= OBJ_TYPE::TYPE_VAR_STRING ) //if it's a variable type..
     {
-		shared_ptr<Ladder_VAR> varPtr = static_pointer_cast<Ladder_VAR>(pObj); //declare a pointer to the variable object
+		VAR_PTR varPtr = static_pointer_cast<Ladder_VAR>(pObj); //declare a pointer to the variable object
+		const String &varID = varPtr->sObjID;
 
 		html += PSTR("<tr>\n");
-		html += PSTR("<td id=\"") + pObj->getID() + varPtr->getID() + "_Type\">" + varPtr->getID() + "</td>";
-		html += PSTR("<td id=\"") + pObj->getID() + varPtr->getID() + "\">" + varPtr->getValueStr() + "</td>\n"; 
+		html += PSTR("<td id=\"") + objID + varID + "_Type\">" + varID + "</td>";
+		html += PSTR("<td id=\"") + objID + varID + "\">" + varPtr->getValueStr() + "</td>\n"; 
 		html += PSTR("</tr>\n");
 	}
 	else
 	{
 		for (uint8_t i = 0; i < pObj->getObjectVARs().size(); i++)
 		{
-			shared_ptr<Ladder_VAR> varPtr = pObj->getObjectVARs()[i]; //declare a pointer to the variable object
+			VAR_PTR varPtr = pObj->getObjectVARs()[i]; //declare a pointer to the variable object
+			const String &varID = varPtr->sObjID;
 
 			html += PSTR("<tr>\n");
-			html += PSTR("<td id=\"") + pObj->getID() + varPtr->getID() + "_Type\">" + varPtr->getID() + "</td>";
-			html += PSTR("<td id=\"") + pObj->getID() + varPtr->getID() + "\">" + varPtr->getValueStr() + "</td>\n"; 
+			html += PSTR("<td id=\"") + objID + varID + "_Type\">" + varID + "</td>";
+			html += PSTR("<td id=\"") + objID + varID + "\">" + varPtr->getValueStr() + "</td>\n"; 
 			html += PSTR("</tr>\n");
 		}
 	}

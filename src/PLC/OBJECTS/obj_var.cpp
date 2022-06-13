@@ -13,7 +13,7 @@ void Ladder_VAR::setLineState(bool &state, bool bNot)
 
 void Ladder_VAR::setValue( const String &str )
 {
-    if ( getType() == OBJ_TYPE::TYPE_VAR_FLOAT )
+    if ( iType == OBJ_TYPE::TYPE_VAR_FLOAT )
         setValue( str.toDouble() );
     else
         setValue( static_cast<int64_t>(strtoll(str.c_str(), NULL, 10)) );
@@ -22,7 +22,7 @@ void Ladder_VAR::setValue( const String &str )
 String Ladder_VAR::getValueStr()
 {
     String value;
-    switch(getType()) //get the correct value from the variable object
+    switch(iType) //get the correct value from the variable object
     {
         case OBJ_TYPE::TYPE_VAR_USHORT:
             value = getValue<uint16_t>();
@@ -52,53 +52,96 @@ String Ladder_VAR::getValueStr()
     return value;
 }
 
-bool Ladder_VAR::operator<=(const Ladder_VAR &B)
+bool Ladder_VAR::operator<=(const VAR_PTR &B)
 {
-    if ( this->getValue<double>() <= Ladder_VAR(B).getValue<double>() )
+    if ( this->getValue<double>() <= B->getValue<double>() )
         return true;
     
     return false;
 }
 
-bool Ladder_VAR::operator<(const Ladder_VAR &B)
+bool Ladder_VAR::operator<(const VAR_PTR &B)
 {
-    if ( this->getValue<double>() < Ladder_VAR(B).getValue<double>() )
+    if ( this->getValue<double>() < B->getValue<double>() )
         return true;
     
     return false;
 }
 
-bool Ladder_VAR::operator>=(const Ladder_VAR &B)
+bool Ladder_VAR::operator>=(const VAR_PTR &B)
 {
-    if ( this->getValue<double>() >= Ladder_VAR(B).getValue<double>() )
+    if ( this->getValue<double>() >= B->getValue<double>() )
         return true;
     
     return false;
 }
 
-bool Ladder_VAR::operator>(const Ladder_VAR &B)
+bool Ladder_VAR::operator>(const VAR_PTR &B)
 {
-    if ( this->getValue<double>() > Ladder_VAR(B).getValue<double>() )
+    if ( this->getValue<double>() > B->getValue<double>() )
         return true;
     
     return false;
 }
 
-bool Ladder_VAR::operator==(const Ladder_VAR &B)
+bool Ladder_VAR::operator==(const VAR_PTR &B)
 {
-    if ( this->getValue<double>() == Ladder_VAR(B).getValue<double>() )
+    if ( this->getValue<double>() == B->getValue<double>() )
         return true;
     
     return false;
 }
 
-bool Ladder_VAR::operator!=(const Ladder_VAR &B)
+bool Ladder_VAR::operator!=(const VAR_PTR &B)
 {
     return !this->operator==(B);
 }
 
-void Ladder_VAR::operator=(const Ladder_VAR &B)
+Ladder_VAR Ladder_VAR::operator=(const VAR_PTR &B)
 {
-    this->values = B.values;
-    this->b_usesPtr = B.b_usesPtr;
+    Ladder_VAR var = *B;
+    return var;
 }
+
+//Global operators for Ladder_VAR objects below here
+const double operator-(const VAR_PTR &var1, const VAR_PTR &var2 )
+{
+	return (var1->getValue<double>() - var2->getValue<double>());
+}
+const double operator+(const VAR_PTR &var1, const VAR_PTR &var2 )
+{
+	return (var1->getValue<double>() + var2->getValue<double>());
+}
+const double operator*(const VAR_PTR &var1, const VAR_PTR &var2 )
+{
+	return (var1->getValue<double>() * var2->getValue<double>());
+}
+const double operator/(const VAR_PTR &var1, const VAR_PTR &var2 )
+{
+	return (var1->getValue<double>() / var2->getValue<double>());
+}
+bool operator==(const VAR_PTR &var1, const VAR_PTR &var2 )
+{
+    return (var1->getValue<double>() == var2->getValue<double>());
+}
+bool operator>=(const VAR_PTR &var1, const VAR_PTR &var2 )
+{
+    return (var1->getValue<double>() >= var2->getValue<double>() );
+}
+bool operator<=(const VAR_PTR &var1, const VAR_PTR &var2 )
+{
+    return ( var1->getValue<double>() <= var2->getValue<double>() );
+}
+bool operator>(const VAR_PTR &var1, const VAR_PTR &var2 )
+{
+    return !operator<=(var1,var2);
+} 
+bool operator<(const VAR_PTR &var1, const VAR_PTR &var2 )
+{
+    return !operator>=(var1,var2);
+}
+bool operator!=(const VAR_PTR &var1, const VAR_PTR &var2 )
+{
+    return !operator==(var1,var2);
+} 
+

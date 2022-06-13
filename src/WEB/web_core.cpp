@@ -38,6 +38,28 @@ void UICore::setupServer()
 	getWebServer().on(alertsDir, std::bind(&UICore::handleAlerts, this) );
     getWebServer().on(firmwareDir, HTTP_GET, std::bind(&UICore::handleUpdater, this) );
     getWebServer().on(firmwareDir, HTTP_POST, [](){}, applyRemoteFirmwareUpdate ); //continuously call the firmware update function on HTTP POST method
+	 
+	getWebServer().on(filesDir, HTTP_GET, std::bind(&UICore::handleFileList, this) );
+	//create file
+	getWebServer().on(editDir, HTTP_PUT, std::bind(&UICore::handleFileCreate, this) );
+	//delete file
+	getWebServer().on(editDir, HTTP_DELETE, std::bind(&UICore::handleFileDelete, this) );
+	//first callback is called after the request has ended with all parsed arguments
+	//second callback handles file uploads at that location
+	getWebServer().on(editDir, HTTP_POST, []()
+	{
+		Core.getWebServer().send(200, transmission_Plain, "");
+	}, std::bind(&UICore::handleFileUpload, this));
+
+	//called when the url is not defined here
+	//use it to load content from FILESYSTEM
+	getWebServer().onNotFound([]() 
+	{
+		if (!Core.handleFileRead(Core.getWebServer().uri())) 
+		{
+			Core.getWebServer().send(404, transmission_Plain, Core.getWebServer().uri() + " not Found");
+		}
+	});
 	//
 };
 
@@ -54,7 +76,10 @@ bool UICore::handleAuthorization()
 
 String UICore::generateTitle( const String &data )
 {
-	return PSTR("<title>Device: ") + getUniqueID() + " " + data + PSTR("</title>");
+	String title;
+	title.reserve(256);
+	title = PSTR("<title>Device: ") + getUniqueID() + " " + data + PSTR("</title>");
+	return title;
 }
 
 String UICore::generateHeader()
@@ -69,12 +94,17 @@ String UICore::generateFooter()
 
 String UICore::generateAlertsScript( uint8_t fieldID )
 { 
-	return PSTR("<script>var intFunc = function(){\n var xml = new XMLHttpRequest();\n xml.onreadystatechange = function(){\n if (this.readyState == 4 && this.status == 200){parse(this.responseText);};};\n xml.open(\"GET\", \"alerts\");\n xml.send(); };\n function parse(arr){ var doc = document.getElementById(\"1\"); if(doc.innerHTML != arr){\ndoc.innerHTML = arr\ndoc.scrollTop = doc.scrollHeight}; };\nsetInterval(intFunc,500);</script>");
+	String script;
+	script.reserve(512);
+	script = PSTR("<script>var intFunc = function(){\n var xml = new XMLHttpRequest();\n xml.onreadystatechange = function(){\n if (this.readyState == 4 && this.status == 200){parse(this.responseText);};};\n xml.open(\"GET\", \"alerts\");\n xml.send(); };\n function parse(arr){ var doc = document.getElementById(\"1\"); if(doc.innerHTML != arr){\ndoc.innerHTML = arr\ndoc.scrollTop = doc.scrollHeight}; };\nsetInterval(intFunc,500);</script>");
+	return script;
 }
 
 String UICore::generateAlertsJSON()
 {
-	String JSON = "";
+	String JSON;
+	JSON.reserve(MAX_MESSAGE_HISTORY_SIZE);
+
 	for( size_t x = 0; x < alerts.size(); x++ )
 		JSON += alerts[x] + CHAR_NEWLINE;
 
@@ -100,7 +130,7 @@ void UICore::UpdateWebFields( const vector<shared_ptr<DataTable>> &tables )
 		{
 			tempField = tables[i]->GetFields()[y]; //Get the pointer
 			
-			if ( tempField->GetType() == FIELD_TYPE::CHECKBOX ) //Arg doesn't apply
+			if ( tempField->iType == FIELD_TYPE::CHECKBOX ) //Arg doesn't apply
             {
                 tempField->SetFieldValue();
             }
@@ -120,14 +150,14 @@ void UICore::UpdateWebFields( const vector<shared_ptr<DataTable>> &tables )
 					continue; //Skip if so
 				
 				//build a map of function data fields to update last, update all others as they come
-				if ( tempField->UsesFunction() ) //All function related fields should go here
+				if ( tempField->bFunction ) //All function related fields should go here
 				{
 					functionFields.emplace(tempField, getWebServer().arg(x)); //place into the map for fields that execute functions
 				}
 				else
 				{
 					if ( !tempField->SetFieldValue( getWebServer().arg(x) ) )
-						sendMessage( PSTR("Update of '") + tempField->GetFieldLabel() + PSTR("' failed.") );
+						sendMessage( PSTR("Update of '") + tempField->sFieldLabel + PSTR("' failed.") );
 				}
 			}
 		}
@@ -137,7 +167,7 @@ void UICore::UpdateWebFields( const vector<shared_ptr<DataTable>> &tables )
 	for ( std::map<shared_ptr<DataField>, String>::iterator itr = functionFields.begin(); itr != functionFields.end(); itr++ )//handle each object attached to this object.
 	{
 		if( !itr->first->SetFieldValue( itr->second ) )
-			sendMessage( PSTR("Update of '") + itr->first->GetFieldLabel() + PSTR("' failed.") );
+			sendMessage( PSTR("Update of '") + itr->first->sFieldLabel + PSTR("' failed.") );
 	}
 }
 

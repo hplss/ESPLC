@@ -5,17 +5,32 @@
 //////////////////////////////////////////////////////////////////////////
 void CounterOBJ::updateObject(bool state)
 {
-	if ( getState() == STATE_ENABLED ) //make sure we don't increment the accumulator twice
-		return; //already enabled
-		
-	setAccumVal( getAccumVal() + 1 ); //increment 1
-	if ( iAccum >= iCount )//we're above the set limit for counting
-		setState(STATE_ENABLED);
+	if ( enableBit == getLineState() )
+		return; //same state
+	
+    if ( iType == OBJ_TYPE::TYPE_COUNTER_UP ) //Count up to a specific value
+    {
+	    ptr_accum->setValue( ptr_accum + 1 ); 
+        if ( ptr_accum >= ptr_count ) 
+        {
+            doneBit = true;
+        }
+    }
+    else if (iType == OBJ_TYPE::TYPE_COUNTER_DOWN )
+    {
+        ptr_accum->setValue( ptr_accum - 1 );
+        if ( ptr_accum <= ptr_count ) 
+        {
+            doneBit = true;
+        }
+    }
+
+    enableBit = getLineState();
 }
 
-shared_ptr<Ladder_VAR> CounterOBJ::getObjectVAR( const String &id )
+VAR_PTR CounterOBJ::getObjectVAR( const String &id )
 { 
-    shared_ptr<Ladder_VAR> var = Ladder_OBJ_Logical::getObjectVAR(id);
+    VAR_PTR var = Ladder_OBJ_Logical::getObjectVAR(id);
     if ( !var ) //already exists?
     {
         
@@ -24,9 +39,9 @@ shared_ptr<Ladder_VAR> CounterOBJ::getObjectVAR( const String &id )
         else if ( id == bitTagDN )
             var = make_shared<Ladder_VAR>(&doneBit, id);
         else if ( id == bitTagPRE )
-            var = make_shared<Ladder_VAR>(&iCount, id);
+            return ptr_count;
         else if ( id == bitTagACC)
-            var = make_shared<Ladder_VAR>(&iAccum, id);
+            return ptr_accum;
 
         if ( var )
         {

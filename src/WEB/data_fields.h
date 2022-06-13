@@ -44,61 +44,40 @@ class DataField
 	DataField( make_shared<String>(defaultValue), address, type, fieldLabel, params, cols, rows, newLine, functional ){}
 
 	DataField( shared_ptr<String>defaultValue, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool newLine = true, bool functional = false )
+	: iAddress(address), iType(type), bNewLine(newLine), bFunction(functional), iRows(rows), iCols(cols), sFieldLabel(fieldLabel)
 	{
-		i_Address = address;
-		i_Type = type;
-		s_fieldLabel = fieldLabel; //Labels are the describing text
 		s_fieldValue = defaultValue;
-		b_newLine = newLine;
-		b_Function = functional; //always default off
-		iRows = rows; 
-		iCols = cols;
 		s_specialParams = params;
 	}
 	virtual ~DataField(){} //Destructor
 
-	//Returns the field type (used for the generation of the HTML code)
-	FIELD_TYPE GetType() { return i_Type; } 
 	//This overloaded function is used for setting the data (stored value) within the field.
 	virtual bool SetFieldValue( shared_ptr<String> ); 
 	//This overloaded function is used for setting the data (stored value) within the field.
 	virtual bool SetFieldValue( const String & = "" );
 	//void SetEnabled( bool en ){ SetSetting(en, 1, 1); /*b_enabled = en;*/ }
 
-	//Returns the address of the field (Used to make sure we're updating the proper field)
-	uint8_t GetAddress()
-	{
-		return i_Address;
-	}
 	//Currently this function returns a String of the field's assigned address.
-	String GetFieldName() { return String(GetAddress()); }
+	String GetFieldName() { return String(iAddress); }
 	//Returns the string containing the value of the data field (the actual data).
 	const String &GetFieldValue() { return *s_fieldValue; }
-	//Returns the string containing the label used to describe the data field.
-	const String &GetFieldLabel() { return s_fieldLabel; }
 
 	vector<String> &getSpecialParams(){ return s_specialParams; }
 	uint8_t getNumSpecialParams(){ return getSpecialParams().size(); }
 	//Used to create the HTML as it corresponds each web UI data field. 
 	//Returns a string that contains all of the generated HTML, which can then be appended to the main HTML string before being sent to the end user.
 	virtual String GenerateHTML(); 
-	//Create a new line?
-	bool DoNewline(){ return b_newLine; }
-	bool UsesFunction(){ return b_Function; }
+
+	const bool bFunction;
+	const bool bNewLine; //Generate a newline in HTML following this Datafield.
+	const uint8_t iRows, iCols;
+	const uint8_t iAddress; //Represents the address number used for updating values in the field.	
+	const FIELD_TYPE iType; //This represents the type of data field we're displaying (Text-box, radio button, etc)
+	const String sFieldLabel; //Text that describes the field
 
 	private:
-	FIELD_TYPE i_Type; //This represents the type of data field we're displaying (Text-box, radio button, etc)
-	uint8_t i_Address; //Represents the address number used for updating values in the field.	
 	shared_ptr<String> s_fieldValue; //This is the data being displayed within the form (default text in a text-box for example)
-	String s_fieldLabel; //Text that describes the field
-	bool b_Function; //kinda hackish, but this is used to determine if this field performs a direct function call. This will look better with bit shifting
-	bool b_newLine; //Generate a newline in HTML following this Datafield.
-	uint8_t iRows, iCols; 
 	vector<String> s_specialParams; //Container for special parameters for various types of datafields
-
-	unsigned int settings; //variables that mutliple settings are shifted into
-
-	//Bit shifting idea: unsigned int(16 bit) = (type = 4 bits), (address = 8 bits), (function = 1 bit), (enabled = 1 bit), (new line = 1 bit) = 15 bits total
 };
 
 class DataTable //This class is basically used to create sections for specific types of inputs, like SQL settings, or Time settings, etc.
@@ -201,17 +180,21 @@ class VAR_S_Datafield : public VAR_Datafield
 {
 	public:
 	template <typename T>
-	VAR_S_Datafield(const function<void(void)> &onChanged, T *var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool force = false, bool newLine = true ) : VAR_Datafield( var, address, type, fieldLabel, params, cols, rows, newLine, true )
-	{ func = onChanged;  forceExec = force; }
+	VAR_S_Datafield(const function<void(void)> &onChanged, T *var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool force = false, bool newLine = true ) 
+	: VAR_Datafield( var, address, type, fieldLabel, params, cols, rows, newLine, true ), func(onChanged), forceExec(force)
+	{}
+
 	template <typename T>
-	VAR_S_Datafield(const function<void(void)> &onChanged, shared_ptr<T> var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool force = false, bool newLine = true ) : VAR_Datafield( var, address, type, fieldLabel, params, cols, rows, newLine, true )
-	{ func = onChanged; forceExec = force; }
+	VAR_S_Datafield(const function<void(void)> &onChanged, shared_ptr<T> var, uint8_t address, FIELD_TYPE type, const String &fieldLabel = "", const vector<String> &params = {}, uint8_t cols = MAX_DATA_LENGTH, uint8_t rows = 1, bool force = false, bool newLine = true ) 
+	: VAR_Datafield( var, address, type, fieldLabel, params, cols, rows, newLine, true ), func(onChanged), forceExec(force)
+	{}
 	~VAR_S_Datafield(){}
+
 	bool SetFieldValue( const String &str ){ if(VAR_Datafield::SetFieldValue(str) || forceExec ){ func(); return true; } return false; }
 
 	private:
-	function<void(void)> func;//function reference to be executed on change
-	bool forceExec;
+	const function<void(void)> func;//function reference to be executed on change
+	const bool forceExec;
 };
 
 //This field is used specifically for selecting and setting the device WiFi SSID for direct connection vie the web UI.
@@ -256,17 +239,17 @@ class Select_Datafield : public VAR_Datafield
 class FILE_Datafield : public DataField
 {
 	public: 
-	FILE_Datafield( const vector<String> &types, bool multiple, uint8_t address, const String &fieldLabel, bool newLine = true ) : DataField(address, FIELD_TYPE::FILE_UPLOAD, fieldLabel, "", {}, 50, 1, newLine ) 
+	FILE_Datafield( const vector<String> &types, bool multiple, uint8_t address, const String &fieldLabel, bool newLine = true ) 
+	: DataField(address, FIELD_TYPE::FILE_UPLOAD, fieldLabel, "", {}, 50, 1, newLine ), b_multiple(multiple)
 	{
 		getSpecialParams() = types;
-		b_multiple = multiple; //allow for multiple files to be uploaded at once? -- probably not, but whatever
 	}
 
 	String GenerateHTML();
 	const vector<String> &getFileTypes(){ return getSpecialParams(); }
 
 	private:
-	bool b_multiple;
+	const bool b_multiple;
 };
 
 //This field type is used for generating the status objects per each initialized ladder object. 
@@ -274,7 +257,7 @@ class FILE_Datafield : public DataField
 class LADDER_OBJ_Datafield : public DataField
 {
 	public:
-	LADDER_OBJ_Datafield( shared_ptr<Ladder_OBJ_Logical> obj, uint8_t address, const String &fieldLabel = "", bool newLine = true ) : 
+	LADDER_OBJ_Datafield( OBJ_LOGIC_PTR obj, uint8_t address, const String &fieldLabel = "", bool newLine = true ) : 
 	DataField(address, FIELD_TYPE::NONE, fieldLabel, "", {}, newLine )
 	{
 		pObj = obj;
@@ -285,8 +268,9 @@ class LADDER_OBJ_Datafield : public DataField
 
 	String GenerateHTML();
 	private:
-	shared_ptr<Ladder_OBJ_Logical> pObj;
+	OBJ_LOGIC_PTR pObj;
 };
+
 //Returns a string of the object type
 String getObjectType(OBJ_TYPE val);
 #endif /* DATA_FIELDS_H_ */

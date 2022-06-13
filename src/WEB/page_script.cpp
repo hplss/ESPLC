@@ -47,7 +47,10 @@ void UICore::handleScript() //Generate the HTML for our main page.
 	if ( getWebServer().args() ) //Do we have some args to input? Apply settings if so (before generating the rest of the HTML)
 		UpdateWebFields( p_UIDataTables );
 
-	String HTML = generateHeader();
+	String HTML;
+	HTML.reserve(8192);
+
+	HTML += generateHeader();
 	HTML += generateTitle(PSTR("Ladder Logic Script Page")); //generates the title for the page
 	HTML += generateAlertsScript( 1 ); //hackhack for now -- index may vary, unless explicitly assigned to '1'
 

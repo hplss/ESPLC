@@ -7,8 +7,6 @@
  */
 
 #include <CORE/UICore.h>
- 
-extern UICore Core; //Accessor for the initialized UIcore object.
 
 void UICore::createAdminFields() //Should never be called more than once
 {
@@ -99,7 +97,9 @@ void UICore::handleAdmin()
 	if ( getWebServer().args() ) //Do we have some args to input? Apply settings if so (before generating the rest of the HTML)
 		UpdateWebFields( p_UIDataTables );
 	
-	String HTML = generateHeader();
+	String HTML;
+	HTML.reserve(8192);
+	HTML = generateHeader();
 	HTML += generateTitle(PSTR("Admin Page"));
 	HTML += generateAlertsScript( 1 ); //hackhack for now -- index may vary, unless explicitly assigned to '1'
 
@@ -113,6 +113,7 @@ void UICore::handleAdmin()
 	
 	HTML += html_form_End;
 	HTML += generateFooter(); //Add the footer stuff.
+
 	getWebServer().sendHeader(http_header_connection, http_header_close);
 	getWebServer().send(200, transmission_HTML, HTML );
 	resestFieldContainers();

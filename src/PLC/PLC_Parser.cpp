@@ -71,7 +71,7 @@ bool NestContainer::connectObjects()
 bool PLC_Parser::parseLine()
 {
     //This parser code can be cleaned up, but we'll worry about getting it working first.
-    vector<shared_ptr<Ladder_OBJ_Wrapper>> firstEQObjects; //container for all "global" assignment operations for the line being parsed.
+    vector<OBJ_WRAPPER_PTR> firstEQObjects; //container for all "global" assignment operations for the line being parsed.
     vector<String> firstOrObjects; //continer for all strings that are split at the OR operator (parallel operations)
     //Before handling each tier, break up any "global" object operations (per line). An example of this is the Objects being assigned (=) at the end of the line (not in parenthesis).
     vector<String> outer = splitString(getParsedLineStr(), CHAR_EQUALS, true, CHAR_P_START, CHAR_P_END); //Split on '=' char first
@@ -81,7 +81,7 @@ bool PLC_Parser::parseLine()
         {
             if ( buildObjectStr(outer[x]) ) //If not, 
             {
-                shared_ptr<Ladder_OBJ_Wrapper> newObj = handleObject(); //perform any logic specific operations and initialize it.
+                OBJ_WRAPPER_PTR newObj = handleObject(); //perform any logic specific operations and initialize it.
                 if ( newObj ) //attempt to build the object using the parsed info in buildObjectStr() and push into NestContainer
                 {
                     firstEQObjects.push_back(newObj);
@@ -106,13 +106,12 @@ bool PLC_Parser::parseLine()
                 vector<shared_ptr<NestContainer>> tierNest = getNestsByTier(x); //Get the NestContainers for the given tier
                 for ( uint8_t y = 0; y < tierNest.size(); y++ ) //Iterate through all nests for the current tier..
                 {
-                    vector<shared_ptr<NestContainer>> nextNests = tierNest[y]->getNextNests(); //For the given nest, find the nest (tethered) NestContainer objects 
-                    vector<shared_ptr<Ladder_OBJ_Wrapper>> currentLastObjects = tierNest[y]->getLastObjects();
-                    vector<shared_ptr<Ladder_OBJ_Wrapper>> currentFirstObjects = tierNest[y]->getFirstObjects();
+                    vector<NEST_PTR> nextNests = tierNest[y]->getNextNests(); //For the given nest, find the nest (tethered) NestContainer objects 
+                    vector<OBJ_WRAPPER_PTR> currentLastObjects = tierNest[y]->getLastObjects();
 
                     for ( uint8_t z = 0; z < nextNests.size(); z++ ) //Iterate through the next nests for the given tier object...
                     {   
-                        vector<shared_ptr<Ladder_OBJ_Wrapper>> nextNestObjects = nextNests[z]->getFirstObjects();
+                        vector<OBJ_WRAPPER_PTR> nextNestObjects = nextNests[z]->getFirstObjects();
 
                         if ( !nextNestObjects.size() && currentLastObjects.size() ) //no objects stored in the next tier up, so forward the current (last) objects to the next tier.
                         {
@@ -135,8 +134,9 @@ bool PLC_Parser::parseLine()
     }
     else if ( firstEQObjects.size() > 1 ) //no objects in the OR objects list.. means that all of the objects were stored into the EQobjects vector. Time for a bit of a hack... 
     {
-        shared_ptr<Ladder_OBJ_Wrapper> firstObj = firstEQObjects.front();
+        OBJ_WRAPPER_PTR firstObj = firstEQObjects.front();
         getRung()->addInitialRungObject(firstObj);
+
         for (uint8_t x = 1; x < firstEQObjects.size(); x++ )
             firstObj->addNextObject(firstEQObjects[x]);
     }
@@ -144,7 +144,7 @@ bool PLC_Parser::parseLine()
     //Finally, we append the "global" assignments to the end of each "last" object of each nest.
     for ( uint8_t q = 0; q < firstEQObjects.size(); q++ )
     {
-        vector<shared_ptr<Ladder_OBJ_Wrapper>> allLastObjects = getLastNestObjects();
+        vector<OBJ_WRAPPER_PTR> allLastObjects = getLastNestObjects();
         for ( uint8_t x = 0; x < allLastObjects.size(); x++ )
         {
             allLastObjects[x]->addNextObject(firstEQObjects[q]);
@@ -244,7 +244,7 @@ bool PLC_Parser::buildObjectStr(const String &str)
 
 shared_ptr<Ladder_OBJ_Wrapper> PLC_Parser::getObjectVARWrapper(shared_ptr<Ladder_OBJ_Logical> ptr)
 {
-    shared_ptr<Ladder_VAR> pVar = ptr->getObjectVAR(sParsedBit); //This will attempt to find the existing variable object (or sometimes create it, depending on the object type)
+    VAR_PTR pVar = ptr->getObjectVAR(sParsedBit); //This will attempt to find the existing variable object (or sometimes create it, depending on the object type)
     if ( pVar ) //If successful (not null), make the wrapper and return it
         return make_shared<Ladder_OBJ_Wrapper>( pVar, getRungNum(), getNotOP() );
 
@@ -255,7 +255,7 @@ shared_ptr<Ladder_OBJ_Wrapper> PLC_Parser::createNewWrapper( shared_ptr<Ladder_O
 {
     if ( obj ) //pointer must be valid
     {
-        shared_ptr<Ladder_OBJ_Wrapper> newOBJWrapper = 0; //init
+        OBJ_WRAPPER_PTR newOBJWrapper = 0; //init
         if ( getParsedBitStr().length() && !getParsedAccessorStr().length() ) //accessing a specific bit? -- bit of a hack for now. accessors utilize entire names including bit operators for assigning new objects.
         {
             newOBJWrapper = getObjectVARWrapper(obj);
@@ -273,12 +273,12 @@ shared_ptr<Ladder_OBJ_Wrapper> PLC_Parser::createNewWrapper( shared_ptr<Ladder_O
     return 0; //return null
 }
 
-shared_ptr<Ladder_OBJ_Wrapper> PLC_Parser::handleObject()
+OBJ_WRAPPER_PTR PLC_Parser::handleObject()
 {   
-    shared_ptr<Ladder_OBJ_Wrapper> obj = 0;
+    OBJ_WRAPPER_PTR obj = 0;
     if ( getParsedAccessorStr().length() ) //Do we have some accessor that we are referencing?
     {
-        shared_ptr<Ladder_OBJ_Accessor> accessor = PLCObj.findAccessorByID(getParsedAccessorStr()); 
+        OBJ_ACC_PTR accessor = PLCObj.findAccessorByID(getParsedAccessorStr()); 
         if ( !accessor ) //didn't find the accessor from the list. 
         {
             sendError(ERR_DATA::ERR_INVALID_ACCESSOR, getParsedAccessorStr());
@@ -301,7 +301,7 @@ shared_ptr<Ladder_OBJ_Wrapper> PLC_Parser::handleObject()
             shared_ptr<Ladder_OBJ> newObj = PLCObj.createNewLadderObject(getParsedObjectStr(), parseObjectArgs());
             if ( newObj )  //so try to create it
             {
-                if(newObj->getType()==OBJ_TYPE::TYPE_ONS)
+                if(newObj->iType == OBJ_TYPE::TYPE_ONS)
                 {
                     obj = createNewWrapper(static_pointer_cast<Ladder_OBJ_Logical>(newObj));
                 }
@@ -335,17 +335,17 @@ void PLC_Parser::sendError(ERR_DATA err, const String &str)
     PLCObj.sendError(err,str);
 }
 
-vector<shared_ptr<Ladder_OBJ_Wrapper>> PLC_Parser::getFirstNestObjects()
+vector<OBJ_WRAPPER_PTR> PLC_Parser::getFirstNestObjects()
 {
-    vector<shared_ptr<Ladder_OBJ_Wrapper>> allFirstObjects;
+    vector<OBJ_WRAPPER_PTR> allFirstObjects;
 
     for (uint8_t x = 0; x <= getHighestNestTier(); x++)
     {
-        vector<shared_ptr<NestContainer>> nests = getNestsByTier(x);
+        vector<NEST_PTR> nests = getNestsByTier(x);
         for ( uint8_t y = 0; y < nests.size(); y++ )
         {
-            vector<shared_ptr<Ladder_OBJ_Wrapper>> nestFirstObjects = nests[y]->getFirstObjects(); 
-            for ( uint8_t z = 0; z < nestFirstObjects.size(); z++ ) //have we reach a nest that has no nests following it? Must be the last at the enf of the chain.
+            vector<OBJ_WRAPPER_PTR> nestFirstObjects = nests[y]->getFirstObjects(); 
+            for ( uint8_t z = 0; z < nestFirstObjects.size(); z++ ) //have we reached a nest that has no nests following it? Must be the last at the end of the chain.
             {
                 allFirstObjects.push_back(nestFirstObjects[z]);
             }
@@ -358,15 +358,15 @@ vector<shared_ptr<Ladder_OBJ_Wrapper>> PLC_Parser::getFirstNestObjects()
     return allFirstObjects;
 }
 
-vector<shared_ptr<Ladder_OBJ_Wrapper>> PLC_Parser::getLastNestObjects()
+vector<OBJ_WRAPPER_PTR> PLC_Parser::getLastNestObjects()
 {
-    vector<shared_ptr<Ladder_OBJ_Wrapper>> allLastObjects;
+    vector<OBJ_WRAPPER_PTR> allLastObjects;
 
     for (uint8_t x = 0; x < getNests().size(); x++)
     {
         if ( !getNests()[x]->getNumNextNests() ) //have we reach a nest that has no nests following it? Must be the last at the enf of the chain.
         {
-            vector<shared_ptr<Ladder_OBJ_Wrapper>> lastObjects = getNests()[x]->getLastObjects();
+            vector<OBJ_WRAPPER_PTR> lastObjects = getNests()[x]->getLastObjects();
             for ( uint8_t y = 0; y < lastObjects.size(); y++ )
             {
                 allLastObjects.push_back(lastObjects[y]);
@@ -377,9 +377,9 @@ vector<shared_ptr<Ladder_OBJ_Wrapper>> PLC_Parser::getLastNestObjects()
     return allLastObjects;
 }
 
-vector<shared_ptr<NestContainer>> PLC_Parser::getNestsByTier( uint8_t tier )
+vector<NEST_PTR> PLC_Parser::getNestsByTier( uint8_t tier )
 {
-    vector<shared_ptr<NestContainer>> tempVec;
+    vector<NEST_PTR> tempVec;
     for (uint8_t x = 0; x < getNests().size(); x++)
     {
         if ( getNests()[x]->getPTier() == tier )
@@ -470,7 +470,7 @@ LogicObject::LogicObject(const String &line, PLC_Parser *parser, uint8_t pTier, 
                     }
 
                     multimap<int8_t, String> tierMap = textWithin(current[z], CHAR_P_START, CHAR_P_END, 1); //break everything up into tiers and subtiers based on parenthesis in statement
-                    typedef multimap<int8_t, String> :: iterator itr;
+                    typedef multimap<int8_t, String>::iterator itr;
                     for (int8_t ptier = 0; ptier < tierMap.end()->first; ptier++ ) //find the highest tier level
                     {
                         if ( !tierMap.count(ptier) ) //make sure there's some data stored for the given tier

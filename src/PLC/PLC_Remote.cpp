@@ -89,14 +89,14 @@ String PLC_Remote_Server::handleInit( const String &str )
 
         if ( args.size() > 1) // Looks like we have a var type object.
         {
-            shared_ptr<Ladder_OBJ_Logical> pObj = PLCObj.findLadderObjByID(args[0]);
+            OBJ_LOGIC_PTR pObj = PLCObj.findLadderObjByID(args[0]);
 
             if (pObj)
             {
-                shared_ptr<Ladder_VAR> pVar = pObj->getObjectVAR( args[1] );
+                VAR_PTR pVar = pObj->getObjectVAR( args[1] );
                 //Format: <ID><TYPE><VALUE> // other arguments may be added later such as STATE, LOGIC, etc.
                 if ( pVar )
-                    initList += initObjects[x] + CHAR_UPDATE_RECORD + static_cast<uint16_t>(pVar->getType()) + CHAR_UPDATE_RECORD + pVar->getValueStr();
+                    initList += initObjects[x] + CHAR_UPDATE_RECORD + static_cast<uint16_t>(pVar->iType) + CHAR_UPDATE_RECORD + pVar->getValueStr();
             }
         }
         else if ( args.size() ) //just a regular object
@@ -126,11 +126,11 @@ String PLC_Remote_Server::handleUpdate( const String &str )
 
         if (args.size() > 1) //Got a variable type.
         { //<ID>,<VALUE> //For now  -- presumably the client device knows the object's type following the init
-            shared_ptr<Ladder_OBJ_Logical> pObj = PLCObj.findLadderObjByID(args[0]);
+            OBJ_LOGIC_PTR pObj = PLCObj.findLadderObjByID(args[0]);
 
             if (pObj)
             {
-                shared_ptr<Ladder_VAR> pVar = pObj->getObjectVAR(args[1]);
+                VAR_PTR pVar = pObj->getObjectVAR(args[1]);
                 if (pVar)
                 {
                     updateList += updateObjects[x] + CHAR_UPDATE_RECORD + pVar->getValueStr(); //split with a 'record' char

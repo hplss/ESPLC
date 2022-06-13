@@ -74,6 +74,12 @@ class PLC_Remote_Server
 	uint16_t i_Port;
 };
 
+struct ParserHelper
+{
+	OBJ_TYPE type;
+	OBJ_CATEGORY category;
+};
+
 //The PLC_Main object handles the parsing of a user-inputtd logic script and functions as the central manager for all created ladder logic objects. 
 class PLC_Main
 {
@@ -116,27 +122,31 @@ class PLC_Main
 	//object is created, paired with its name for later reference by the parser. 
 	shared_ptr<Ladder_OBJ> createNewLadderObject( const String &, const vector<String> &);
 	//Creates a new OUTPUT type object, based on the inputted arguments. Script args: [1] = output pin, [2] = NO/NC
-	shared_ptr<Ladder_OBJ_Logical> createOutputOBJ( const String &, const vector<String> &);
+	OBJ_LOGIC_PTR createOutputOBJ( const String &, const vector<String> &);
 	//Creates an input object and associates it with a name. Script args: [1] = input pin, [2] = type (analog/digital), [3] = logic
-	shared_ptr<Ladder_OBJ_Logical> createInputOBJ( const String &, const vector<String> &);
+	OBJ_LOGIC_PTR createInputOBJ( const String &, const vector<String> &);
 	//Creates a counter object and associates it with a name. Script args: [1] = count value, [2] = accum, [3] = subtype(CTU/CTD)
-	shared_ptr<Ladder_OBJ_Logical> createCounterOBJ( const String &, const vector<String> &);
+	OBJ_LOGIC_PTR createCounterOBJ( const String &, const vector<String> &);
 	//Creates a new timer object and associates it with a name. Script args: [1] = delay(ms), [2]= accum default(ms), [3] = subtype(TON/TOF)
-	shared_ptr<Ladder_OBJ_Logical> createTimerOBJ( const String &, const vector<String> &);
-	//Creates a new basic math object, which is capable of performing a series of simple calculations based on inputted arguments.
-
-	//shared_ptr<Ladder_OBJ> createMathOBJ( const String &, const vector<String> &);
+	OBJ_LOGIC_PTR createTimerOBJ( const String &, const vector<String> &);
 	//Creates a oneshot object, which pulses HIGH for one cycle, then LOW until reset. Declared inline.
-	shared_ptr<Ladder_OBJ_Logical> createOneshotOBJ();
+	OBJ_LOGIC_PTR createOneshotOBJ();
     //Creates a new basic math object, which is capable of performing a series of simple calculations based on inputted arguments.
-	shared_ptr<Ladder_OBJ_Logical> createMathOBJ( const String &, OBJ_TYPE, const vector<String> &);
+	OBJ_LOGIC_PTR createMathOBJ( const String &, OBJ_TYPE, const vector<String> &);
 	//Creates a new variable type object which represents a stored value in memory, to be accessed by other objects such as counters or timers or comparison blocks, etc.
 	//Stored on the global list of initialized ladder objects for reference.
-	shared_ptr<Ladder_OBJ_Logical> createVariableOBJ( const String &, const vector<String> &);
+	OBJ_LOGIC_PTR createVariableOBJ( const String &, const vector<String> &);
 	//Creates a ladder variable object for reference by a different part of the code based on the type of data stored in the argument string.
-	shared_ptr<Ladder_VAR> createVariableInstance( const String &, const String &);
+	VAR_PTR createVariableInstance( const String &, const String &);
 	//Creates a ladder object reference that represents the current state of an object that is initialized on another ESPLC device.
-	shared_ptr<Ladder_OBJ_Accessor> createRemoteClient( const String &, const vector<String> &);
+	OBJ_ACC_PTR createRemoteClient( const String &, const vector<String> &);
+	//Creates a CAN interface using the MCP2515 chip.
+	OBJ_ACC_PTR createCANInterface( const String &, const vector<String> &);
+	//Creates a predefinition for a CAN frame associated with a particular initialized CAN interface.
+	OBJ_LOGIC_PTR createCANFrame(const String &, const vector<String> &);
+	//Creates a storage variable for use for writing/reading from received frame data via the CAN interface.
+	OBJ_LOGIC_PTR createCANVariable(const String &, const vector<String> &);
+
 	//performs a lookup to make sure the inputted pin number corresponds to a pin that is valid for the device. Used for some basic error checking in the parser. 
 	//Also lets us know if a given pin is already claimed by another object. 
 	//ARGS: <Pin>, <Device Type>
@@ -156,13 +166,13 @@ class PLC_Main
 	shared_ptr<String> &getLogicScript(){ return currentScript; }
 	//Returns the created ladder object that corresponds to it's unique ID
 	//Args: Ladder Object Vector, Unique ID
-	shared_ptr<Ladder_OBJ_Logical> findLadderObjByID( const String & );
+	OBJ_LOGIC_PTR findLadderObjByID( const String & );
 	//Returns the created accessor object that corresponds to it's unique ID
 	//Args: Ladder Object Vector, Unique ID
-	shared_ptr<Ladder_OBJ_Accessor> findAccessorByID( const String & );
+	OBJ_ACC_PTR findAccessorByID( const String & );
 	//Returns the created variable object that corresponds to it's unique ID
 	//Args: Ladder Var Vector, Unique ID
-	shared_ptr<Ladder_VAR> findLadderVarByID( const String & );
+	VAR_PTR findLadderVarByID( const String & );
 
 	//This function scan for nodes on the given port
 	vector<IPAddress> scanForRemoteNodes( uint16_t, uint8_t, uint8_t, uint16_t );
@@ -171,13 +181,13 @@ class PLC_Main
 	//Returns a reference to the local storage container for all locally stored initialized logic rungs.
 	vector<shared_ptr<Ladder_Rung>> &getLadderRungs(){ return ladderRungs; }
 	//Returns a reference to the local storage container for initialized Ladder_OBJ_Logical objects.
-	vector<shared_ptr<Ladder_OBJ_Logical>> &getLadderObjects(){ return ladderObjects; }
+	vector<OBJ_LOGIC_PTR> &getLadderObjects(){ return ladderObjects; }
 	//Returns a reference to the local storage container for initialized Ladder_VAR objects.
-	vector<shared_ptr<Ladder_VAR>> &getLadderVars(){ return ladderVars; }
+	vector<VAR_PTR> &getLadderVars(){ return ladderVars; }
 	//Returns the locally stored pointer to the PLC web status server.
 	unique_ptr<PLC_Remote_Server> &getRemoteServer(){ return remoteServer; }
 	//Returns a reference to the local storage container for initialized Ladder_OBJ_Accessor objects.
-	vector<shared_ptr<Ladder_OBJ_Accessor>> &getAccessorObjects() { return accessorObjects; }
+	vector<OBJ_ACC_PTR> &getAccessorObjects() { return accessorObjects; }
 	//Returns the number of accessors in the locally stored accessor container.
 	uint8_t getNumAccessors() { return accessorObjects.size(); }
 
@@ -187,9 +197,9 @@ class PLC_Main
 	private:
 	vector<shared_ptr<Ladder_Rung>> ladderRungs; //Container for all ladder rungs present in the parsed ladder logic script.
 
-	vector<shared_ptr<Ladder_OBJ_Logical>> ladderObjects; //Container for all Ladder_OBJ_Logical objects present in the parsed ladder logic script. Used for easy status query.
-	vector<shared_ptr<Ladder_OBJ_Accessor>> accessorObjects; //Container for all Ladder_OBJ_Accessor objects present in the larsed ladder logic script.
-	vector<shared_ptr<Ladder_VAR>> ladderVars; //Container for all ladder variables present in the parsed ladder logic script. Used for easy status query.
+	vector<OBJ_LOGIC_PTR> ladderObjects; //Container for all Ladder_OBJ_Logical objects present in the parsed ladder logic script. Used for easy status query.
+	vector<OBJ_ACC_PTR> accessorObjects; //Container for all Ladder_OBJ_Accessor objects present in the larsed ladder logic script.
+	vector<VAR_PTR> ladderVars; //Container for all ladder variables present in the parsed ladder logic script. Used for easy status query.
 	
 	shared_ptr<String> currentScript; //save the current script in RAM?.. Hmm..
 
@@ -202,6 +212,7 @@ class PLC_Main
 //Generic functions here
 char toUpper( char x );
 String &toUpper(String &);
+
 extern PLC_Main PLCObj;
 
 #endif /* PLC_MAIN_H_ */

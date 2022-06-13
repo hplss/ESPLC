@@ -39,8 +39,11 @@ extern const String &styleDir PROGMEM,
 			 		&adminDir PROGMEM,
 					&statusDir PROGMEM,
 					&alertsDir PROGMEM,
+					&filesDir PROGMEM,
+					&editDir PROGMEM,
 					&updateDir PROGMEM,
 					&firmwareDir PROGMEM,
+					&filesDir PROGMEM,
 			 		&scriptDir PROGMEM;
 //
 
@@ -96,6 +99,7 @@ extern const String &file_Stylesheet PROGMEM,
 
 //Web UI constants
 extern const String &transmission_HTML PROGMEM,
+					&transmission_Plain PROGMEM,
 			 		&html_form_Begin PROGMEM,
 			 		&html_form_Middle PROGMEM,
 					&html_form_Middle_Upload PROGMEM,
@@ -105,7 +109,12 @@ extern const String &transmission_HTML PROGMEM,
 					&html_paragraph_end PROGMEM,
 					&field_title_alerts PROGMEM,
 					&http_header_connection PROGMEM,
-					&http_header_close PROGMEM;
+					&http_header_close PROGMEM,
+					&http_file_bad_args PROGMEM,
+					&http_file_exists PROGMEM,
+			 		&http_file_forbidden PROGMEM,
+					&http_file_creation_failed PROGMEM,
+			 		&http_file_not_found PROGMEM;
 
 //
 
@@ -151,6 +160,7 @@ enum class OBJ_TYPE : uint8_t
 	TYPE_OUTPUT_PWM, 	//physical output - PWM output type
 	TYPE_VIRTUAL,		//internal coil (variable)
 	TYPE_CLOCK,			//clock object type 
+	TYPE_PID, 			//PID object type - also for PI, PD, etc.
 	TYPE_TIMER_ON,			//timed on
 	TYPE_TIMER_OFF,			//timed off
 	TYPE_TIMER_RET,			//retentive timer
@@ -178,7 +188,10 @@ enum class OBJ_TYPE : uint8_t
 	TYPE_MATH_DEC,		//decrement block - subtracts 1 from the inputted source variable
 	TYPE_MATH_CPT,		//compute block. Performs a math operation and sends the calculated value to the provided storage variable
 	TYPE_MATH_MOV,		//Move block, used for transferring data from a source to another destination (IE: From Source to Source, Dest to Source, etc.)
-	TYPE_REMOTE,		//Remote object. Ued in cluster and expander operations when multiple ESP devices are interconnected via networks.
+	TYPE_REMOTE,		//Remote object. Used in cluster and expander operations when multiple ESP devices are interconnected via networks.
+	TYPE_CAN,			//CAN interface. Used as a means of communicating with the MCP2515 CAN hardware layer.
+	TYPE_CAN_FRAME,		//CAN frame object, used as a means of organizing bits of data to be received or transmitted from/to the CAN interface.
+	TYPE_CAN_DATA, 	    //CAN data object, used as a means of accessing successfully received data in a given frame into useful information for logic operations.
 
 	//Variable Exclusive Types
 	TYPE_VAR_UBYTE,		//variable type, used to store information (8-bit unsigned integer)
@@ -192,6 +205,16 @@ enum class OBJ_TYPE : uint8_t
 	TYPE_VAR_STRING,	//variable type, used to store information (String)
 };
 
+//OBJ_CATEGORY contains identifiers 
+enum class OBJ_CATEGORY : uint8_t 
+{
+	CAT_TIMER,
+	CAT_COUNTER,
+	CAT_MATH_BASIC,
+	CAT_INPUT,
+	CAT_OUTPUT,
+};
+
 enum OBJ_LOGIC : uint8_t 
 {
 	LOGIC_NC,	//Normally Closed
@@ -202,6 +225,13 @@ enum class PWM_STATUS : uint8_t
 {
 	PWM_AVAILABLE,
 	PWM_TAKEN
+};
+
+enum class DATA_TYPE : uint8_t
+{
+	TYPE_STRING, //not a valid numeric data
+	TYPE_INT, //integer type
+	TYPE_DOUBLE //double (floating point) type
 };
 
 //This enum denotes the varying states that an object may have. 
@@ -258,6 +288,12 @@ extern const String &bitTagDN PROGMEM,
 					&bitTagSRCB PROGMEM,
 					&bitTagDEST PROGMEM,
 					&bitTagVAL PROGMEM,
+					&bitTagSP PROGMEM,
+					&bitTagKP PROGMEM,
+					&bitTagKI PROGMEM,
+					&bitTagKD PROGMEM,
+					&bitTagPV PROGMEM,
+					&bitTagCV PROGMEM,
 
 			 		&logicTagNO PROGMEM,
 			 		&logicTagNC PROGMEM,
@@ -301,6 +337,8 @@ extern const String &bitTagDN PROGMEM,
 			 		&outputTag2 PROGMEM,
 					&mathTag PROGMEM,
 					&remoteTag PROGMEM,
+					&CANTag PROGMEM,
+			 		&CANFrameTag PROGMEM,
 					&oneshotTag PROGMEM;
 
 
@@ -365,12 +403,23 @@ bool strContains( const String &, const vector<char> & );
 //Performs a check to see if a specific character is present in the inputted string.
 bool strContains( const String &, const char );
 
+bool strBeginsWith( const String &, const vector<String> & );
+bool strBeginsWith( const String &, const String & );
 bool strBeginsWith( const String &, const vector<char> & );
-bool strBeginsWith( const String &, const char  );
+bool strBeginsWith( const String &, const char );
+
+bool strEndsWith( const String &, const vector<String> & );
+bool strEndsWith( const String &, const String & );
 bool strEndsWith( const String &, const vector<char> & );
 bool strEndsWith( const String &, const char );
-uint8_t strDataType( const String &str );
+//This function analyzes an inputted string and make a decision about the types of data contained therein.
+DATA_TYPE strDataType( const String &str );
 //Remove specific character(s) from a given string.
 String removeFromStr( const String &, const vector<char> &);
 String removeFromStr( const String &, const char);
+
+uint64_t generateBitMask(const uint8_t numBits, const uint8_t offset);
+uint32_t unpackData(const uint8_t numBits, const uint8_t offset, const uint64_t *packedBits);
+uint32_t unpackData(const uint64_t mask, const uint8_t offset, const uint64_t *packedBits);
+
 #endif /* GLOBALDEFS_H_ */

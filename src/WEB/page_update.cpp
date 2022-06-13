@@ -1,8 +1,6 @@
 #include <CORE/UICore.h>
 #include <Update.h>
 
-extern UICore Core; //Accessor for the initialized UIcore object.
-
 void UICore::createUpdaterFields()
 {
     shared_ptr<DataTable> alertsTable( new DataTable( table_title_messages ) ),                
@@ -30,7 +28,9 @@ void UICore::handleUpdater()
     if ( getWebServer().args() ) //Do we have some args to input? Apply settings if so (before generating the rest of the HTML)
 		UpdateWebFields( p_UIDataTables );
 
-    String HTML = generateHeader();
+    String HTML;
+    HTML.reserve(4096); 
+    HTML += generateHeader();
 	HTML += generateTitle(PSTR("Firmware Update"));
     HTML += generateAlertsScript( 1 ); //hackhack for now -- index may vary, unless explicitly assigned to '1'
 

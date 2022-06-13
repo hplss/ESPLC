@@ -6,16 +6,16 @@
 //////////////////////////////////////////////////////////////////////////
 void OutputOBJ::updateObject() //Logic used to update the coil
 {
-	bool lineState = (getLineState()!=getLogic()) ? LOW : HIGH;
+	bool lineState = (getLineState() != iLogic) ? LOW : HIGH;
 
-	if ( getType() == OBJ_TYPE::TYPE_OUTPUT )
+	if ( iType == OBJ_TYPE::TYPE_OUTPUT )
 	{
 		if ( iOutputValue != lineState )
 			iOutputValue = lineState; //only update if changed.
 
 		digitalWrite(iPin, lineState);
 	}
-	else if ( getType() == OBJ_TYPE::TYPE_OUTPUT_PWM )
+	else if ( iType == OBJ_TYPE::TYPE_OUTPUT_PWM )
 	{
 		if ( !lineState )
 			iOutputValue = lineState;

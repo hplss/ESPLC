@@ -53,7 +53,7 @@ UICore Core; //UI object init -- for web and serial interfaces, as well as setti
 void setup()
 {
 	millis(); //HACK HACK - calling this here seems to prevent millis() from crashing the device when a timer is used (weird bug). - DO NOT REMOVE
-	Serial.begin(9600); //open the serial port 
+	Serial.begin(115200); //open the serial port 
 	Core.setup(); //Initialize all core UI stuff. Should always be before the PLC_Main object is initialized (script is parsed), because certain settings in the FS should be loaded first.
 	Core.loadPLCScript(PLCObj.getScript()); //load the script from the flash file system, 
 	PLCObj.parseScript(PLCObj.getScript()); //Parses the PLC logic script given above (testing).

@@ -22,35 +22,41 @@ using namespace std;
 
 //predefine to prevent some linker problems
 class Ladder_VAR;
+class Ladder_OBJ_Logical;
+class Ladder_OBJ_Accessor;
+class Ladder_OBJ_Wrapper;
+class NestContainer;
 //
+
+using OBJ_LOGIC_PTR = shared_ptr<Ladder_OBJ_Logical>;
+using OBJ_ACC_PTR = shared_ptr<Ladder_OBJ_Accessor>;
+using OBJ_WRAPPER_PTR = shared_ptr<Ladder_OBJ_Wrapper>;
+using NEST_PTR = shared_ptr<NestContainer>;
+using VAR_PTR = shared_ptr<Ladder_VAR>;
+
+
 
 
 //This is the base class for all PLC ladder logic objects. Individual object types derive from this class.
 class Ladder_OBJ
 {
 public:
-	Ladder_OBJ( const String &id, OBJ_TYPE type ){ s_ObjID = id; i_Type = type; i_objState = 0; }
+	Ladder_OBJ( const String &id, OBJ_TYPE type ) : sObjID(id), iType(type)
+	{  
+		iState = 0; 
+	}
 	virtual ~Ladder_OBJ(){ }
-	//Sets the state of the Ladder_OBJ
-	void setState(uint8_t state) { i_objState = state; }
-	//Returns enabled/disabled/etc
-	uint8_t getState(){ return i_objState; } 
-	//Returns the object type identifier (OUTPUT/INPUT/TIMER,etc.)
-	const OBJ_TYPE getType(){ return i_Type; }
-	//Returns the unique object ID
-	const String &getID(){ return s_ObjID; }
 
 	//Returns an object's bit (Ladder_VAR pointer) based on an inputted bit ID string
-	virtual shared_ptr<Ladder_VAR> getObjectVAR( const String & );
+	virtual VAR_PTR getObjectVAR( const String & );
 	//This function returns a reference to the object's local variable storage container (this may or may not be used, depending on the object's type).
-	vector<shared_ptr<Ladder_VAR>> &getObjectVARs(){ return localVars; }
+	vector<VAR_PTR> &getObjectVARs(){ return localVars; }
 
+	const String sObjID; //The unique ID for this object (globally)
+	const OBJ_TYPE iType; //Identifies the type of this object. 0 = input, 1 = Physical output, 2 = Virtual Output, 3 = timer, etc.	
+	uint8_t iState; //Enabled or disabled?
 private:
-	OBJ_TYPE i_Type; //Identifies the type of this object. 0 = input, 1 = Physical output, 2 = Virtual Output, 3 = timer, etc.	
-	uint8_t i_objState; //Enabled or disabled?
-	String s_ObjID; //The unique ID for this object (globally)
-
-	vector<shared_ptr<Ladder_VAR>> localVars; //locally stored ladder var objects (that belong to this object)
+	vector<VAR_PTR> localVars; //locally stored ladder var objects (that belong to this object)
 };
 
 //Ladder_OBJ_Logical objects are a subclass of Ladder_OBJ. These are objects that are used in performing logic operations via the logic script. 
@@ -61,17 +67,11 @@ class Ladder_OBJ_Logical : public Ladder_OBJ
 	~Ladder_OBJ_Logical(){}
 	virtual void setLineState(bool &state, bool bNot){ if (state) b_lineState = state; } //save the state. Possibly consider latching the state if state is HIGH (duplicate outputs?)
 	//Returns the currently stored line state for the given object.
-	bool getLineState(){ return b_lineState; }
-	//Returns the logic type of the object. EX: Normally Open, Normally closed, etc.
-	const uint8_t getLogic() { return i_objLogic; }
-
-	//Sets the logic type for the given object. EX: Normally Open, Normally closed, etc.
-	void setLogic(uint8_t logic) { i_objLogic = logic; }
+	bool getLineState() const { return b_lineState; }
 	//Set the line state back to false for the next scan This should only be called by the rung manager (which applies the logic after processing)
 	virtual void updateObject(){ b_lineState = false; } 
-
+	
 	private:
-	uint8_t i_objLogic;
 	bool b_lineState;
 };
 
@@ -95,16 +95,16 @@ class Ladder_OBJ_Accessor : public Ladder_OBJ
 	//This function handles the initialization of an object(s) that does not already exist in the accessor, essentially parsing the reply from a server that is sent after an init request.
 	shared_ptr<Ladder_OBJ_Logical> handleInit( const String &);
 
-	bool addObject(shared_ptr<Ladder_OBJ_Logical> obj) { accessorVars.push_back(obj); return true;}
+	bool addObject(OBJ_LOGIC_PTR obj) { accessorVars.push_back(obj); return true;}
 
-	const vector<shared_ptr<Ladder_OBJ_Logical>> &getAccessorVars(){ return accessorVars; }
+	const vector<OBJ_LOGIC_PTR> &getAccessorVars(){ return accessorVars; }
 
 	//Returns the locally stored Ladder_OBJ copy as it pertains to the remote client.
-	virtual shared_ptr<Ladder_OBJ_Logical> findAccessorVarByID( const String &id )
+	virtual OBJ_LOGIC_PTR findAccessorVarByID( const String &id )
 	{
 		for ( uint16_t x = 0; x < getNumObjects(); x++ )
 		{
-			if ( getAccessorVars()[x]->getID() == id )
+			if ( getAccessorVars()[x]->sObjID == id )
 				return getAccessorVars()[x];
 		}
 		
@@ -114,53 +114,47 @@ class Ladder_OBJ_Accessor : public Ladder_OBJ
 	const uint16_t getNumObjects() { return getAccessorVars().size(); }
 
 	private:
-	vector<shared_ptr<Ladder_OBJ_Logical>> accessorVars; //Storage for any initialized ladder objects on the remote client.
+	vector<OBJ_LOGIC_PTR> accessorVars; //Storage for any initialized ladder objects on the remote client.
 };
 
 //This object serves as a means of storing logic script specific flags that pertain to a single ladder object. 
 //This allows us to perform multiple varying logic operations without the need to create multiple copies of the same object.
 struct Ladder_OBJ_Wrapper 
 {
-	Ladder_OBJ_Wrapper(shared_ptr<Ladder_OBJ_Logical> obj, uint16_t rung, bool not_flag = false)
+	Ladder_OBJ_Wrapper(OBJ_LOGIC_PTR obj, uint16_t rung, bool not_flag = false) : bNot(not_flag), pObj(obj)
 	{
-		bNot = not_flag; //Exclusively for NOT logic
-		ladderOBJ = obj; 
-		i_rungNum = rung; //store this here for now
+		//i_rungNum = rung; //store this here for now
 	}
 	~Ladder_OBJ_Wrapper(){ }
 
 	//Adds the inputted object to the current object's list.
-	bool addNextObject( shared_ptr<Ladder_OBJ_Wrapper> pObj )
+	bool addNextObject( const OBJ_WRAPPER_PTR obj )
 	{
-		nextObjects.push_back(pObj);
+		nextObjects.push_back(obj);
 		return true; 
 	}
-	bool addNextObject( const vector<shared_ptr<Ladder_OBJ_Wrapper>> &pObj )
+	bool addNextObject( const vector<OBJ_WRAPPER_PTR> &obj )
 	{
-		for ( uint8_t x = 0; x < pObj.size(); x++ )
-			nextObjects.push_back(pObj[x]);
+		for ( uint8_t x = 0; x < obj.size(); x++ )
+			nextObjects.push_back(obj[x]);
 
 		return true; 
 	}
 
 	void setLineState(bool state)
 	{
-		getObject()->setLineState(state, getNot()); //line state needs to be set per wrapper, not per ladder object
+		pObj->setLineState(state, bNot); //line state needs to be set per wrapper, not per ladder object
 		
 		for(uint8_t x = 0; x < nextObjects.size(); x++ )
 			nextObjects[x]->setLineState(state);
 	}
-	
-	//Returns the pointer to the ladder object stored by this object.
-	const shared_ptr<Ladder_OBJ_Logical> getObject(){ return ladderOBJ; }
-	//Tells us if the object is being interpreted using NOT logic
-	bool getNot(){ return bNot; }
 		
+	const OBJ_LOGIC_PTR pObj = 0; //Container for the actual Ladder_Obj object
+	const bool bNot = false; //if the object is using not logic (per instance in rungs)
+
 	private:
-	bool bNot; //if the object is using not logic (per instance in rungs)
-	uint16_t i_rungNum;
-	shared_ptr<Ladder_OBJ_Logical> ladderOBJ; //Container for the actual Ladder_Obj object
-	vector<shared_ptr<Ladder_OBJ_Wrapper>> nextObjects;
+	//uint16_t i_rungNum;
+	vector<OBJ_WRAPPER_PTR> nextObjects;
 };
 
 

@@ -13,11 +13,7 @@
 class MathBlockOBJ : public Ladder_OBJ_Logical 
 {
 	public:
-    template <typename A>
-    MathBlockOBJ(const String &id, OBJ_TYPE type, A var1, shared_ptr<Ladder_VAR> SrcB = 0, shared_ptr<Ladder_VAR> dest = 0) : MathBlockOBJ(id, type, make_shared<Ladder_VAR>(var1, bitTagSRCA), SrcB, dest ) {}
-    template <typename A, typename B>
-    MathBlockOBJ(const String &id, OBJ_TYPE type, A var1, B var2 = 0, shared_ptr<Ladder_VAR> dest = 0) : MathBlockOBJ(id, type, make_shared<Ladder_VAR>(var1, bitTagSRCA), make_shared<Ladder_VAR>(var2, bitTagSRCB), dest ) {}
-	MathBlockOBJ(const String &id, OBJ_TYPE type, shared_ptr<Ladder_VAR> A, shared_ptr<Ladder_VAR> B = 0, shared_ptr<Ladder_VAR> dest = 0) : Ladder_OBJ_Logical(id, type)
+	MathBlockOBJ(const String &id, OBJ_TYPE type, VAR_PTR A, VAR_PTR B = 0, VAR_PTR dest = 0) : Ladder_OBJ_Logical(id, type)
     { 
         sourceA = A; //must always have a valid pointer
         getObjectVARs().emplace_back(sourceA); //add to the storage vector for local VAR object pointers.
@@ -90,29 +86,25 @@ class MathBlockOBJ : public Ladder_OBJ_Logical
     void computeMOV();
 
 	virtual void updateObject(){}
-    virtual shared_ptr<Ladder_VAR> getObjectVAR( const String &id )
+    virtual VAR_PTR getObjectVAR( const String &id )
 	{
-		for ( uint8_t x = 0; x < getObjectVARs().size(); x++ )
-        {
-            if ( id == getObjectVARs()[x]->getID() )
-                return getObjectVARs()[x]; //found the stored var, so return it
-        }
-
 		return Ladder_OBJ_Logical::getObjectVAR(id); //default case. -- probably an error
 	}
+
     //returns true if either Ladder_Var object uses float type vairables. This is important for some math operations.
     bool usesFloat()
     {
-        return (sourceA->getType() == OBJ_TYPE::TYPE_VAR_FLOAT || ( sourceB && sourceB->getType() == OBJ_TYPE::TYPE_VAR_FLOAT));
+        return (sourceA->iType == OBJ_TYPE::TYPE_VAR_FLOAT || ( sourceB && sourceB->iType == OBJ_TYPE::TYPE_VAR_FLOAT));
     }
+
     //returns true if there are exclusively unsigned numbers at play.
     bool usesUnsignedInt()
     {
-        OBJ_TYPE AType = sourceA->getType();
+        OBJ_TYPE AType = sourceA->iType;
 
         if ( sourceB )
         {
-            OBJ_TYPE BType = sourceB->getType();
+            OBJ_TYPE BType = sourceB->iType;
             return (AType == OBJ_TYPE::TYPE_VAR_UINT || AType == OBJ_TYPE::TYPE_VAR_ULONG || AType == OBJ_TYPE::TYPE_VAR_USHORT) 
             && ( BType == OBJ_TYPE::TYPE_VAR_UINT || BType == OBJ_TYPE::TYPE_VAR_ULONG || BType == OBJ_TYPE::TYPE_VAR_USHORT);
         }
@@ -121,9 +113,9 @@ class MathBlockOBJ : public Ladder_OBJ_Logical
     }
 	
 	private:
-	shared_ptr<Ladder_VAR> sourceA,
-						   sourceB,
-						   destination;
+	VAR_PTR sourceA,
+			sourceB,
+			destination;
 };
 
 #endif /* MATH_BASIC */

@@ -14,6 +14,8 @@ const String &styleDir PROGMEM = PSTR("/style"),
              &adminDir PROGMEM = PSTR("/admin"),
 			 &statusDir PROGMEM = PSTR("/status"),
 			 &alertsDir PROGMEM = PSTR("/alerts"),
+			 &filesDir PROGMEM = PSTR("/files"),
+			 &editDir PROGMEM = PSTR("/edit"),
 			 &updateDir PROGMEM = PSTR("/update"),
 			 &firmwareDir PROGMEM = PSTR("/firmware"),
              &scriptDir PROGMEM = PSTR("/script");
@@ -29,6 +31,12 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &bitTagSRCB PROGMEM = PSTR("B"), //Source B variabel input
 			 &bitTagDEST PROGMEM = PSTR("DEST"), //Destination
 			 &bitTagVAL PROGMEM = PSTR("VAL"), //Value bit - generic
+			 &bitTagSP PROGMEM = PSTR("SP"), //Setpoint component
+			 &bitTagKP PROGMEM = PSTR("KP"), //Proportional Component
+			 &bitTagKI PROGMEM = PSTR("KI"), //Integral component
+			 &bitTagKD PROGMEM = PSTR("KD"), //Derivative component
+			 &bitTagPV PROGMEM = PSTR("PV"), //Process Variable
+			 &bitTagCV PROGMEM = PSTR("CV"), //Control Variable
 
              &logicTagNO PROGMEM = PSTR("NO"), //Normally open contact
 			 &logicTagNC PROGMEM = PSTR("NC"), //Normally closed contact
@@ -72,6 +80,8 @@ const String &bitTagDN PROGMEM = PSTR("DN"), //Done
 			 &outputTag2 PROGMEM = PSTR("OUT"), //Output object alias
 			 &mathTag PROGMEM = PSTR("MATH"), //Math object alias
 			 &remoteTag PROGMEM = PSTR("REMOTE"), //remote object
+			 &CANTag PROGMEM = PSTR("CAN"), //CAN object
+			 &CANFrameTag PROGMEM = PSTR("CANFRAME"), //Frame data for a CAN interface
 			 &oneshotTag PROGMEM = PSTR("ONS"); //oneshot object
 //END PLC TAGS
 
@@ -83,6 +93,7 @@ const String &file_Stylesheet PROGMEM = PSTR("/style.css"),
 
 //Web UI Constants
 const String &transmission_HTML PROGMEM = PSTR("text/html"),
+			 &transmission_Plain PROGMEM = PSTR("text/plain"),
 			 &html_form_Begin PROGMEM = PSTR("<FORM action=\"."),
 			 &html_form_Middle PROGMEM = PSTR("\" method=\"post\" id=\"form\">"),
 			 &html_form_Middle_Upload PROGMEM = PSTR("\" method=\"post\" enctype=\"multipart/form-data\" id=\"form\">"), 
@@ -92,7 +103,12 @@ const String &transmission_HTML PROGMEM = PSTR("text/html"),
 			 &html_paragraph_end PROGMEM = PSTR("</ul>"),
 			 &field_title_alerts PROGMEM = PSTR("System Alerts"),
 			 &http_header_connection PROGMEM = PSTR("Connection"),
-			 &http_header_close PROGMEM = PSTR("close");
+			 &http_header_close PROGMEM = PSTR("close"),
+			 &http_file_bad_args PROGMEM = PSTR("Invalid args"),
+			 &http_file_forbidden PROGMEM = PSTR("Forbidden"),
+			 &http_file_not_found PROGMEM = PSTR("File Not Found"),
+			 &http_file_creation_failed = PSTR("Creation Failed"),
+			 &http_file_exists PROGMEM = PSTR("File Exists");
 //
 
 //PLC Error Messages
@@ -108,11 +124,11 @@ const String &err_failed_creation PROGMEM = PSTR("Failed to create object."),
 			 &err_name_too_long PROGMEM = PSTR("Object Name Too Long"),
 			 &err_parser_failed PROGMEM = PSTR("Parser operation failed."),
 			 &err_var_type_invalid PROGMEM = PSTR("Invalid variable type."),
-			 &err_var_out_of_range PROGMEM = PSTR("Value assigned exceeds variable range."),
+			 &err_var_out_of_range PROGMEM = PSTR("Value exceeds variable range."),
 			 &err_invalid_function PROGMEM = PSTR("Function given is not supported."),
-			 &err_math_too_many_args PROGMEM = PSTR("Function was given too many arguments."),
-			 &err_math_too_few_args PROGMEM = PSTR("Function was given too few arguments."),
-			 &err_math_division_by_zero PROGMEM = PSTR("A division by zero was about to occur.");
+			 &err_math_too_many_args PROGMEM = PSTR("Too many arguments."),
+			 &err_math_too_few_args PROGMEM = PSTR("Too few arguments."),
+			 &err_math_division_by_zero PROGMEM = PSTR("Cannot divide by zero.");
 //
 //Variable string definitions
 const String &VAR_INT32 PROGMEM = PSTR("INT32"),
@@ -301,11 +317,11 @@ void reverse(char* begin, char* end) {
         --ie;
     }
 }
-//
-uint8_t strDataType( const String &str )
+
+DATA_TYPE strDataType( const String &str )
 {
 	if ( str.length() > 18 )
-		return 0; //can't have this many numbers in a valid value 
+		return DATA_TYPE::TYPE_STRING; //can't have this many numbers in a valid numeric value 
 
 	uint8_t numDots = 0;
 	for (uint16_t x = 0; x < str.length(); x++ )
@@ -313,13 +329,13 @@ uint8_t strDataType( const String &str )
 		if ( str[x] == '.')
 			numDots++;
 		if ( str[x] > 57 || ( (str[x] < 48 ) && (str[x] != '.') && (str[x] != '-' && x == 0) ) || numDots > 1 )
-			return 0; //string type
+			return DATA_TYPE::TYPE_STRING; //string type
 	}
 
 	if ( numDots )
-		return 2; //double type
+		return DATA_TYPE::TYPE_DOUBLE; //double type
 	
-	return 1; //integer type
+	return DATA_TYPE::TYPE_INT; //integer type
 }
 
 bool strContains( const String &str, const vector<char> &c )
@@ -336,6 +352,18 @@ bool strContains( const String &str, const vector<char> &c )
 }
 bool strContains( const String &str, const char c ){ return strContains(str, vector<char>{c}); }
 
+bool strBeginsWith( const String &str, const vector<String> &s)
+{
+    for ( uint8_t y = 0; y < s.size(); y++ )
+    {
+        if ( (bool)str.startsWith(s[y]) )
+            return true;
+    }
+
+    return false;
+}
+bool strBeginsWith( const String &str, const String &s ){ return strBeginsWith( str, vector<String>{ s } ); }
+
 bool strBeginsWith( const String &str, const vector<char> &c )
 {
 	for (uint8_t y = 0; y < c.size(); y++ )
@@ -346,6 +374,18 @@ bool strBeginsWith( const String &str, const vector<char> &c )
 	return false;
 }
 bool strBeginsWith( const String &str, const char c ){ return strBeginsWith(str, vector<char>{c}); }
+
+bool strEndsWith( const String &str, const vector<String> &s)
+{
+    for ( uint8_t y = 0; y < s.size(); y++ )
+    {
+        if ( (bool)str.endsWith(s[y]) )
+            return true;
+    }
+
+    return false;
+}
+bool strEndsWith( const String &str, const String &s ){ return strEndsWith( str, vector<String>{ s } ); }
 
 bool strEndsWith( const String &str, const vector<char> &c )
 {
@@ -406,4 +446,35 @@ OBJ_TYPE findMathObjectType( const String &str )
 	else if ( str == typeTagMNEQ ) return OBJ_TYPE::TYPE_MATH_NEQ;
 
 	return OBJ_TYPE::TYPE_INVALID; //could not find the object
+}
+
+uint64_t generateBitMask(const uint8_t numBits, const uint8_t offset)
+{
+	if (numBits > 63)
+		return 0;
+
+	uint64_t mask = 1;
+
+	for (uint8_t x = 1; x < numBits; x++)
+		mask |= (1 << x); 
+
+	mask = (mask << offset);
+
+	return mask;
+}
+
+uint32_t unpackData(const uint8_t numBits, const uint8_t offset, const uint64_t *packedBits)
+{
+	uint64_t data = (generateBitMask(numBits, offset) & *packedBits);
+	data = (data >> offset);
+
+	return (uint32_t)data;
+}
+
+uint32_t unpackData(const uint64_t mask, const uint8_t offset, const uint64_t *packedBits)
+{
+	uint64_t data = (mask & *packedBits);
+	data = (data >> offset);
+
+	return (uint32_t)data;
 }

@@ -1,8 +1,6 @@
 #include <CORE/UICore.h>
 #include <PLC/PLC_Main.h>
 
-extern UICore Core; //Used to identify our initialized core object.
-
 void UICore::createStyleSheetFields() //Probably shouldnt be called more than once.
 {
 	shared_ptr<DataTable> alertsTable( new DataTable( table_title_messages ) ),

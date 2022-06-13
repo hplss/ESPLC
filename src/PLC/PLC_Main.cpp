@@ -17,6 +17,7 @@
 #include "OBJECTS/obj_counter.h"
 #include "OBJECTS/obj_oneshot.h"
 #include "ACCESSORS/acc_remote.h"
+#include "ACCESSORS/acc_CAN.h"
 //
 
 void PLC_Main::resetAll()
@@ -154,31 +155,31 @@ bool PLC_Main::addLadderRung(shared_ptr<Ladder_Rung> rung)
 	return true;
 }
 
-shared_ptr<Ladder_OBJ_Logical> PLC_Main::findLadderObjByID( const String &id ) //Search through all created objects thus far. This assumes that the object was created successfully.
+OBJ_LOGIC_PTR PLC_Main::findLadderObjByID( const String &id ) //Search through all created objects thus far. This assumes that the object was created successfully.
 {
 	for ( uint16_t x = 0; x < ladderObjects.size(); x++ )
 	{
-		shared_ptr<Ladder_OBJ_Logical> pObj = ladderObjects[x];
-		if ( pObj && pObj->getID() == id )
+		OBJ_LOGIC_PTR pObj = ladderObjects[x];
+		if ( pObj && pObj->sObjID == id )
 			return pObj;
 	}
 	
 	return 0; //default
 }
 
-shared_ptr<Ladder_OBJ_Accessor> PLC_Main::findAccessorByID( const String &id )
+OBJ_ACC_PTR PLC_Main::findAccessorByID( const String &id )
 {
 	for ( uint8_t x = 0; x < accessorObjects.size(); x++ )
 	{
-		shared_ptr<Ladder_OBJ_Accessor> pObj = accessorObjects[x];
-		if ( pObj && pObj->getID() == id )
+		OBJ_ACC_PTR pObj = accessorObjects[x];
+		if ( pObj && pObj->sObjID == id )
 			return pObj;
 	}
 
 	return 0;
 }
 
-shared_ptr<Ladder_VAR> PLC_Main::findLadderVarByID( const String &id ) 
+VAR_PTR PLC_Main::findLadderVarByID( const String &id ) 
 {
 	if ( strContains(id, CHAR_ACCESSOR_OPERATOR)) //looks like we're trying to access variables that are stored in an accessor
 	{
@@ -186,7 +187,7 @@ shared_ptr<Ladder_VAR> PLC_Main::findLadderVarByID( const String &id )
 
 		if ( argVec.size() > 1) //make sure number of elements is valid, must have an object ID and a variable ID
 		{
-			shared_ptr<Ladder_OBJ_Accessor> accessor = findAccessorByID( argVec[0]);
+			OBJ_ACC_PTR accessor = findAccessorByID( argVec[0]);
 			if ( accessor )
 			{
 				return static_pointer_cast<Ladder_VAR>(accessor->findAccessorVarByID(argVec[1])); //use the first index of the vector to find the existing object.
@@ -208,8 +209,8 @@ shared_ptr<Ladder_VAR> PLC_Main::findLadderVarByID( const String &id )
 	{
 		for ( uint16_t x = 0; x < ladderVars.size(); x++ )
 		{
-			shared_ptr<Ladder_VAR> pObj = ladderVars[x];
-			if ( pObj && pObj->getID() == id )
+			VAR_PTR pObj = ladderVars[x];
+			if ( pObj && pObj->sObjID == id )
 				return pObj;
 		}
 	}
@@ -235,11 +236,14 @@ bool PLC_Main::parseScript(const char *script)
 		else if (scriptLine.length() > 1) //we've hit a newline or carriage return char and we've got a valid length
 		{
 			iLine++; //Looks like we have a valid line
-			shared_ptr<PLC_Parser> parser = make_shared<PLC_Parser>(scriptLine, getNumRungs() );
-			if ( !parser->parseLine() )
+			if ( !strBeginsWith(scriptLine, vector<String>{"//", "#"} ) ) //omit comments in scripts (at beginning of line)
 			{
-				sendError( ERR_DATA::ERR_PARSER_FAILED, PSTR("At Line: ") + String(iLine));
-				return false; //error ocurred somewhere?
+				shared_ptr<PLC_Parser> parser = make_shared<PLC_Parser>(scriptLine, getNumRungs() );
+				if ( !parser->parseLine() )
+				{
+					sendError( ERR_DATA::ERR_PARSER_FAILED, PSTR("At Line: ") + String(iLine));
+					return false; //error ocurred somewhere?
+				}
 			}
 
 			scriptLine.clear(); //empty the container for the next line
@@ -306,7 +310,7 @@ shared_ptr<Ladder_OBJ> PLC_Main::createNewLadderObject(const String &name, const
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ_Logical> PLC_Main::createInputOBJ( const String &id, const vector<String> &args )
+OBJ_LOGIC_PTR PLC_Main::createInputOBJ( const String &id, const vector<String> &args )
 {
 	uint8_t pin = 0, logic = LOGIC_NO, numArgs = args.size();
 
@@ -344,7 +348,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createInputOBJ( const String &id, const
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOutputOBJ( const String &id, const vector<String> &args )
+OBJ_LOGIC_PTR PLC_Main::createOutputOBJ( const String &id, const vector<String> &args )
 {
 	uint8_t pin = 0, logic = LOGIC_NO, numArgs = args.size();
 	OBJ_TYPE type = OBJ_TYPE::TYPE_OUTPUT; //default
@@ -354,7 +358,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOutputOBJ( const String &id, cons
 
 	double frequency = 5000;
 
-	if ( numArgs > 6 ) //PWM resolution (bits)
+	if ( numArgs > 6 ) //PWM resolution (bits) -- should be constant
 	{
 		int32_t tempInt = args[6].toInt();
 		if ( tempInt > 0 && tempInt <= 16 ) //max 16 bit
@@ -363,7 +367,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOutputOBJ( const String &id, cons
 			sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[6] );
 	}
 
-	if ( numArgs > 5 ) //frequency
+	if ( numArgs > 5 ) //frequency -- should be constant?
 	{
 		double tempDbl = args[5].toDouble();
 		if ( tempDbl > 0 && tempDbl < (CPU_CLK_FREQ/exp2(resolution)) ) //80Mhz may or may not be the right value here. Look into later.
@@ -372,7 +376,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOutputOBJ( const String &id, cons
 			sendError(ERR_DATA::ERR_OUT_OF_RANGE, args[5] );
 	}
 
-	if ( numArgs > 4 ) //duty cycle
+	if ( numArgs > 4 ) //duty cycle -- can change
 	{
 		int32_t tempInt = args[4].toInt();
 		if ( tempInt > 0 && tempInt < exp2(resolution) ) 
@@ -422,10 +426,10 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOutputOBJ( const String &id, cons
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ_Logical> PLC_Main::createTimerOBJ( const String &id, const vector<String> &args )
+OBJ_LOGIC_PTR PLC_Main::createTimerOBJ( const String &id, const vector<String> &args )
 {
 	uint8_t numArgs = args.size();
-	uint32_t delay = 0, accum = 0;
+	VAR_PTR delay = 0, accum = 0;
 	OBJ_TYPE subType = OBJ_TYPE::TYPE_TIMER_ON;
 
 	if ( numArgs > 3 )
@@ -437,29 +441,29 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createTimerOBJ( const String &id, const
 		else
 			sendError(ERR_DATA::ERR_UNKNOWN_ARGS, args[0] + args[3]); 
 	}
+
 	if ( numArgs > 2 )
-		accum = args[2].toInt(); //some output verification tests here
+	{
+		accum = createVariableInstance(bitTagACC, args[2]);
+	}
 
 	if ( numArgs > 1 ) //must have at least one arg
 	{
-		delay = args[1].toInt(); //verification tests? 
-		if (delay > 1) //Must have a valid delay time. 
-		{
-			shared_ptr<TimerOBJ> newObj(new TimerOBJ(id, delay, accum, subType ));
-			ladderObjects.emplace_back(newObj);
-			#ifdef DEBUG
-			Serial.println(PSTR("NEW TIMER"));
-			#endif
-			return newObj;
-		}
+		delay = createVariableInstance(bitTagPRE, args[1]);
+		shared_ptr<TimerOBJ> newObj(new TimerOBJ(id, delay, accum, subType ));
+		ladderObjects.emplace_back(newObj);
+		#ifdef DEBUG
+		Serial.println(PSTR("NEW TIMER"));
+		#endif
+		return newObj;
 	}
 
 	return 0;
 }
 
-shared_ptr<Ladder_OBJ_Logical> PLC_Main::createCounterOBJ( const String &id, const vector<String> &args )
+OBJ_LOGIC_PTR PLC_Main::createCounterOBJ( const String &id, const vector<String> &args )
 {
-	uint16_t count = 0, accum = 0; 
+	shared_ptr<Ladder_VAR> count = 0, accum = 0; 
 	uint8_t numArgs = args.size();
 	OBJ_TYPE subType = OBJ_TYPE::TYPE_COUNTER_UP;
 
@@ -473,11 +477,14 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createCounterOBJ( const String &id, con
 			sendError(ERR_DATA::ERR_UNKNOWN_ARGS, args[0] + args[3]);
 	}
 	if ( numArgs > 2 )
-		accum = args[2].toInt(); //some output verification tests here?
+	{
+		accum = createVariableInstance(bitTagACC, args[2]); 
+	}
 		
 	if ( numArgs > 1 )
 	{
-		count = args[1].toInt();
+		count = createVariableInstance(bitTagPRE, args[1]); 
+
 		shared_ptr<CounterOBJ> newObj(new CounterOBJ(id, count, accum, subType));
 		ladderObjects.emplace_back(newObj);
 		#ifdef DEBUG
@@ -489,23 +496,23 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createCounterOBJ( const String &id, con
 }
 
 //TODO - Implement some way where a user can easily dictate which variable type to use for memory purposes, otherwise default to auto-detection (maybe always estimate high? 64-bit?).
-shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, const vector<String> &args )
+OBJ_LOGIC_PTR PLC_Main::createVariableOBJ( const String &id, const vector<String> &args )
 {
 	shared_ptr<Ladder_VAR> newObj = 0;
 
 	//could use an else here for but it really doesn't matter
 	if ( args.size() > 1 )
 	{
-		if(args[1] == "TRUE")
+		if(args[1] == PSTR("TRUE"))
 		{
 			newObj = make_shared<Ladder_VAR>(true, id);
 		}
-		else if(args[1] == "FALSE")
+		else if(args[1] == PSTR("FALSE"))
 		{
 			newObj = make_shared<Ladder_VAR>(false, id);
 		}
 
-		if (args.size() > 2 && !newObj) // in this case, we are manually specifying the type of variable that we are initializing
+		if (args.size() > 2 && !newObj) // in this case, we are manually (explicitly) specifying the type of variable that we are initializing
 		{
 			if (args[2] == VAR_INT32)
 			{
@@ -580,62 +587,135 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createVariableOBJ( const String &id, co
 	return newObj;
 }
 
-shared_ptr<Ladder_VAR> PLC_Main::createVariableInstance(const String &id, const String &arg)
+OBJ_ACC_PTR PLC_Main::createCANInterface( const String &id, const vector<String> &args )
 {
-	shared_ptr<Ladder_VAR> newVar = 0;
-	uint8_t dataType = strDataType(arg);
+	shared_ptr<PLC_CAN_ADAPTER> interface = 0;
 
-	if ( dataType == 2) //double type
+	if ( args.size() < 5 )
+		return 0;
+
+	for ( uint8_t x = 1; x < 5; x++ )
+	{
+		if ( !isValidPin(args[x].toInt(), OBJ_TYPE::TYPE_OUTPUT))
+		{
+			#ifdef DEBUG
+			Serial.println("PIN " + args[x] + " IS INVALID");
+			#endif
+			return 0;
+		}
+	}
+
+	setClaimedPin(args[1].toInt());
+	setClaimedPin(args[2].toInt());
+	setClaimedPin(args[3].toInt());
+	setClaimedPin(args[4].toInt());
+	
+	interface = make_shared<PLC_CAN_ADAPTER>(id, args[1].toInt(), args[2].toInt(), args[3].toInt(), args[4].toInt(), args.size() > 5 ? args[5].toInt() : 250000 );
+
+	if ( interface ) //We've created a new object, so store it in the appropriate vectors.
+	{
+		ladderObjects.emplace_back(interface);
+		#ifdef DEBUG
+		Serial.println( PSTR("CREATED NEW CAN INTERFACE") ); 
+		#endif
+	}
+
+	return interface;
+}
+
+//Creates a predefinition for a CAN frame associated with a particular initialized CAN interface.
+OBJ_LOGIC_PTR PLC_Main::createCANFrame(const String &id, const vector<String> &args )
+{
+	CAN_FRAME_PTR frame = 0;
+
+	bool tx = false;
+	uint16_t txRate = 10; //10MS transmit rate by default (if it's a TX frame)
+
+	if ( args.size() < 2 )
+		return 0;
+
+	frame = make_shared<CANFrameOBJ>(id, args[1].toInt(), args.size() > 2 ? args[3].toInt() : tx, args.size() > 3 ? args[4].toInt() : txRate );
+
+	//CANFrameOBJ(const String &name, const uint32_t id, const bool tx = false, const uint16_t txRate = 10 ) 
+	if ( frame ) //We've created a new object, so store it in the appropriate vectors.
+	{
+		ladderObjects.emplace_back(frame);
+		#ifdef DEBUG
+		Serial.println( PSTR("CREATED NEW CAN INTERFACE") ); 
+		#endif
+	}
+
+	return frame;
+}
+
+//Creates a storage variable for use for writing/reading from received frame data via the CAN interface.
+OBJ_LOGIC_PTR PLC_Main::createCANVariable(const String &id, const vector<String> &args )
+{
+	CAN_DATA_PTR newObj = 0;
+	//CANDataOBJ(const String &id, CAN_FRAME_PTR parentFrame, const uint64_t mask, const uint8_t bitOffset, const double ratio = 1.0, const double offset = 0 ) 
+
+	if ( args.size() < 4 )
+		return 0;
+
+	OBJ_LOGIC_PTR parentFrame = findLadderObjByID(args[1]);
+	if ( !parentFrame || parentFrame->iType != OBJ_TYPE::TYPE_CAN_FRAME );
+	{
+		Serial.println("Cannot find CAN frame: " + args[1]);
+		return 0;
+	}
+
+	newObj = make_shared<CANDataOBJ>(id,  );
+
+	if ( newObj ) //We've created a new object, so store it in the appropriate vectors.
+	{
+		ladderObjects.emplace_back(newObj);
+		ladderVars.emplace_back(newObj);
+		#ifdef DEBUG
+		Serial.println( PSTR("New CAN variable created.") ); 
+		#endif
+	}
+
+	return newObj;
+}
+
+//this function is used to create a new variable object on the fly. Most likely for use by other objects that are being initialized.
+VAR_PTR PLC_Main::createVariableInstance(const String &id, const String &arg)
+{
+	VAR_PTR newVar = 0;
+	DATA_TYPE dataType = strDataType(arg);
+
+	if ( dataType == DATA_TYPE::TYPE_DOUBLE) //double type
 		newVar = make_shared<Ladder_VAR>( atof(arg.c_str()),id);
-	else if ( dataType == 1)//integer type
+	else if ( dataType == DATA_TYPE::TYPE_INT)//integer type
 		newVar = make_shared<Ladder_VAR>( atoll(arg.c_str()),id);
+	else if ( dataType == DATA_TYPE::TYPE_STRING ) //attempt to find the variable as an existing object (whether alone or as a member of another pobject)
+		newVar = findLadderVarByID(arg);
 
 	return newVar;
 }
 
-shared_ptr<Ladder_OBJ_Logical> PLC_Main::createOneshotOBJ()
+OBJ_LOGIC_PTR PLC_Main::createOneshotOBJ()
 {
 	shared_ptr<OneshotOBJ> newObj(new OneshotOBJ());
 	return newObj;
 }
 
-shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, OBJ_TYPE type, const vector<String> & args)
+OBJ_LOGIC_PTR PLC_Main::createMathOBJ( const String &id, OBJ_TYPE type, const vector<String> & args)
 {
 	shared_ptr<MathBlockOBJ> newObj = 0;
 	uint8_t argSize = args.size(); //get number of arguments that were passed in
 
 	if(argSize >= 2)
 	{
-		uint8_t var1DataType = strDataType(args[1]), var2DataType = 0, var3DataType = 0;
-		shared_ptr<Ladder_VAR> var1ptr = 0;
-		shared_ptr<Ladder_VAR> var2ptr = 0;
-		shared_ptr<Ladder_VAR> var3ptr = 0;
-		
-		if ( !var1DataType ) //searching for a string 
-			var1ptr = findLadderVarByID(args[1]);
-		else
-			var1ptr = createVariableInstance(bitTagSRCA, args[1]); //attempt to create the source A from a constant numeric value that was given
+		VAR_PTR var1ptr = createVariableInstance(bitTagSRCA, args[1]); //set to null at first
+		VAR_PTR var2ptr = 0;
+		VAR_PTR var3ptr = 0;
 
 		if ( !var1ptr ) //must always have at least one valid source and valid math type to continue
-		{
-			//error here could not find argument
-			return 0;
-		}
+			return 0; //error here could not find argument
 
 		//Arguments are: arg[0] = function, arg[1] = first variable, arg[2] = second variable, arg[3] = third variable
-		if(argSize >= 3) //must have at least 4 args to access string at args[3]
-		{
-			var2DataType = strDataType(args[2]);
-			if ( !var2DataType ) // string type data only
-				var2ptr = findLadderVarByID(args[2]);
-		}
-		if(argSize == 4) //must have at least 4 args
-		{
-			var3DataType = strDataType(args[3]);
-			if ( !var3DataType ) 
-				var3ptr = findLadderVarByID(args[3]);
-		}
-		else if ( argSize > 4 )
+		if ( argSize > 4 )
 		{
 			sendError(ERR_DATA::ERR_MATH_TOO_MANY_ARGS);
 		}
@@ -649,10 +729,9 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, OBJ_TY
 		else if(type == OBJ_TYPE::TYPE_MATH_TAN || type == OBJ_TYPE::TYPE_MATH_SIN || type == OBJ_TYPE::TYPE_MATH_ACOS || type == OBJ_TYPE::TYPE_MATH_COS
 		|| type == OBJ_TYPE::TYPE_MATH_ATAN || type == OBJ_TYPE::TYPE_MATH_ASIN || type == OBJ_TYPE::TYPE_MATH_MOV ) 
 		{
-			if ( !var2ptr && var2DataType )
-				var2ptr = createVariableInstance(bitTagDEST, args[2]);
+			var2ptr = createVariableInstance(bitTagDEST, args[2]);
 
-			newObj = make_shared<MathBlockOBJ>(id, type, var1ptr, shared_ptr<Ladder_VAR>(0), var2ptr );
+			newObj = make_shared<MathBlockOBJ>(id, type, var1ptr, VAR_PTR(0), var2ptr );
 		}
 		//check for objects that require SourceA, SourceB, and DEST (Optional)
 		else if(type == OBJ_TYPE::TYPE_MATH_MUL || type == OBJ_TYPE::TYPE_MATH_DIV || type == OBJ_TYPE::TYPE_MATH_ADD || type == OBJ_TYPE::TYPE_MATH_SUB
@@ -665,11 +744,8 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, OBJ_TY
 			}
 			else if(argSize <= 4)
 			{
-				if ( !var2ptr && var2DataType )
-					var2ptr = createVariableInstance(bitTagSRCB, args[2]);
-
-				if ( !var3ptr && var3DataType )
-					var3ptr = createVariableInstance(bitTagDEST, args[3]);
+				var2ptr = createVariableInstance(bitTagSRCB, args[2]);
+				var3ptr = createVariableInstance(bitTagDEST, args[3]);
 
 				if ( var2ptr ) //must have valid pointers
 					newObj = make_shared<MathBlockOBJ>(id, type, var1ptr, var2ptr, var3ptr);
@@ -684,7 +760,7 @@ shared_ptr<Ladder_OBJ_Logical> PLC_Main::createMathOBJ( const String &id, OBJ_TY
 	return newObj;
 }
 
-shared_ptr<Ladder_OBJ_Accessor> PLC_Main::createRemoteClient( const String &id, const vector<String> &args )
+OBJ_ACC_PTR PLC_Main::createRemoteClient( const String &id, const vector<String> &args )
 {
 	//Args: IP, Port, Timeout Time
 	uint32_t timeout = 2000, updfreq = 1000; //default values in ms
@@ -722,7 +798,7 @@ shared_ptr<Ladder_OBJ_Accessor> PLC_Main::createRemoteClient( const String &id, 
 		{
 			for ( uint8_t x = 0; x < getNumAccessors(); x++ )
             {
-                if ( getAccessorObjects()[x]->getType() == OBJ_TYPE::TYPE_REMOTE )
+                if ( getAccessorObjects()[x]->iType == OBJ_TYPE::TYPE_REMOTE )
                 {
                     PLC_Remote_Client *currentClient = static_cast<PLC_Remote_Client *>(getAccessorObjects()[x].get());
                     if ( currentClient && currentClient->getHostAddress() == serverIP )
@@ -814,6 +890,7 @@ bool PLC_Main::setClaimedPin(uint8_t pin)
 void PLC_Main::sendError(ERR_DATA err, const String &info )
 {
 	String error;
+	error.reserve(384);
 	switch (err)
 	{
 		case ERR_DATA::ERR_CREATION_FAILED: //generic
