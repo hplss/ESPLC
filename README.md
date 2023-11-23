@@ -11,12 +11,9 @@ The documentation for this project can be found in the <a href="https://github.c
 A simple overview and demonstration video for this project, as presented to the <a href="https://eceacademy.mst.edu/">Missouri S&T EE Academy</a>, can be found <a href ="https://www.dropbox.com/s/e552shd9b4f98de/Presentation_Final.mp4"> here.</a>
 <br>
 <br>
-
-Current developers include:
-  - <a href="mailto:aswmkm@umsystem.edu">Andrew Ward</a>
-
   
 Past developers include:
+  - Andrew Ward
   - <a href = "https://github.com/bd9232">Brendan Dunne</a>
   - <a href = "https://github.com/Dakotah3121">Dakotah Lyons</a>
   - <a href = "https://github.com/CosmicStrife">Ryan McClure</a>
